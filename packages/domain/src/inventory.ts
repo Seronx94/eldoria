@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { items, inventoryRules, type ItemId } from '@eldoria/content';
-const itemId = z.enum(['sword', 'tunic', 'potion', 'skin', 'chitin']);
+const itemId = z.enum(['sword','bow','wand','tunic', 'potion', 'skin', 'chitin']);
 export const stackSchema = z.object({ itemId, quantity: z.number().int().min(1).max(99) }).strict();
 export type Stack = z.infer<typeof stackSchema>;
 export const inventorySchema = z.array(stackSchema).max(inventoryRules.slots).refine(stacks => stacks.every(s => s.quantity <= items[s.itemId].stack), 'Przekroczony limit stosu');

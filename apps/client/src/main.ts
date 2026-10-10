@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import { combatAllowedAt, regionAt, landmarksOnMap, importMap, validateMaps, rules, monsters, items, npcs, questRules, explorationRules, landmarks, type WorldMap, type NpcId } from '@eldoria/content';
-import { nameSchema, type Direction } from '@eldoria/protocol';
+import { combatAllowedAt, regionAt, landmarksOnMap, importMap, validateMaps, rules, monsters, items, npcs, questRules, explorationRules, landmarks,professions,spells, type WorldMap, type NpcId } from '@eldoria/content';
+import { nameSchema,professionSchema, type Direction,type ActionId } from '@eldoria/protocol';
 import { Simulation, LocalGateway, type Snapshot, type SaveData } from '@eldoria/domain';
 import {createTileLayer} from './tile-layer';
 import { CityGuide } from './city-guide';
@@ -10,6 +10,7 @@ import { OfflineStorage } from './storage';
 import {VirtualJoystick} from './virtual-joystick';
 import {renderActionIcons} from './action-icons';
 import {creatureFacing,creatureFrames} from './creature-facing';
+import {ActionBar,actionName} from './action-bar';
 import './style.css';
 
 function element<T extends HTMLElement>(selector: string): T {
@@ -58,12 +59,14 @@ let bagSignature = '';
 const pointerDirections = new Map<number, Direction>();
 const heldKeys = new Map<string, Direction>();
 const attackPointers = new Set<number>();
-let attackKey = false;
+const attackKeys=new Set<string>();
+const actionButtons=Array.from(document.querySelectorAll<HTMLButtonElement>('[data-slot]'));
+const actionBar=new ActionBar(actionButtons);
 const joystick = new VirtualJoystick(element('#joystick'), () => playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open, (id, d) => {
   if (d) pointerDirections.set(id, d); else pointerDirections.delete(id);
   movement();
 });
-function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); attackPointers.clear(); attackKey = false; joystick.reset(); }
+function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); attackPointers.clear(); attackKeys.clear(); joystick.reset(); }
 function direction(): Direction | undefined { return [...pointerDirections.values()].at(-1) ?? [...heldKeys.values()].at(-1); }
 function movement(): void {
   const d = direction();
@@ -72,7 +75,7 @@ function movement(): void {
 }
 const movementTimer = window.setInterval(() => {
   movement();
-  if ((attackKey || attackPointers.size > 0) && playing && !document.hidden && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({type:'Attack'});
+  if ((attackKeys.size || attackPointers.size > 0) && playing && !document.hidden && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({type:'Attack'});
 }, rules.tickMs);
 
 class Boot extends Phaser.Scene {
@@ -256,6 +259,7 @@ class World extends Phaser.Scene {
     } else if (this.time.now < this.movingUntil) this.hero.play(`${colorful ? 'colorful-' : ''}walk-${s.direction}`, true);
     else { this.hero.anims.stop(); this.hero.setFrame(['down', 'left', 'right', 'up'].indexOf(s.direction) * 3); }
     this.bars.clear();
+    if(s.guardMs>0)this.bars.lineStyle(2,0x98c7ef,.6+Math.sin(this.time.now/180)*.2).strokeEllipse(this.hero.x,this.hero.y-10,34,28);
     for (const loot of s.loot.filter(l => l.mapId === s.mapId)) {
       this.bars.fillStyle(colorful ? 0xffd660 : 0xdac083).fillCircle(loot.x * 32 + 16, loot.y * 32 + 24, 5);
       this.bars.lineStyle(1, 0x594b33).strokeCircle(loot.x * 32 + 16, loot.y * 32 + 24, 5);
@@ -300,12 +304,13 @@ class World extends Phaser.Scene {
       if (event.mapId !== s.mapId) continue;
       const source = event.sourceId === 'player' ? this.hero : this.creatureSprites.get(event.sourceId);
       const target = event.targetId === 'player' ? this.hero : event.targetId ? this.creatureSprites.get(event.targetId) : undefined;
-      this.effects.play(event, source, target);
+      this.effects.play(event, source, target,id=>id==='player'?this.hero:this.creatureSprites.get(id));
       if (event.sourceId === 'player') { this.actionUntil = this.time.now + 280; this.actionKind = event.kind === 'spell' ? 'spell' : 'melee'; }
       ui.hud.dataset.combatDamage = String(event.damage); ui.hud.dataset.combatTarget = event.targetId ?? '';
       ui.hud.dataset.combat = event.kind; ui.hud.dataset.combatId = String(event.id);
+      ui.hud.dataset.combatEffect=event.effect;ui.hud.dataset.combatRange=String(Math.abs(event.from.x-event.to.x)+Math.abs(event.from.y-event.to.y));
     }
-    this.effects.update(); ui.hud.dataset.effects = String(this.effects.count);
+    this.effects.update(); ui.hud.dataset.effects = String(this.effects.count);ui.hud.dataset.effectTypes=this.effects.types.join(',');
   }
 }
 const game = new Phaser.Game({
@@ -316,9 +321,10 @@ const game = new Phaser.Game({
 });
 function updateUI(s: Snapshot): void {
   snapshot = s;
+  actionBar.update(s);
   ui.hp.max = s.maxHp; ui.mana.max = s.maxMana; ui.hp.value = s.hp; ui.mana.value = s.mana;
   ui.hpLabel.textContent = `${s.hp} HP · ${s.mana} MP`;
-  ui.playerName.textContent = `${s.name} · poz. ${s.level}`;
+  ui.playerName.textContent = `${s.name} · ${professions[s.profession].name} ${s.level}`;
   ui.mapName.textContent = regionAt(maps.find(m=>m.id===s.mapId)!,s.player)?.label ?? ({courtyard:'DZIEDZINIEC WZORCOWY',grove:'ZAGAJNIK WZORCOWY',vareon:'VAREON',forest:'MROCZNY LAS'})[s.mapId] ?? s.mapId;
   ui.objective.textContent = adventure ? s.quest.status === 'available' ? 'Mira →' : s.quest.status === 'claimed' ? '✓' : `${s.quest.kills} / 5` : `${s.defeatedKinds.length} / 3`;
   element('#objective-title').textContent = adventure ? 'NIEPOKÓJ ZA BRAMĄ' : 'PRÓBA WĘDROWCA';
@@ -347,7 +353,7 @@ function updateUI(s: Snapshot): void {
   else if (target) ui.targetLabel.textContent = `${monsters[target.kind].name} · ${target.hp} HP · ${target.x > s.player.x ? '→' : target.x < s.player.x ? '←' : ''}${target.y > s.player.y ? '↓' : target.y < s.player.y ? '↑' : ''} ${distance(target)} kratek`;
   else {
     const count = s.creatures.filter(c => c.hp > 0).length;
-    ui.targetLabel.textContent = count ? `Potwory: ${count} · Przytrzymaj Miecz · Cel (T) opcjonalny` : 'Potwory odradzają się — zaczekaj lub rozpocznij nową próbę';
+    ui.targetLabel.textContent = count ? `Potwory: ${count} · Przytrzymaj ${professions[s.profession].attackName} · Cel (T) opcjonalny` : 'Potwory odradzają się — zaczekaj lub rozpocznij nową próbę';
     if(adventure)ui.targetLabel.textContent += ` · ${gateHint}`;
   }
   if (adventure && s.exploration.status !== 'available' && s.exploration.status !== 'claimed') {
@@ -371,10 +377,13 @@ function updateUI(s: Snapshot): void {
   ui.hud.dataset.map = s.mapId;
   ui.hud.dataset.region = regionAt(map,s.player)?.id ?? s.mapId;
   ui.hud.dataset.graphics = colorful ? 'colorful' : 'classic';
+  ui.hud.dataset.profession=s.profession;ui.hud.dataset.actionSlots=s.actionSlots.join(',');
 }
 function activate(simulation: Simulation): void {
   chooseGraphics(); worldEpoch++; guidedNpc=undefined;
+  element<HTMLSelectElement>('#profession').value=simulation.snapshot().profession;
   delete ui.hud.dataset.combat; delete ui.hud.dataset.combatId; delete ui.hud.dataset.combatDamage; delete ui.hud.dataset.combatTarget;
+  delete ui.hud.dataset.combatEffect;delete ui.hud.dataset.effectTypes;
   unsubscribe?.(); gateway?.disconnect(); resetInput();
   completionDismissed = false; ui.complete.hidden = true;
   gateway = new LocalGateway(simulation);
@@ -388,7 +397,7 @@ function start(name: string): void {
   adventure = !walkingOnly && element<HTMLSelectElement>('#mode').value === 'adventure';
   const samples = maps.filter(m => ['courtyard','grove'].includes(m.id));
   const startingMaps = adventure ? maps.filter(m => ['eldoria','vareon','forest'].includes(m.id)) : walkingOnly ? samples : [...samples].reverse();
-  activate(new Simulation(startingMaps, name, { now: () => performance.now() }, walkingOnly ? [] : undefined));
+  activate(new Simulation(startingMaps, name, { now: () => performance.now() }, walkingOnly ? [] : undefined,undefined,professionSchema.parse(element<HTMLSelectElement>('#profession').value)));
 }
 element<HTMLFormElement>('#start-form').addEventListener('submit', event => {
   event.preventDefault(); const result = nameSchema.safeParse(ui.name.value);
@@ -402,15 +411,27 @@ element('#menu-button').addEventListener('click', () => {
 });
 element('#continue').addEventListener('click', () => { completionDismissed = true; ui.complete.hidden = true; });
 element('#again').addEventListener('click', () => start(snapshot?.name ?? 'Wędrowiec'));
-for (const [id, type] of [['attack', 'Attack'], ['cast', 'Cast'], ['potion', 'UseItem'], ['interact', 'Interact'], ['loot', 'Loot']] as const) {
+function useAction(action:ActionId):void {
+  if(!playing||!ui.complete.hidden||bagDialog.open||npcDialog.open)return;
+  gateway?.send(action==='attack'?{type:'Attack'}:action==='potion'?{type:'UseItem'}:{type:'Cast',spellId:action});
+}
+for(const [index,button] of actionButtons.entries()){
+  const act=()=>{if(snapshot)useAction(snapshot.actionSlots[index]!);};
+  button.addEventListener('pointerdown',event=>{
+    event.preventDefault();
+    if(snapshot?.actionSlots[index]==='attack'&&playing&&ui.complete.hidden&&!bagDialog.open&&!npcDialog.open){attackPointers.add(event.pointerId);button.setPointerCapture(event.pointerId);}
+    act();
+  });
+  for(const name of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(name,event=>attackPointers.delete((event as PointerEvent).pointerId));
+  button.addEventListener('click',event=>{if(event.detail===0)act();});
+}
+for (const [id, type] of [['potion', 'UseItem'], ['interact', 'Interact'], ['loot', 'Loot']] as const) {
   const button = element(`#${id}`);
   const act = () => { if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) gateway?.send({ type }); };
   button.addEventListener('pointerdown', event => {
     event.preventDefault();
-    if(type === 'Attack' && playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) {attackPointers.add(event.pointerId);button.setPointerCapture(event.pointerId);}
     act();
   });
-  if(type === 'Attack') for(const name of ['pointerup','pointercancel','lostpointercapture']) button.addEventListener(name,event=>attackPointers.delete((event as PointerEvent).pointerId));
   button.addEventListener('click', event => { if (event.detail === 0) act(); });
 }
 renderActionIcons();
@@ -428,12 +449,13 @@ window.addEventListener('keydown', event => {
   if (key === 't' && !event.repeat && !bagDialog.open && !npcDialog.open) { event.preventDefault(); cycleTarget(); return; }
   if (key === 'i' && !event.repeat) { event.preventDefault(); toggleBag(); return; }
   if (!ui.complete.hidden || bagDialog.open || npcDialog.open) return;
+  if(/^[1-4]$/.test(key)&&snapshot){event.preventDefault();const action=snapshot.actionSlots[Number(key)-1]!;if(action==='attack')attackKeys.add(key);if(!event.repeat)useAction(action);return;}
   const d = keyDirections[key];
   if (d) { event.preventDefault(); heldKeys.set(key, d); if (!event.repeat) movement(); return; }
   const type = ({ ' ': 'Attack', e: 'Cast', q: 'UseItem', f: 'Interact', r: 'Loot' } as const)[key as ' ' | 'e' | 'q' | 'f' | 'r'];
-  if (type) { event.preventDefault(); if(type === 'Attack') attackKey = true; if(!event.repeat) gateway?.send({ type }); }
+  if (type) { event.preventDefault(); if(type === 'Attack') attackKeys.add(key); if(!event.repeat) gateway?.send({ type }); }
 });
-window.addEventListener('keyup', event => { heldKeys.delete(event.key.toLowerCase()); if(event.key === ' ') attackKey = false; });
+window.addEventListener('keyup', event => { heldKeys.delete(event.key.toLowerCase());attackKeys.delete(event.key.toLowerCase()); });
 window.addEventListener('blur', resetInput);
 window.addEventListener('resize', resetInput);
 document.addEventListener('visibilitychange', () => {
@@ -443,7 +465,23 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => { if (adventure) saveNow(); clearInterval(movementTimer); gateway?.disconnect(); game.destroy(true); });
 
+let loadoutProfession='';
+function renderLoadout(s:Snapshot):void {
+  const container=element('#loadout-slots');
+  if(loadoutProfession!==s.profession){
+    loadoutProfession=s.profession;container.replaceChildren();
+    element('#profession-description').textContent=`${professions[s.profession].name} · ${professions[s.profession].attackName}, zasięg ${professions[s.profession].range}. Czary tej profesji mają własny koszt many i odnowienie.`;
+    for(let index=0;index<4;index++){
+      const label=document.createElement('label');label.textContent=`Pozycja ${index+1}`;
+      const select=document.createElement('select');select.id=`action-choice-${index+1}`;
+      for(const id of ['attack',...professions[s.profession].spells,'potion'] as ActionId[]){const option=document.createElement('option');option.value=id;option.textContent=actionName(s,id)+(id==='attack'||id==='potion'?'':` · ${spells[id].mana} many, ${spells[id].cooldown/1000} s`);select.append(option);}
+      select.addEventListener('change',()=>gateway?.send({type:'SetActionSlot',slot:index,actionId:select.value}));label.append(select);container.append(label);
+    }
+  }
+  for(let index=0;index<4;index++)element<HTMLSelectElement>(`#action-choice-${index+1}`).value=s.actionSlots[index]!;
+}
 function renderBag(s: Snapshot): void {
+  renderLoadout(s);
   element('#city-guide').hidden=!adventure;cityGuide?.update(s.mapId,s.player);
   const signature = JSON.stringify([s.inventory, s.equipment, s.gold, s.exp, s.exploration]);
   if (signature === bagSignature) return;
@@ -474,7 +512,7 @@ function renderBag(s: Snapshot): void {
     const stack = s.inventory[i];
     if (stack) {
       const label = document.createElement('span'); label.textContent = `${items[stack.itemId].name} ×${stack.quantity}`; cell.append(label);
-      if (stack.itemId === 'sword' || stack.itemId === 'tunic') {
+      if (['sword','bow','wand','tunic'].includes(stack.itemId)) {
         const button = document.createElement('button'); button.textContent = 'Załóż';
         button.addEventListener('click', () => gateway?.send({ type: 'Equip', itemId: stack.itemId })); cell.append(button);
       }
@@ -553,19 +591,19 @@ npcDialog.addEventListener('close', resetInput);
 function saveNow(explicitRecovery = false): void {
   if (!gateway || !adventure) return;
   lastSaveTime = performance.now();
-  if (snapshot) { lastSavedMap = saveLocation(snapshot.mapId,snapshot.player); lastSavedEconomy = JSON.stringify([snapshot.gold,snapshot.quest.status,snapshot.exploration]); }
+  if (snapshot) { lastSavedMap = saveLocation(snapshot.mapId,snapshot.player); lastSavedEconomy = JSON.stringify([snapshot.gold,snapshot.quest.status,snapshot.exploration,snapshot.profession,snapshot.actionSlots]); }
   try {
     const data = gateway.exportSave();
     const error = storage.write(data,explicitRecovery);
     element('#save-status').textContent = error ?? 'Przygoda zapisana lokalnie';
-    if (!error) { lastSaveTime = performance.now(); lastSavedSignature = persistentSignature(data); lastSavedMap = saveLocation(data.mapId,data.player); lastSavedEconomy = JSON.stringify([data.gold,data.quest.status,data.exploration]); }
+    if (!error) { lastSaveTime = performance.now(); lastSavedSignature = persistentSignature(data); lastSavedMap = saveLocation(data.mapId,data.player); lastSavedEconomy = JSON.stringify([data.gold,data.quest.status,data.exploration,data.profession,data.actionSlots]); }
   } catch { element('#save-status').textContent = 'Nie udało się zapisać. Wyeksportuj zapis lub zgłoś błąd.'; }
 }
 function persistentSignature(data: SaveData): string {
-  return JSON.stringify([data.cityRevision,data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
+  return JSON.stringify([data.cityRevision,data.profession,data.actionSlots,data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
 }
 function autosave(s: Snapshot): void {
-  const economy = JSON.stringify([s.gold,s.quest.status,s.exploration]);
+  const economy = JSON.stringify([s.gold,s.quest.status,s.exploration,s.profession,s.actionSlots]);
   if (saveLocation(s.mapId,s.player) !== lastSavedMap || economy !== lastSavedEconomy || performance.now()-lastSaveTime >= 30000) {
     const data = gateway?.exportSave();
     if (data && persistentSignature(data) !== lastSavedSignature) saveNow();

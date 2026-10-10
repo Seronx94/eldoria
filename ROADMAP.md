@@ -32,3 +32,7 @@ T19–T21. Testy obciążeniowe: stopniowo 10/25/50 aktywnych klientów przez co
 
 ## Poza pierwszym wydaniem
 Otwarty PvP, domki, aukcje, gildie, crafting, rozbudowane drzewka, dziesiątki map, tysiące graczy i migracja starej Eldorii Django. Nie dodawać ich kosztem jakości podstawowej pętli.
+
+## Wybór testera — profesje wcześniej w offline
+
+0.1.9 realizuje T07b: Knight, Archer, Mag, broń, trzy umiejętności każdego i cztery przypisywane akcje. T07c pozostaje kolejnym etapem po ocenie: drzewka profesji, punkty rozwoju, zależności od poziomu i balans. Obecne stabilne ID oraz właściciel i poziom umiejętności służą przyszłej rozbudowie. Nie dodano punktów ani drzewa. W online serwer będzie sprawdzał profesję, rozwój, obrażenia i nagrody; lokalny postęp nie zostanie przeniesiony do ekonomii online.

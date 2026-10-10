@@ -1,11 +1,20 @@
 import { z } from 'zod';
 export const directionSchema = z.enum(['down', 'left', 'right', 'up']);
 export type Direction = z.infer<typeof directionSchema>;
+export const professionSchema=z.enum(['knight','archer','mage']);
+export type Profession=z.infer<typeof professionSchema>;
+export const weaponSchema=z.enum(['sword','bow','wand']);
+export type Weapon=z.infer<typeof weaponSchema>;
+export const spellSchema=z.enum(['blade-wave','spin','guard','power-shot','volley','mend','spark','fireball','frost']);
+export type SpellId=z.infer<typeof spellSchema>;
+export const actionSchema=z.enum(['attack','potion',...spellSchema.options]);
+export type ActionId=z.infer<typeof actionSchema>;
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Move'), direction: directionSchema }).strict(),
   z.object({ type: z.literal('Select'), targetId: z.string().min(1).max(80) }).strict(),
   z.object({ type: z.literal('Attack') }).strict(),
-  z.object({ type: z.literal('Cast') }).strict(),
+  z.object({ type: z.literal('Cast'),spellId:spellSchema.optional() }).strict(),
+  z.object({ type:z.literal('SetActionSlot'),slot:z.number().int().min(0).max(3),actionId:actionSchema }).strict(),
   z.object({ type: z.literal('UseItem') }).strict(),
   z.object({ type: z.literal('Interact'), npcId: z.enum(['mira', 'oren', 'borin']).optional() }).strict(),
   z.object({ type: z.literal('CloseDialog') }).strict(),
@@ -15,7 +24,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Buy'), quantity: z.number().int().min(1).max(99) }).strict(),
   z.object({ type: z.literal('Sell'), itemId: z.enum(['skin', 'chitin']), quantity: z.number().int().min(1).max(99) }).strict(),
   z.object({ type: z.literal('Loot'), lootId: z.string().min(1).max(100).optional() }).strict(),
-  z.object({ type: z.literal('Equip'), itemId: z.enum(['sword', 'tunic']) }).strict(),
+  z.object({ type: z.literal('Equip'), itemId: z.enum(['sword','bow','wand','tunic']) }).strict(),
   z.object({ type: z.literal('Unequip'), slot: z.enum(['weapon', 'armor']) }).strict(),
 ]);
 export type Command = z.infer<typeof commandSchema>;

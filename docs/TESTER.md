@@ -1,6 +1,6 @@
-# Eldoria 0.1.8 — dachy przy podejściu, potwory i fontanna
+# Eldoria 0.1.9 — profesje i cztery akcje
 
-Pierwsza przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
+Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Nie ma multiplayer ani APK.
 
 ## Uruchomienie na komputerze
 
@@ -28,83 +28,35 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
 
-## Trzy kroki testu nowych poprawek
+## Pięć kroków testu profesji
 
-1. Oddal się od wartowni na południe o pięć kroków. Wróć dwa kroki: dach znika jeszcze na ulicy, widać wnętrze i Mirę. Sprawdź to też przy bocznej ścianie świątyni lub sklepu. Oddal się ponad dwie kratki od najbliższej ściany: dach wraca. Nie musisz wchodzić do środka. Ściany nadal blokują przejście, rozmowa wymaga sąsiedztwa NPC.
-2. Wybierz kolorową grafikę i wyjdź do lasu. Obejdź szczura, żuka i wilka tak, żeby ścigały Cię z góry, z dołu i z boków; używaj mikstury w razie potrzeby. W biegu na północ widać grzbiet i ogon, na południe głowę. Żuk kieruje rogi w stronę biegu. Po zatrzymaniu nie powinny obracać się nagle do przodu.
-3. Podejdź pod fontannę na rynku (na południe od wartowni). Wokół kamiennej misy powinien być bruk, bez kwadratowej plamy wody. Obejdź fontannę: misa pozostaje przeszkodą, na bruk obok można wejść.
+1. W menu wyeksportuj swój ważny zapis, potem wybierz **Knight**, **Archer** lub **Mag** i rozpocznij nową przygodę. Wznawianie starej przygody zachowuje jej profesję; starszy zapis otrzymuje Knighta. Każda profesja zaczyna z odpowiednią bronią i trzema własnymi umiejętnościami.
+2. Wyjdź północną bramą do lasu. Przytrzymaj miecz/łuk/różdżkę, bez zaznaczania potwora: Knight uderza obok, Archer do pięciu kratek, Mag do czterech. Broń nie zużywa many; ściany blokują strzały. Sprawdź zatrzymanie po puszczeniu i po powrocie do miasta.
+3. Dotknij każdego z trzech czarów. Knight ma falę ostrza, wir i czterosekundową osłonę; Archer precyzyjny strzał, deszcz strzał i leczenie; Mag Iskrę, kulę ognia i lodowy krąg. Obserwuj odrębne animacje, koszty i odnowienia. Leczenie przy pełnym HP nie zużywa many; lód na razie nie spowalnia. Czary w mieście są zablokowane.
+4. Otwórz **Plecak → Profesja i cztery akcje** i zmień kolejność albo przypisz miksturę. Po lewej na telefonie trzymaj joystick, drugim palcem użyj jednej z czterech ikon po prawej (2×2). Przypisz broń również do czwartego miejsca i przytrzymaj. Po puszczeniu, obrocie lub otwarciu plecaka ruch i atak mają się zatrzymać. Na komputerze: 1–4 odpowiadają pozycjom, Spacja zawsze używa broni, E pierwszego czaru.
+5. Zapisz, odśwież i wznów: profesja, broń, ustawienie przycisków oraz pozostałe odnowienia powinny zostać. Sprawdź każdą profesję jako osobną nową postać; eksport pozwala potem przywrócić wcześniejszą. Zgłoś wygodę pod kciukiem, czytelność efektów, model telefonu i zbyt silne/słabe czary.
 
-## Cztery kroki testu walki i dachów
+Profesje mają na razie wspólny strój bohatera. Drzewka rozwoju i osobne stroje będą dalszym etapem. To grywalne offline, bez online i APK; testy przeglądarkowe nie mierzą FPS na Twoim telefonie.
 
-1. W przygodzie wyjdź z wartowni na południe: dach wraca dopiero po oddaleniu ponad dwie kratki od ściany. Podejdź z powrotem: dach znika przed wejściem, widać Mirę. Powtórz przy świątyni lub sklepie.
-2. Wyjdź północną bramą do lasu, nie zaznaczając potwora. Podejdź na kilka kratek do szczura lub żuka: powinien sam podejść i zaatakować. Przytrzymaj Miecz na telefonie albo spację na komputerze. Kolejne zamachy trafiają pobliskiego przeciwnika; po puszczeniu atak się zatrzymuje. Cel / T pozostaje opcjonalny.
-3. Dotknij Iskry bez zaznaczania: obejrzyj krąg pod postacią, iskry, lecący pocisk i rozbłysk. W pustym miejscu najpierw zmień kierunek patrzenia krokiem: czar poleci w tę stronę, kosztując 8 many. W mieście walka pozostaje zablokowana.
-4. Trzymaj gałkę jednym palcem i Miecz drugim; puść tylko Miecz, potem gałkę. Obróć telefon, otwórz plecak i wróć do gry — akcje nie powinny same trwać. Uciekając do miasta, sprawdź zatrzymanie pościgu. Zapisz, odśwież i wznów; zakończone efekty nie mają się powtarzać.
+Podglądy początku animacji w produkcji **0.1.9**: [Knight — wir](screenshots/profession-knight-mobile.png), [Archer — strzał](screenshots/profession-archer-mobile.png), [Mag — kula ognia](screenshots/profession-mage-mobile.png). Emulacja mobilnego Chromium; efekty są animowane w grze.
 
-Podglądy: [fontanna na bruku](screenshots/fountain-paving-mobile.png), [wilk od tyłu](screenshots/wolf-north-mobile.png), [dachy z daleka](screenshots/exterior-roofs-mobile.png), [podejście przed wejściem](screenshots/approaching-roof-mobile.png). Fontanna i dachy: produkcyjny build 0.1.8; wilk: kontrola przeglądarkowa 0.1.8. [Iskra w trakcie rzucania](screenshots/iskra-cast-mobile.png): produkcja 0.1.7. Emulacja mobilna, nie fizyczny telefon.
+## Pięć kroków przygody
 
-## Sprawdź ciągły świat
+1. Rozpocznij w Vareon obok Miry, w wartowni północnej bramy. Rozmowa / F otwiera dialog tylko z sąsiedztwa. Przyjmij **Niepokój za bramą** (pięć zabójstw) oraz, jeśli chcesz, niezależne **Ślady dawnego szlaku**. Zamknij dialog przed ruchem i walką.
+2. Idź na północ przez zwykłą bramę do lasu, bez przycisku przejścia. Potwory zauważają Cię do sześciu kratek przy niezasłoniętym widoku i ścigają. Walcz bronią swojej profesji oraz czarami. Cel / T jest opcjonalny. Mikstura / Q przywraca do 40 HP co 3 s; przy pełnym HP jej nie zużywasz. Zwycięstwa liczą się do zadania po jego przyjęciu.
+3. Podejdź do sakiewki i wybierz **Łup / R**. Plecak / I pokazuje zasoby, broń, tunikę, zadania, kronikę i plan miasta. Podstawowy atak wymaga założonej broni swojej profesji. Stworzenia odradzają się po 20 s; omdlenie wraca do wartowni z pełnym HP/maną i zachowanymi zdobyczami.
+4. Wróć na południe do Miry po **50 EXP, 20 złota i 2 mikstury**. Nagroda jest jednorazowa, a przy pełnym plecaku pozostaje do odebrania. W **Plecak → Plan Vareon** wybierz wskazówkę do Orena: stoi w Świątyni Świtu na zachód od rynku i leczy za darmo. Borin w sklepie po wschodniej stronie sprzedaje mikstury po 5 złota, kupuje skóry/chitynę po 2.
+5. Zapisz, odśwież i wznów. Sprawdź zachowane zasoby oraz brak drugiej wypłaty. Zadanie eksploracji prowadzi do starego drogowskazu, obozu i kamienia pamięci: podejdź i użyj F, przeczytaj kronikę. Odkryj trzy różne miejsca i wróć do Miry po **75 EXP, 25 złota i 2 mikstury**; powtórne odkrycie nie zwiększa licznika.
 
-1. Rozpocznij lub wznów przygodę. Z wartowni idź na północ gałką albo W, przez zwykłą bramę i dalej do lasu. Nie naciskaj F ani żadnego przycisku przejścia. Kamera powinna prowadzić cały spacer bez przeskoku.
-2. Zawróć na południe do Miry. Powtórz wyjście i powrót pięć razy. Nazwa regionu zmienia się na Vareon / Mroczny Las, ale pozycja przesuwa się tylko o jeden krok, a potwory zachowują stan.
-3. W lesie użyj miecza lub Iskry bez wybierania stworzenia i zbierz łup. Cofnij się do miasta: walka w strefie bezpiecznej jest zablokowana, a pościg nie przekracza jej granicy.
-4. Porozmawiaj z Mirą, Orenem i Borinem; sprawdź plan miasta oraz zadania. F / Rozmowa służy dialogom i odkryciom. Zapisz w lesie, odśwież stronę i wznów — wracasz na to samo miejsce.
-5. Jeżeli masz stary eksport zapisu, zaimportuj go: zasoby i postęp mają pozostać. Nie usuwaj localStorage. Przetestuj też gałkę z drugim palcem używającym czaru oraz obrót telefonu.
+## Miasto, grafika i sterowanie
 
+- Dach odsłania wnętrze i NPC już do dwóch kratek od najbliższej ściany, również z boku; oddalenie go przywraca. Ściany pozostają przeszkodami, rozmowa wymaga sąsiedztwa. Sprawdź wartownię, świątynię i sklep. Pozostałe domy, warsztat i gospoda są na razie do zwiedzania, bez usług.
+- Na rynku kamienna fontanna stoi na bruku, woda mieści się w misie. Obejdź ją: misa blokuje, bruk obok jest dostępny.
+- Szczur, żuk i wilk mają kolorowy chód z przodu, od tyłu oraz z obu boków. Po zatrzymaniu zachowują kierunek. Starszy prosty styl porównawczy ma statyczne placeholdery.
+- Joystick: środek zatrzymuje, przesunięcie wybiera jeden z czterech kierunków, puszczenie centruje. Sprawdź chodzenie z drugim palcem rzucającym czar i przytrzymującym broń. Obrót do pionu, blur i dialog zerują wejście; po powrocie trzeba ponownie dotknąć gałki. Na komputerze WASD/strzałki i D-pad.
+- Przejdź drogą miasto–las i wróć pięć razy: nazwa regionu zmienia się bez teleportacji, potwory i łup zostają. Miasto jest bezpieczne, zatrzymuje pościg i blokuje ataki/czary przez granicę.
 
-Podgląd produkcyjny: [droga między miastem a lasem](screenshots/continuous-gate-mobile.png), [powrót do wartowni po omdleniu](screenshots/world-respawn-mobile.png). Emulacja mobilnego Chromium, nie test fizycznego telefonu.
-
-## Cztery kroki testu gałki na telefonie
-
-1. Obróć telefon poziomo. Po lewej jest okrągła gałka. Przytrzymaj środek: postać stoi. Przesuń palec w lewo/prawo lub w górę/dół: zaczyna chodzić. Po przekątnej wybierany jest jeden kierunek, bez szybszego ruchu. Gałka podąża za palcem także poza swoim kołem, a po puszczeniu wraca na środek i zatrzymuje ruch.
-2. W Próbie Wędrowca wybór szczura przyciskiem **Cel** jest opcjonalny. Trzymając gałkę, dotknij drugim palcem **Iskry** (płomień). Postać powinna się poruszać i rzucić czar, jeśli jest w zasięgu i ma manę. Miecz, mikstura, łup i rozmowa mają osobne ikony oraz podpisy. Iskra pozostaje jedynym czarem.
-3. Trzymając gałkę, otwórz plecak albo obróć telefon do pionu i z powrotem. Po zamknięciu plecaka lub powrocie do poziomu postać nie powinna sama chodzić — trzeba ponownie dotknąć gałki.
-4. Przejdź bramą i wróć, sprawdź działanie gałki w mieście i lesie oraz czy ikony są wygodne pod prawym kciukiem. Zgłoś model telefonu i ewentualne zacinanie. Na komputerze nadal działają WASD, strzałki i D-pad.
-
-Podgląd: [gałka i pasek akcji — mobilny Chromium](screenshots/joystick-mobile.png). Testy emulacji nie zastępują kontroli na Twoim telefonie.
-
-## Pięć kroków zwiedzania miasta
-
-1. Rozpocznij albo wznów Vareon w kolorowym stylu. Mira czeka w wartowni przy północnej bramie. Wyjdź drzwiami na południu: dach powinien zakryć wnętrze. Wejście z powrotem odsłania dach i Mirę. Północne przejście nadal prowadzi do lasu.
-2. Otwórz **Plecak → Plan Vareon**. Wybierz Orena: wskazówka pokazuje kierunek i odległość, bez automatycznego chodzenia. Idź na zachód od rynku do **Świątyni Świtu** i wejdź drzwiami od południa. Oren leczy tak jak wcześniej.
-3. Przejdź przez brukowany rynek z fontanną i straganami. W planie wybierz Borina i wejdź do sklepu po wschodniej stronie. Porozmawiaj i sprawdź dotychczasowy handel.
-4. Zobacz gospodę i warsztat na południu oraz dwa domy na północy. Wszystkie siedem budynków ma dostępne wnętrza; gospoda, warsztat i domy służą na razie zwiedzaniu, bez dodatkowych NPC/usług. Sprawdź, czy ściany i meble blokują krok, a drzwi pozwalają wejść.
-5. Zapisz grę wewnątrz budynku, odśwież i wznów. Obróć telefon do pionu i z powrotem. Oceń dachy, drzwi, ostrość bruku i czytelność NPC. Stary poprawny zapis zachowuje postęp; gdy dawną pozycję zajęła nowa ściana lub NPC, gracz wraca do wartowni. Nowy zapis wspólnego świata wymaga wersji 0.1.6+.
-
-Nowa aranżacja i zestaw miejski czekają na Twoją ocenę. Zrzuty: [rynek — desktop](screenshots/vareon-market-desktop.png), [świątynia — mobilny](screenshots/vareon-temple-mobile.png), [sklep — mobilny](screenshots/vareon-shop-mobile.png). Są to widoki Chromium, nie fizycznego telefonu.
-
-## Pięć kroków nowej wyprawy
-
-1. Rozpocznij lub wznów przygodę Vareon. U Miry wybierz **Przyjmij: Ślady dawnego szlaku**. Możesz wykonać to zadanie niezależnie od pięciu zabójstw.
-2. Wyjdź północną bramą. Bez wybranego celu walki wskazówka nad mapą pokazuje kolejne miejsce i kierunek. Stary drogowskaz leży na północ od wejścia, obóz na zachodzie, kamień pamięci dalej na północnym wschodzie. Podejdź do oznaczenia i wybierz **Rozmowa (F)**; kliknięcie oznaczenia też działa w zasięgu jednej kratki.
-3. Po pierwszym odkryciu odśwież stronę i wznów. Postęp powinien zostać. Zbadaj ponownie to samo miejsce: licznik nie zwiększa się. Otwórz **Plecak → Kronika**, aby przeczytać opisy; na telefonie przewiń okno plecaka. W lesie potwory nadal działają przy otwartym plecaku.
-4. Po odkryciu trzech miejsc wróć na południe tą samą drogą do Miry. Odbierz **nagrodę za szlak**: 75 EXP, 25 złota i 2 mikstury. Przy pełnym plecaku nagroda pozostaje do odebrania.
-5. Odśwież stronę i wznów. Kronika powinna zachować wszystkie odkrycia, a Mira nie wypłaca nagrody drugi raz. Zgłoś czy wskazówki i tekst są czytelne na Twoim telefonie.
-
-## Trzy kroki testu animacji
-
-1. Wybierz **Kolorowy pixel art**, **Próba Wędrowca**, bez spaceru. Wybierz szczura przyciskiem **Cel** i użyj **Miecza** z daleka: powinien pojawić się komunikat o zasięgu, bez zamachu i trafienia.
-2. Rzuć **Iskrę**. Sprawdź lot pomarańczowego pocisku, rozbłysk i liczbę obrażeń. Szczur zacznie podchodzić z animacją nóg. Kiedy stanie obok, dobij go **Mieczem**: postać zwraca się do celu, pokazuje zamach i ślad cięcia. Przy otrzymaniu obrażeń widać krótki błysk i czerwony wynik. Szybkie ponowne kliknięcie podczas cooldownu nie powinno tworzyć kolejnego trafienia.
-3. Sprawdź żuka i wilka, następnie przygodę w lesie. Dalsze stworzenia spacerują blisko swoich spawnów; przy wejściu cele pozostają spokojne do nauki. Po walce efekty znikają; po menu, zmianie mapy i wznowieniu zapisu nie wracają stare trafienia. Oceń na telefonie czytelność i płynność przy jednoczesnym ruchu i czarze.
-
-[Nagranie animowanej walki — Chromium desktop](videos/animated-combat-desktop.webm). To nagranie scenariusza walki w Chromium, nie z fizycznego telefonu. Potwory mają dwa ujęcia (przód/bok) i odbicie lewego boku; osobne ujęcie tyłu oraz dedykowane klatki uderzenia bohatera pozostają do dopracowania.
-
-## Porównanie grafiki
-
-1. W menu pozostaw **Kolorowy pixel art — do oceny**, wybierz **Próba Wędrowca** i zaznacz **Spacer bez potworów**. Podejdź pięć kratek na północ: dom i drzewo będą widoczne obok ścieżki.
-2. Przejdź w czterech kierunkach. Oceń szczegóły postaci, kontury, ostrość terenu podczas ruchu kamery oraz to, czy tekstury nie męczą wzroku.
-3. Wróć do menu, wybierz **Poprzednia grafika — porównanie**, rozpocznij ten sam spacer i podejdź pięć kratek na północ. Porównaj te same obiekty; wybór grafiki jest zapamiętywany.
-4. Wybierz ponownie kolorowy styl, tryb Vareon i odznacz spacer. Zobacz Mirę, Orena i Borina, przejdź do lasu i sprawdź czytelność szczura, żuka i wilka podczas walki. Możesz też wznowić swoją przygodę w wybranym stylu.
-
-Napisz, czy ten kierunek jest wystarczająco bliski oczekiwanemu klimatowi, i wskaż element do poprawy: postać, potwory, teren, drzewa lub domy. Kierunek kolorowy został zaakceptowany; nowe wnętrza i aranżacja Vareon czekają na ocenę.
-
-## Pięć kroków testu
-
-1. Wybierz **Vareon — Niepokój za bramą**, pozostaw spacer odznaczony i rozpocznij. Stoisz obok **Miry**. Kliknij ją lub użyj **Rozmowa (F)**, a potem **Przyjmij zadanie**. Ruch, atak i czar pod dialogiem mają być zablokowane. Zamknij rozmowę. WASD/strzałki oraz D-pad poruszają postacią; Caps Lock działa.
-2. Idź na północ przez wartownię i zwykłą bramę; kontynuuj spacer do lasu bez naciskania **F**. W lesie szczur jest blisko na północy po prawej; żuk dalej na prawo. Wybierz **Cel (T)** albo dotknij stworzenia. **Iskra (E)** działa do 4 kratek, kosztuje 8 many i odnawia się przez 1,5 s; **Miecz (Spacja)** działa z sąsiedniej kratki co 0,8 s. Wilki głębiej w lesie atakują same; szczury i żuki dopiero po zaczepieniu. Potwory odradzają się po 20 s. Pokonaj pięć — licznik zadania rośnie tylko po jego przyjęciu.
-3. Podejdź obok każdej sakiewki i wybierz **Łup (R)**. Sprawdź materiały i złoto w **Plecaku (I)**. **Mikstura (Q)** przywraca do 40 HP co 3 s, pełne HP jej nie zużywa. Można zdjąć i założyć miecz/tunikę. Śmierć wraca do Vareon z pełnym HP/maną i zachowanymi zdobyczami. Brama powrotna jest na południe od wejścia do lasu; samo podejście nie teleportuje.
-4. Wróć do Miry i odbierz **50 EXP, 20 złota i 2 mikstury**. Nagroda musi być wypłacona tylko raz. Gdy nie mieści się w plecaku, pozostaje do odebrania. **Oren** dwa pola na zachód od miejsca startu leczy za darmo. **Borin** stoi trzy pola na wschód i dwa na południe: sprzedaje mikstury po 5 złota i kupuje skóry/chitynę po 2. Rozmowa działa wyłącznie obok NPC.
-5. Użyj **Zapisz**, odśwież stronę i wybierz **Wznów przygodę**. Pozycja, poziom, wyposażenie, zasoby i odebrana nagroda powinny pozostać. W menu wyeksportuj zapis do pliku, a następnie zaimportuj go. Jest też **Odzyskaj kopię zapisu** — wraca do poprzedniego checkpointu, więc część ostatniego postępu może cofnąć się. Sprawdź pięć spacerów między miastem i lasem, obrót telefonu, ostrość kamery oraz jednoczesny ruch i czar.
+Podglądy grafiki z **0.1.8**: [fontanna](screenshots/fountain-paving-mobile.png), [wilk od tyłu](screenshots/wolf-north-mobile.png), [dach z daleka](screenshots/exterior-roofs-mobile.png), [podejście przed wejściem](screenshots/approaching-roof-mobile.png). Układ akcji w tych starszych zrzutach jest wcześniejszy. Zrzuty Chromium są emulacją mobilną, nie kontrolą fizycznego telefonu.
 
 ## Zapis i tryby
 
@@ -113,13 +65,6 @@ Zapis przygody znajduje się lokalnie w tej przeglądarce, oddzielnie od przysz�
 Uszkodzenie lub nieobsługiwana wersja pokazują komunikat i pozostawiają dane. Wybierz odzyskanie kopii lub import poprawnego pliku. Jeśli pamięć jest pełna lub zablokowana, gra zgłasza błąd zapisu; można wrócić do menu i wyeksportować aktywną przygodę. Import wadliwego pliku nie zmienia bieżącego zapisu. Zegar walki i odrodzenia jest wstrzymany podczas wyłączenia gry; wznowienie nie resetuje cooldownów.
 
 **Próba Wędrowca — trening walki** zaczyna się bezpośrednio przy szczurze i żuku w starym zagajniku i kończy po pokonaniu trzech typów. **Spacer bez potworów** umożliwia oglądanie scen wzorcowych. Te tryby nie zapisują postępu.
-
-## Widoki
-
-Nowy styl 0.1.1: [scena wzorcowa — desktop](screenshots/colorful-sample-desktop.png) · [poprzedni styl — ta sama scena](screenshots/classic-sample-desktop.png) · [Vareon — desktop](screenshots/colorful-town-desktop.png) · [Vareon — mobilny](screenshots/colorful-town-mobile.png) · [las — mobilny](screenshots/colorful-forest-mobile.png) · [postać w ruchu — mobilny](screenshots/colorful-moving-mobile.png). Zrzuty z Chromium, nie z fizycznego telefonu.
-
-Poprzedni styl 0.1.0:
-[Vareon — desktop](screenshots/vareon-desktop.png) · [Vareon — mobilny](screenshots/vareon-mobile.png) · [las — desktop](screenshots/forest-desktop.png) · [nagroda Miry — mobilny](screenshots/reward-mobile.png). Zrzuty z testów przeglądarkowych, z grafiką roboczą.
 
 ## Co zgłosić
 

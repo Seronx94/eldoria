@@ -68,8 +68,16 @@ test('menu, assets, real combat loop and restart', async ({ page }, testInfo) =>
     if ((await page.locator('#target-label').textContent())?.includes('Wilk')) break;
   }
   await expect(page.locator('#target-label')).toContainText('Wilk');
+  // React to current HP and hold the actual basic attack rather than assuming
+  // six slow browser clicks finish before the pursuing wolf can defeat us.
+  await page.keyboard.press('q');
   await page.getByRole('button', { name: /Iskra/ }).click();
-  for (let i = 0; i < 6; i++) { await page.getByRole('button', { name: /Miecz/ }).click(); await page.waitForTimeout(850); if (i === 2) await page.getByRole('button', { name: /Mikstura/ }).click(); }
+  await page.keyboard.down('Space');
+  await expect.poll(async()=>{
+    if(await page.locator('#hp').evaluate(el=>(el as HTMLProgressElement).value)<55)await page.keyboard.press('q');
+    return page.locator('#objective').textContent();
+  },{timeout:15000}).toBe('3 / 3');
+  await page.keyboard.up('Space');
   await expect(page.locator('#objective')).toHaveText('3 / 3');
   await expect(page.getByText('Próba ukończona', { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('complete.png') });

@@ -1,8 +1,20 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.8 — dachy przy podejściu, kierunki potworów i fontanna**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.9 — Knight, Archer, Mag i cztery przypisywane akcje**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
+
+W **0.1.9** przed nową przygodą wybierz **Knight, Archer albo Mag**. Każda profesja ma własną broń, trzy startowe umiejętności i osobne animacje. Podstawowy miecz trafia z sąsiedniej kratki, łuk do pięciu, różdżka do czterech; wszystkie odnawiają się co 0,8 s i nie zużywają many ani amunicji. Atak można przytrzymać bez wybierania celu. Zasięgi liczone są po kratkach (Manhattan), ściany i strefa miasta blokują walkę.
+
+| Profesja | Umiejętności startowe | Mana / odnowienie |
+|---|---|---|
+| Knight | Iskra ostrza — fala cięcia; Wir ostrzy — sąsiednie cele; Żelazna osłona — +4 obrony przez 4 s | 8 / 1,5 s; 12 / 3 s; 10 / 6 s |
+| Archer | Precyzyjny strzał — do 6 kratek; Deszcz strzał — obszar wokół trafienia; Oddech lasu — do 24 HP | 8 / 1,5 s; 14 / 3,5 s; 12 / 5 s |
+| Mag | Iskra — pocisk; Kula ognia — wybuch obszarowy; Lodowy krąg — cele do 2 kratek wokół postaci | 8 / 1,5 s; 16 / 3,5 s; 14 / 3,5 s |
+
+Po lewej na telefonie jest joystick, po prawej **cztery duże przyciski w układzie 2×2**. W **Plecak → Profesja i cztery akcje** przypisz do każdej pozycji atak, własny czar albo miksturę. Ikony, koszt many i pozostałe odnowienie odpowiadają wybranej akcji. Przypisanie tego samego czaru kilka razy nie skraca odnowienia. Na komputerze działają **1–4** (pozycje), **Spacja** (broń), **E** (pierwszy czar profesji) oraz dotychczasowe skróty ruchu i interakcji. Przytrzymuje się tylko atak bronią; czar uruchamia pojedyncze dotknięcie. Wszystkie efekty wynikają z potwierdzonej symulacji: lot strzały/pocisku, zamach, wir, osłona, leczenie, wybuch i lód. Obecne postacie nadal mają wspólny strój roboczy; osobne stroje profesji i drzewka rozwoju pozostają kolejnymi etapami. Lodowy krąg zadaje obrażenia, jeszcze nie spowalnia.
+
+Starszy zapis automatycznie otrzymuje Knighta, zachowując zasoby, zadania, wyposażenie i odnowienie dawnej Iskry. Wznowienie zachowuje zapisaną profesję, niezależnie od wyboru w menu. Nowy format v1 z profesją wymaga klienta **0.1.9+**. Jedna przeglądarka przechowuje jedną przygodę: przed sprawdzaniem innej profesji wyeksportuj ważny zapis. Rozpoczęcie tworzy nową postać; drzewka punktów i zmianę profesji w istniejącej postaci zaplanujemy po testach tej wersji.
 
 W **0.1.8** dach odsłania wnętrze i NPC już do dwóch kratek od ściany, również z boku budynku; oddalenie przywraca dach. Kolorowe szczury, żuki i wilki mają osobne ujęcie chodu od tyłu, z przodu i z boku (lewy bok odbija prawy), a po zatrzymaniu zachowują kierunek ostatniego kroku. Żuk idący w dół ma głowę i rogi skierowane w dół. Pod fontanną jest bruk — woda pozostaje w kamiennej misie, bez kwadratowej łaty jeziora. Kolizje fontanny i ścian, pościg, walka, zapis i ekonomia pozostają zgodne z 0.1.7. Starszy prosty zestaw porównawczy nadal używa statycznych placeholderów potworów.
 
@@ -17,7 +29,7 @@ Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.m
 
 Wersja **0.1.7** pozwala walczyć bez wybierania celu. Przytrzymaj **Miecz** albo **spację**, aby wykonywać kolejne ataki co 0,8 s; puszczenie, obrót, utrata fokusu i otwarcie dialogu zatrzymują atak. Miecz trafia najbliższego widocznego przeciwnika w sąsiedniej kratce. Ręczny wybór pozostaje opcjonalny i ma pierwszeństwo, jeśli cel jest w zasięgu. Bez przeciwnika wykonujesz zwykły zamach, bez obrażeń i nagród.
 
-**Iskra** automatycznie trafia wybrany lub najbliższy widoczny cel w zasięgu czterech kratek. Gdy nie ma celu, leci w kierunku patrzenia do przeszkody lub granicy bezpiecznego miasta. Każde przyjęte użycie kosztuje 8 many, również w powietrze, i ma cooldown 1,5 s. Rzucanie pokazuje krąg pod postacią, unoszące się iskry, pocisk oraz rozbłysk; liczby obrażeń pojawiają się wyłącznie przy trafieniu. Iskra jest obecnie jedynym czarem.
+**Iskra** automatycznie trafia wybrany lub najbliższy widoczny cel w zasięgu czterech kratek. Gdy nie ma celu, leci w kierunku patrzenia do przeszkody lub granicy bezpiecznego miasta. Każde przyjęte użycie kosztuje 8 many, również w powietrze, i ma cooldown 1,5 s. Rzucanie pokazuje krąg pod postacią, unoszące się iskry, pocisk oraz rozbłysk; liczby obrażeń pojawiają się wyłącznie przy trafieniu. W tej historycznej wersji Iskra była jedynym czarem.
 
 Szczury, żuki i wilki zauważają gracza z sześciu kratek, jeśli nie zasłania go ściana, i podążają za nim bez prowokowania. Pościg nie przekracza strefy miasta; oddalenie potwora ponad dziesięć kratek od spawnu powoduje powrót. W historycznej wersji 0.1.7 dopiero wejście odsłaniało wnętrze; od 0.1.8 wystarczy podejście na dwie kratki do budynku. Dodano kalenicę, cień połaci i krawędź dachu. Format zapisu pozostaje zgodny z 0.1.6.
 
@@ -29,7 +41,7 @@ W wersji 0.1.2 potwory animują chód podczas pościgu i powrotu. Dalsze stworze
 
 Wersja 0.1.3 dodaje niezależne zadanie Miry **Ślady dawnego szlaku**: przyjmij je, zbadaj (F) stary drogowskaz, opuszczony obóz i kamień pamięci, potem wróć po 75 EXP, 25 złota i 2 mikstury. Wskazówka nad mapą pokazuje kierunek i odległość, gdy nie masz wybranego celu walki. **Plecak → Kronika** przechowuje opisy odkryć. Odkrycia liczą się po przyjęciu zadania, nagroda jest jednorazowa i czeka przy pełnym plecaku. Dotychczasowe zapisy v1 są wczytywane z nowym zadaniem do przyjęcia; zapisy utworzone przez 0.1.3 wymagają klienta 0.1.3 lub nowszego.
 
-Wersja 0.1.5 dodaje na telefonie gałkę po lewej stronie oraz autorskie ikony akcji po prawej: cel, miecz, Iskra, mikstura, łup i rozmowa/przejście. Przeciągnij gałkę w kierunku ruchu; postać nadal chodzi po jednej kratce, bez przyspieszenia po przekątnej. Puszczenie palca centruje gałkę i zatrzymuje ruch. Drugi palec może używać akcji. Obrót ekranu, utrata fokusu i otwarcie dialogu zerują sterowanie. Na komputerze pozostają strzałki i WASD. Nie dodano nowych czarów ani zmian zapisu — Iskra jest obecnie jedynym czarem.
+Wersja 0.1.5 dodaje na telefonie gałkę po lewej stronie oraz autorskie ikony akcji po prawej: cel, miecz, Iskra, mikstura, łup i rozmowa/przejście. Przeciągnij gałkę w kierunku ruchu; postać nadal chodzi po jednej kratce, bez przyspieszenia po przekątnej. Puszczenie palca centruje gałkę i zatrzymuje ruch. Drugi palec może używać akcji. Obrót ekranu, utrata fokusu i otwarcie dialogu zerują sterowanie. Na komputerze pozostają strzałki i WASD. Nie dodano nowych czarów ani zmian zapisu — W tej historycznej wersji Iskra była jedynym czarem.
 
 Wersja 0.1.4 przebudowuje Vareon w autorskie miasto klasycznego RPG: brukowany rynek z fontanną i straganami, mury, wartownia, świątynia, sklep, gospoda, warsztat i dwa domy. Mira stoi w wartowni przy północnej bramie; Oren w Świątyni Świtu na zachód od rynku; Borin w sklepie na wschód. Wejdź południowymi drzwiami, aby odsłonić dach i zobaczyć wnętrze. Wartownia ma również północne przejście do bramy. **Plecak → Plan Vareon** pokazuje budynki, pozycję i wybór wskazówki do NPC; gracz idzie sam. Gospoda, warsztat i domy są dostępne do zwiedzania, bez nowych usług NPC. Miasto wykorzystuje oryginalne materiały Eldorii; nie jest kopią Thais.
 

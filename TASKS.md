@@ -1,6 +1,6 @@
 # Eldoria — kolejka implementacji
 
-Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżący etap 0.1.8 poprawia dachy przy podejściu, kierunki animacji potworów i bruk pod fontanną. Zachowuje przygodę offline, walkę bez zaznaczania, pościg, ciągły świat, gałkę i zadania; nie jest wydaniem online ani APK.
+Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżący etap 0.1.9 wprowadza Knighta, Archera, Maga, własne czary i cztery przypisywane akcje. Zachowuje przygodę offline, walkę bez zaznaczania, pościg, ciągły świat, gałkę i zadania; nie jest wydaniem online ani APK.
 
 ## Zasady kolejki
 Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVIEW można budować domenę, lecz nie rozbudowywać finalnej mapy przed akceptacją stylu. Każdy wpis po pracy uzupełnij o dowód: polecenia/wyniki, pliki, screenshot lub scenariusz manualny. Opisane niżej testy są wymaganiem, nie raportem ich wykonania.
@@ -17,6 +17,8 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 | T06 | M1 | DONE | NPC i dialogi | T05 |
 | T07 | M2 | DONE | Potwory, AI i walka | T03, T04 |
 | T07a | M2 | REVIEW | Opcjonalny cel, ciągły atak, pościg i efekty Iskry (wybór testera) | T07, T10, T11 mobilne sterowanie |
+| T07b | M2 | REVIEW | Profesje, własne czary, animacje i cztery przypisywane akcje (wybór testera) | T07, T10, T11 mobilne sterowanie |
+| T07c | M2 | TODO | Drzewka rozwoju trzech profesji | T07b zaakceptowane, balans |
 | T08 | M2 | DONE | Ekwipunek, loot i mikstury | T07 |
 | T09 | M2 | DONE | Sklep i quest | T06, T08 |
 | T10 | M2 | DONE | Zapis i odtworzenie | T09 |
@@ -29,7 +31,7 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 | T16 | M3 | TODO | Testy online i zabezpieczenia | T15 |
 | T17 | M4 | TODO | Capacitor i APK | T16 |
 | T18 | M4 | TODO | Test urządzenia i profilowanie | T17 |
-| T19 | M5 | TODO | Profesje i loch | T18 |
+| T19 | M5 | TODO | Profesje online, dalszy rozwój i loch | T18, T07b, T07c |
 | T20 | M5 | TODO | Operacje i obciążenie | T16, T19 |
 | T21 | M6 | TODO | Checklista publikacji | T20 |
 
@@ -319,3 +321,27 @@ Wersja, urządzenie/przeglądarka, kroki, oczekiwany efekt, rzeczywisty efekt, s
 - Końcowe testy gotowego buildu (istniejący preview 5175, konfiguracja poza repo) — **2 PASS**, 47,4 s, exit 0: cztery kierunki szczura oraz dachy przed wejściem/po oddaleniu, hold/release/blur, pusty czar i wielodotyk. Rzeczywiste screenshoty produkcyjne approaching-roof-mobile.png oraz exterior-roofs-mobile.png zapisane i ocenione. Produkcyjny widok fontanny na desktop/mobilnym także sprawdzony (poprawny import fixture z pozycją przy rynku, aktywna symulacja, brak błędów console/pageerror/HTTP); zrzuty od boku zastępują wcześniejsze ujęcie spod misy, aby cały obrys był widoczny. Nie zmieniano obrazów po przechwyceniu.
 - T05a/T07a/T11 **REVIEW** do oceny właściciela. Brak FAIL w wykonanych kontrolach 0.1.8; fizyczny telefon/FPS/15 minut ręcznej gry nadal nieprzetestowane w chmurze. Audio wyłączone, offline, bez APK. Następny krok: trzy kroki nowych poprawek w docs/TESTER.md — podejście do dachów z ulicy i boku, obejście każdego gatunku w lesie, obrys fontanny na rynku.
 - Skill cloud-environment-onboarding:setup wykorzystany do instalacji i kontroli uruchomienia. Zapisane wcześniej install_script/start_skill nadal odpowiadają temu samemu workflow, bez nowych zależności/usług ani potrzeby zmiany szkicu. Własne procesy testów zakończone, istniejący preview 5175 zachowany. Zmiany przygotowane na main, wersja 0.1.8.
+
+## Sesja 0.1.9 — profesje i cztery akcje
+
+Priorytet właściciela: trzy profesje już w grywalnym offline, przed pierwotnym etapem M5/online. T07b REVIEW oznacza gotowy rezultat do oceny testera po kontrolach, a nie akceptację balansu. Drzewka rozwoju (T07c) pozostają TODO: stabilne ID czarów, właściciel-profesja i wymagany poziom przygotowują dane do przyszłej rozbudowy; punktów ani pozornego drzewka nie dodano.
+
+- Knight: miecz, fala cięcia, wir i osłona; Archer: łuk, precyzyjny strzał, deszcz strzał i leczenie; Mag: różdżka, Iskra, ogień i lód. Dane w packages/content/src/professions.ts. Zasięg, mana, osobne odnowienia, linia widzenia, obszar, osłona i pojedyncze nagrody rozstrzygane przez domenę. Podstawowe strzały/pociski nie zużywają amunicji/many. Lód na razie nie spowalnia.
+- Autorskie ikony SVG i efekty Phaser: źródła action-icons.ts/combat-effects.ts. Każda umiejętność ma odrębny efekt. Liczby i błyski trafień obejmują faktycznie trafione cele obszarowe. Osłona ma także wskaźnik podczas działania. Postać korzysta ze wspólnego stroju roboczego; brak nowych strojów, audio i kopiowanych materiałów innych gier.
+- Joystick po lewej, cztery pozycje 2×2 po prawej na telefonie. Plecak pozwala przypisać broń, własne czary lub miksturę; duplikaty współdzielą odnowienie. Podstawowy atak można przytrzymać w dowolnym slocie; pojedynczy dotyk rzuca czar. Klawisze 1–4, Spacja i E. Puszczenie, blur, obrót i dialog zatrzymują wejście.
+- Profesja, wyposażenie, przypisania, odnowienia wszystkich czarów i pozostała osłona zapisują się. Stare zapisy otrzymują Knighta; zasoby i postęp pozostają. Wczytywanie odrzuca obcą broń, obce czary i niepoprawne czasy. Wznowienie nie zmienia profesji z menu. Nowy zapis wymaga 0.1.9+.
+- Kontrole: npm ci (lokalny cache) PASS, 146 pakietów; npm run typecheck PASS; npm run lint PASS; npm test PASS — 90 testów / 13 plików, w tym 15 nowych przypadków profesji, zasięgu, ścian, obszaru, pełnego HP, osłony, migracji i odnowienia po przypisaniu/wczytaniu. npm run build / validate:content PASS — 5 map. Wersje własnych workspace 0.1.9; content deklaruje zależność typów protocol. Zewnętrzne wersje zależności bez zmian. Istniejące ostrzeżenie o rozmiarze pakietu Phaser pozostaje.
+- Pierwszy start nowego e2e FAIL przed uruchomieniem przypadków: import całego content w Node wymagał atrybutu JSON. Test importuje teraz bezpośredni moduł profesji (bez map JSON). Pierwszy przebieg po naprawie importu: 8 PASS / 2 FAIL. Oba błędy dotyczyły próby zwolnienia drugiego palca: CDP touchEnd otrzymało punkt joysticka, więc kończyło pierwszy dotyk. Test podaje teraz punkt kończonego przycisku (jak w istniejącym joystick.spec.ts), bez zmiany sterowania i bez osłabiania asercji. Końcowy przebieg z regresją i testem czwartego slotu opisano poniżej.
+
+Następny krok: ocena wygody przycisków, czytelności dziewięciu animacji i balansu na fizycznym telefonie; potem projekt drzewek i odrębne stroje. FPS i 15 minut na urządzeniu nie były zmierzone w chmurze.
+
+### Końcowa regresja 0.1.9
+
+- Sześć plików e2e: professions, client, adventure, free-combat, world, joystick — 39 PASS / 1 FAIL / 2 SKIP (18,4 min). SKIP to dwa scenariusze dotykowe uruchamiane wyłącznie w projekcie mobilnym; mobilne odpowiedniki PASS. Wszystkie 12 przypadków profesji PASS: dziewięć efektów, zapis, zasięg łuku/różdżki, dwa palce, dowolny slot broni, zwolnienie/cancel. Pełny quest, pięć spacerów, łup, jednorazowa nagroda, NPC, handel, omdlenie, granica miasta, obrót, backup, błędny import i niedostępna pamięć PASS na obu viewportach.
+- Jedyny FAIL: desktop starego treningu zakładał sześć pojedynczych kliknięć i miksturę przy trzecim, niezależnie od aktualnego HP. Zrzut pokazał omdlenie i powrót do bezpiecznego dziedzińca przed ukończeniem wilka. Test przytrzymuje teraz realny atak i używa mikstury według bieżącego HP; nie zmieniono AI, obrażeń, ekonomii ani końcowych asercji zwycięstwa, łupu i restartu.
+- Ponowny test treningu + nowy profession-legacy.spec.ts: **4 PASS** (1,3 min; komputer i mobilny). Stary zapis bez pól profesji zachowuje zasoby i odebrany quest, staje się Knightem; wybór Maga/Archera w menu nie zmienia wznowionej profesji. Import obcego czaru jest odrzucony bez nadpisania danych. Końcowe typecheck i lint PASS po zmianie testów. Pozostałe przypadki już przeszły i nie były bez potrzeby powtarzane.
+- HTTP produkcji PASS: menu 0.1.9, assets/index-DVaXkvWv.js i index-CvkMEzhe.css zwracają 200 z builda. Końcową kontrolę produkcji opisano poniżej. Nie zmieniono usług ani skryptu instalacji środowiska; npm ci nadal korzysta z zamrożonego lockfile i lokalnego cache.
+
+- Produkcyjny build: początkowe **7 PASS** (40,2 s). Oględziny zrzutów wykazały styk nazwy profesji i HP w małym nagłówku; rozdzielono je w CSS na dwie linie, z ellipsis dla długiego imienia. Dodano asercję braku nakładania. Typecheck, lint i ponowny build/validate:content PASS. **Końcowa produkcja: 7 PASS (1,3 min)** — trzy profesje, dziewięć animowanych efektów, konfiguracja/zapis, zasięg, wielodotyk, czwarty slot, stary zapis i odrzucenie obcego czaru. Końcowe pliki: index-S5GZpnz8.js, index-Bq9wYfoE.css.
+- Dodatkowa kontrola produkcyjna: przechwycono rzeczywiste klatki wszystkich dziewięciu umiejętności w Chromium, bez wstrzymywania zegara/AI; brak błędów strony/HTTP. Zweryfikowano także rozdzielenie etykiet po zmianie rozmiaru do desktopu. Obejrzano wir, precyzyjny strzał i początek kuli ognia; podglądy docs/screenshots/profession-{knight,archer,mage}-mobile.png. Dalsze klatki oraz log pozostają robocze w /tmp. Zrzuty i wielodotyk pochodzą z emulacji, nie z fizycznego telefonu.
+- READY do testów właściciela: T07b REVIEW; instrukcja docs/TESTER.md, README, roadmap i źródła/licencje aktualne. Drzewka T07c TODO; stroje wspólne, balans startowy, lód bez spowolnienia, audio/online/APK poza tym etapem. Brak blockerów uruchomienia. Ocena balansu i FPS na urządzeniu pozostaje zadaniem testera.

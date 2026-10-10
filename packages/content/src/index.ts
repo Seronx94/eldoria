@@ -19,3 +19,4 @@ export { items, inventoryRules, type ItemId } from './items';
 export { npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId } from './adventure';
 
 export {legacyTownPositionAllowed} from './town';
+export {professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual} from './professions';

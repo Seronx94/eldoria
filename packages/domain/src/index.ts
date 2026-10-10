@@ -1,5 +1,5 @@
-import { combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
-import { commandSchema, nameSchema, type Command, type Direction } from '@eldoria/protocol';
+import { combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { commandSchema, nameSchema,professionSchema, type Command, type Direction,type Profession,type SpellId,type ActionId,type Weapon } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 import { saveSchema, type SaveData } from './save';
@@ -12,17 +12,21 @@ export interface Creature extends Point {
   lastAttack: number; lastMove: number; diedAt: number;
 }
 export interface CombatEvent {
-  id: number; mapId: string; kind: 'melee' | 'spell' | 'monster';
+  id: number; mapId: string; kind: 'melee' | 'ranged' | 'spell' | 'monster';
+  effect:CombatVisual;abilityId:SpellId|'attack'|null;radius:number;healing:number;
+  hits:{targetId:string;to:Point;damage:number}[];
   sourceId: string; targetId: string | null; direction: Direction; from: Point; to: Point; damage: number;
 }
 export interface Snapshot {
+  profession:Profession;actionSlots:[ActionId,ActionId,ActionId,ActionId];
+  attackCooldown:number;spellCooldowns:Record<SpellId,number>;guardMs:number;
   exploration: SaveData['exploration'];
   combatEvents: CombatEvent[];
   dialog: NpcId | null; quest: { status: 'available' | 'active' | 'ready' | 'claimed'; kills: number };
   name: string; mapId: string; player: Point; direction: Direction;
   hp: number; mana: number; maxHp: number; maxMana: number; level: number; potions: number; exp: number; gold: number;
   kills: number; defeatedKinds: MonsterKind[]; selectedId: string | null; creatures: Creature[];
-  inventory: Stack[]; equipment: { weapon: 'sword' | null; armor: 'tunic' | null }; loot: Loot[];
+  inventory: Stack[]; equipment: { weapon: Weapon | null; armor: 'tunic' | null }; loot: Loot[];
   message: string; eventId: number; complete: boolean;
 }
 export interface Spawn extends Point { id: string; kind: MonsterKind }
@@ -41,20 +45,24 @@ export class Simulation {
   private lastMove = -Infinity;
   private lastAttack = -Infinity;
   private lastSpell = -Infinity;
+  private lastSpells=new Map<SpellId,number>();
+  private guardUntil=0;
   private lastPotion = -Infinity;
   private lastMana: number;
   private time: number;
-  constructor(private maps: WorldMap[], name: string, private clock: Clock, private spawns?: Spawn[], initialInventory: Stack[] = [{ itemId: 'potion', quantity: 3 }]) {
+  constructor(private maps: WorldMap[], name: string, private clock: Clock, private spawns?: Spawn[], initialInventory: Stack[] = [{ itemId: 'potion', quantity: 3 }], profession:Profession='knight') {
     const map = maps[0];
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
-    this.state = { exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Przytrzymaj Miecz i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    profession=professionSchema.parse(profession);
+    this.state = { profession:'knight',actionSlots:defaultActions('knight'),attackCooldown:0,spellCooldowns:emptySpellCooldowns(),guardMs:0,exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Przytrzymaj atak podstawowy i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    this.state.profession=profession;this.state.actionSlots=defaultActions(profession);this.state.equipment.weapon=professions[profession].weapon;
     this.spawnCreatures();
   }
   private map(): WorldMap { return this.maps.find(m => m.id === this.state.mapId)!; }
   private notify(message: string): void { this.state.message = message; this.state.eventId++; }
-  private combat(kind: CombatEvent['kind'], sourceId: string, targetId: string | null, from: Point, to: Point, damage: number): void {
-    this.state.combatEvents.push({ id: ++this.combatSequence, mapId: this.state.mapId, kind, sourceId, targetId, direction: this.state.direction, from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, damage });
+  private combat(kind: CombatEvent['kind'], sourceId: string, targetId: string | null, from: Point, to: Point, damage: number,extra:Partial<Pick<CombatEvent,'effect'|'abilityId'|'hits'|'radius'|'healing'>>={}): void {
+    this.state.combatEvents.push({ id: ++this.combatSequence, mapId: this.state.mapId, kind, sourceId, targetId, direction: this.state.direction, from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, damage,effect:kind==='monster'?'claw':'sword',abilityId:sourceId==='player'?'attack':null,radius:0,healing:0,hits:targetId&&damage>0?[{targetId,to:{x:to.x,y:to.y},damage}]:[],...extra });
     this.state.combatEvents = this.state.combatEvents.slice(-16);
   }
   private walkable(point: Point): boolean {
@@ -73,7 +81,11 @@ export class Simulation {
     });
     this.creatureMaps.set(this.state.mapId, this.state.creatures);
   }
-  snapshot(): Snapshot { return structuredClone(this.state); }
+  private remaining(last:number,period:number):number {return Math.max(0,Math.ceil(period-(this.time-last)));}
+  private spellCooldowns():Record<SpellId,number> {
+    const result=emptySpellCooldowns();for(const id of Object.keys(spells) as SpellId[])result[id]=this.remaining(this.lastSpells.get(id)??-Infinity,spells[id].cooldown);return result;
+  }
+  snapshot(): Snapshot { return {...structuredClone(this.state),attackCooldown:this.remaining(this.lastAttack,professions[this.state.profession].attackMs),spellCooldowns:this.spellCooldowns(),guardMs:Math.max(0,this.guardUntil-this.time)}; }
   send(input: unknown): void {
     const parsed = commandSchema.safeParse(input);
     if (!parsed.success) { this.notify('Nieprawidłowa komenda.'); return; }
@@ -83,6 +95,10 @@ export class Simulation {
   private command(command: Command): void {
     const now = this.time;
     const s = this.state;
+    if(command.type==='SetActionSlot'){
+      if(!actionAllowed(s.profession,command.actionId)){this.notify('Ta umiejętność należy do innej profesji.');return;}
+      s.actionSlots[command.slot]=command.actionId;this.notify('Zmieniono pasek akcji.');return;
+    }
     if (command.type === 'CloseDialog') { s.dialog = null; return; }
     if (s.dialog && ['Move', 'Attack', 'Cast', 'Select', 'UseItem', 'Loot', 'Interact', 'Equip', 'Unequip'].includes(command.type)) return;
     if (['Heal', 'AcceptQuest', 'ClaimReward', 'Buy', 'Sell'].includes(command.type)) {
@@ -140,6 +156,7 @@ export class Simulation {
       s.inventory = inventory; s.equipment[command.slot] = null; this.notify('Zdjęto wyposażenie.'); return;
     }
     if (command.type === 'Equip') {
+      if(command.itemId!=='tunic'&&command.itemId!==professions[s.profession].weapon){this.notify('To broń innej profesji.');return;}
       const slot = items[command.itemId].slot;
       const without = removeItem(s.inventory, command.itemId, 1);
       if (!without) { this.notify('Nie masz tego przedmiotu w plecaku.'); return; }
@@ -147,7 +164,7 @@ export class Simulation {
       const inventory = previous ? addItems(without, [{ itemId: previous, quantity: 1 }]) : without;
       if (!inventory) { this.notify('Brak miejsca na poprzednie wyposażenie.'); return; }
       s.inventory = inventory;
-      if (slot === 'weapon') s.equipment.weapon = 'sword'; else s.equipment.armor = 'tunic';
+      if (command.itemId!=='tunic') s.equipment.weapon = command.itemId; else s.equipment.armor = 'tunic';
       this.notify('Założono wyposażenie.'); return;
     }
     if (command.type === 'Move') {
@@ -181,7 +198,7 @@ export class Simulation {
       if (!arrival) { this.notify('Wejście jest zajęte — spróbuj ponownie.'); return; }
       s.mapId = target.id; s.player = arrival; s.selectedId = null;
       this.spawnCreatures(); this.lastMove = now;
-      this.notify(target.id === 'forest' ? 'Mroczny Las. Przytrzymaj Miecz przy przeciwniku; cel jest opcjonalny.' : target.id === 'vareon' ? 'Vareon. Wróć do Miry, odpocznij u Orena lub odwiedź Borina.' : 'Przejście do drugiej sceny wzorcowej.'); return;
+      this.notify(target.id === 'forest' ? 'Mroczny Las. Przytrzymaj atak podstawowy w zasięgu przeciwnika; cel jest opcjonalny.' : target.id === 'vareon' ? 'Vareon. Wróć do Miry, odpocznij u Orena lub odwiedź Borina.' : 'Przejście do drugiej sceny wzorcowej.'); return;
     }
     if (command.type === 'UseItem') {
       if (s.hp >= s.maxHp) { this.notify('Masz pełne zdrowie — mikstura pozostaje w plecaku.'); return; }
@@ -191,33 +208,42 @@ export class Simulation {
       this.notify('Odzyskano zdrowie.'); return;
     }
     if (!combatAllowedAt(this.map(),s.player)) { this.notify('Strefa bezpieczna — tutaj nie ma walki.'); return; }
-    const casting = command.type === 'Cast';
-    if (!casting && !s.equipment.weapon) { this.notify('Załóż miecz w plecaku.'); return; }
-    const range = casting ? rules.spellRange : rules.meleeRange;
-    const eligible = (c: Creature) => c.hp > 0 && combatAllowedAt(this.map(),c) && distance(c,s.player) <= range && this.lineOfSight(s.player,c);
-    const selected = s.creatures.find(c => c.id === s.selectedId && c.hp > 0);
-    // A reachable manual choice takes priority; otherwise choose the nearest visible enemy.
-    const target = selected && eligible(selected) ? selected : s.creatures.filter(eligible).sort((a,b)=>distance(a,s.player)-distance(b,s.player)||a.id.localeCompare(b.id))[0];
-    if (now - (casting ? this.lastSpell : this.lastAttack) < (casting ? rules.spellMs : rules.attackMs)) return;
-    if (casting && s.mana < rules.spellCost) { this.notify('Za mało many.'); return; }
-    if (casting) { s.mana -= rules.spellCost; this.lastSpell = now; } else this.lastAttack = now;
-    if (!target) {
-      const v = vectors[s.direction], to = {...s.player};
-      for(let i=0;i<range;i++) {
-        const next={x:to.x+v.x,y:to.y+v.y};
-        if(!this.walkable(next)||!combatAllowedAt(this.map(),next))break;
-        Object.assign(to,next);
-      }
-      this.combat(casting ? 'spell' : 'melee','player',null,s.player,to,0);
-      this.notify(casting ? `Iskra w kierunku patrzenia (${rules.spellCost} many).` : 'Zamach mieczem. Podejdź do przeciwnika; cel wybierze się automatycznie.');
-      return;
+    if(command.type!=='Attack'&&command.type!=='Cast')return;
+    const profile=professions[s.profession],casting=command.type==='Cast';
+    const spellId=casting?(command.spellId??profile.spells[0]!):undefined;
+    const spell=spellId?spells[spellId]:undefined;
+    if(spell&&(spell.profession!==s.profession||s.level<spell.level)){this.notify('Ta umiejętność nie jest dostępna dla Twojej profesji.');return;}
+    if(!casting&&s.equipment.weapon!==profile.weapon){this.notify('Załóż broń swojej profesji w plecaku.');return;}
+    if(now-(spellId?this.lastSpells.get(spellId)??-Infinity:this.lastAttack)<(spell?.cooldown??profile.attackMs))return;
+    if(spell&&s.mana<spell.mana){this.notify('Za mało many.');return;}
+    if(spell?.mode==='heal'&&s.hp===s.maxHp){this.notify('Masz pełne zdrowie — nie zużyto many.');return;}
+    if(spellId&&spell){s.mana-=spell.mana;this.lastSpells.set(spellId,now);if(spellId===profile.spells[0])this.lastSpell=now;}else this.lastAttack=now;
+    const effect=spell?.effect??profile.effect;
+    const kind=casting?'spell':profile.range===1?'melee':'ranged';
+    if(spell?.mode==='guard'||spell?.mode==='heal'){
+      const healing=spell.mode==='heal'?Math.min(professionRules.mendHp,s.maxHp-s.hp):0;
+      s.hp+=healing;if(spell.mode==='guard')this.guardUntil=now+professionRules.guardMs;
+      this.combat('spell','player',null,s.player,s.player,0,{effect,abilityId:spellId!,healing});
+      this.notify(healing?`${spell.name}: +${healing} HP.`:`${spell.name}: osłona na 4 sekundy.`);return;
     }
-    const damage = Math.max(1, (casting ? rules.spellDamage : rules.attackDamage) - monsters[target.kind].defense);
-    const dx = target.x-s.player.x, dy = target.y-s.player.y;
-    s.direction = Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 'right' : 'left' : dy > 0 ? 'down' : 'up';
-    target.hp = Math.max(0, target.hp - damage); target.state = 'chase';
-    this.combat(casting ? 'spell' : 'melee', 'player', target.id, s.player, target, damage);
-    this.notify(`${casting ? 'Iskra' : 'Miecz'}: ${damage} obrażeń.`);
+    const range=spell?.range??profile.range;
+    const eligible=(c:Creature)=>c.hp>0&&combatAllowedAt(this.map(),c)&&distance(c,s.player)<=range&&this.lineOfSight(s.player,c);
+    const selected=s.creatures.find(c=>c.id===s.selectedId&&eligible(c));
+    const target=selected??s.creatures.filter(eligible).sort((a,b)=>distance(a,s.player)-distance(b,s.player)||a.id.localeCompare(b.id))[0];
+    let to={...s.player};
+    if(spell?.mode!=='self-area'){
+      if(target){to={x:target.x,y:target.y};const dx=to.x-s.player.x,dy=to.y-s.player.y;s.direction=Math.abs(dx)>Math.abs(dy)?dx>0?'right':'left':dy>0?'down':'up';}
+      else for(let i=0;i<range;i++){const v=vectors[s.direction],next={x:to.x+v.x,y:to.y+v.y};if(!this.walkable(next)||!combatAllowedAt(this.map(),next))break;to=next;}
+    }
+    const targets=spell&&(spell.mode==='area'||spell.mode==='self-area')?s.creatures.filter(c=>c.hp>0&&combatAllowedAt(this.map(),c)&&distance(c,to)<=spell.radius&&distance(c,s.player)<=range+spell.radius&&this.lineOfSight(s.player,c)):(target?[target]:[]);
+    const hits=targets.map(c=>({targetId:c.id,to:{x:c.x,y:c.y},damage:this.hit(c,spell?.damage??profile.damage,now)}));
+    this.combat(kind,'player',hits[0]?.targetId??null,s.player,to,hits[0]?.damage??0,{effect,abilityId:spellId??'attack',radius:spell?.radius??0,hits});
+    if(!hits.length)this.notify(casting?`${spell!.name} w kierunku patrzenia (${spell!.mana} many).`:`${profile.attackName}: atak bez trafienia. Podejdź w zasięg.`);
+    else if(targets.every(c=>c.hp>0))this.notify(`${spell?.name??profile.attackName}: ${hits.reduce((n,h)=>n+h.damage,0)} obrażeń.`);
+  }
+  private hit(target:Creature,power:number,now:number):number {
+    const s=this.state,damage=Math.max(1,power-monsters[target.kind].defense);
+    target.hp=Math.max(0,target.hp-damage);target.state='chase';
     if (target.hp === 0) {
       target.state = 'dead'; target.diedAt = now; s.selectedId = null;
       this.gainExp(monsters[target.kind].exp); s.kills++;
@@ -230,6 +256,7 @@ export class Simulation {
       s.complete = s.mapId === 'grove' && s.defeatedKinds.length === 3;
       this.notify(s.complete ? 'Próba ukończona! Pokonano 3 stworzenia. Wróć do menu, aby rozpocząć nową próbę.' : ['forest','eldoria'].includes(s.mapId) ? `Pokonano ${monsters[target.kind].name.toLowerCase()}. ${s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę.' : s.quest.status === 'active' ? `Zadanie: ${s.quest.kills}/5.` : 'Przyjmij zadanie u Miry.'}` : `Pokonano ${monsters[target.kind].name.toLowerCase()}. Próba: ${s.defeatedKinds.length}/3.`);
     }
+    return damage;
   }
   private freeArrival(map: WorldMap, spawn: Point): Point | undefined {
     const actors = this.creatureMaps.get(map.id)?.filter(c => c.hp > 0) ?? map.monsterSpawns;
@@ -247,7 +274,7 @@ export class Simulation {
     const s = this.state, now = this.time;
     const remaining = (last: number, period: number) => Math.max(0, Math.ceil(period - (now-last)));
     return saveSchema.parse({
-      version: 1, cityRevision: (this.maps.find(m=>m.id==='eldoria')??this.maps.find(m=>m.id==='vareon'))?.layoutRevision ?? 1, mode: 'offline', name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
+      version: 1, cityRevision: (this.maps.find(m=>m.id==='eldoria')??this.maps.find(m=>m.id==='vareon'))?.layoutRevision ?? 1, mode: 'offline', profession:s.profession,actionSlots:s.actionSlots,spellCooldowns:this.spellCooldowns(),guardIn:Math.min(professionRules.guardMs,Math.max(0,Math.ceil(this.guardUntil-now))), name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
       level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, inventory: s.inventory, equipment: s.equipment,
       cooldowns: { move: remaining(this.lastMove,rules.stepMs), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
       maps: [...this.creatureMaps].map(([mapId, creatures]) => ({ mapId, creatures: creatures.map(c => ({ id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, attackIn:remaining(c.lastAttack,rules.monsterAttackMs), moveIn:remaining(c.lastMove,rules.stepMs*2), respawnIn: c.hp === 0 ? remaining(c.diedAt,rules.respawnMs) : 0 })) })),
@@ -267,7 +294,7 @@ export class Simulation {
     }
     if(world && (data.maps.length!==1||data.maps[0]?.mapId!=='eldoria'||data.loot.some(l=>l.mapId!=='eldoria')))throw new Error('Nieprawidłowe regiony zapisu świata');
     if (new Set(data.maps.map(m => m.mapId)).size !== data.maps.length || !data.maps.some(m => m.mapId === data.mapId)) throw new Error('Nieprawidłowe mapy zapisu');
-    const sim = new Simulation(maps, data.name, clock);
+    const sim = new Simulation(maps, data.name, clock,undefined,undefined,data.profession);
     const now = sim.time;
     const walkable = (mapId: string, p: Point) => {
       const map = maps.find(m => m.id === mapId);
@@ -296,7 +323,9 @@ export class Simulation {
       sim.creatureMaps.set(map.id,creatures);
     }
     if (new Set(data.loot.map(l => l.id)).size !== data.loot.length || data.loot.some(l => !walkable(l.mapId,l))) throw new Error('Nieprawidłowy łup');
-    sim.state = { ...sim.state, name:data.name, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:relocated ? 'Vareon przebudowano — wznowiono przy wartowni. Postęp i wyposażenie zachowano.' : 'Wznowiono przygodę offline.' };
+    sim.state = { ...sim.state, name:data.name,profession:data.profession,actionSlots:data.actionSlots, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:relocated ? 'Vareon przebudowano — wznowiono przy wartowni. Postęp i wyposażenie zachowano.' : 'Wznowiono przygodę offline.' };
+    for(const id of Object.keys(spells) as SpellId[])sim.lastSpells.set(id,now+data.spellCooldowns[id]-spells[id].cooldown);
+    sim.guardUntil=now+data.guardIn;
     sim.lastMove = now+data.cooldowns.move-rules.stepMs;
     sim.lastAttack = now+data.cooldowns.attack-rules.attackMs;
     sim.lastSpell = now+data.cooldowns.spell-rules.spellMs;
@@ -373,7 +402,7 @@ export class Simulation {
         if (distance(c, s.player) <= 1) {
           c.state = 'attack';
           if (now - c.lastAttack >= rules.monsterAttackMs) {
-            const damage = Math.max(1, monsters[c.kind].damage - (s.equipment.armor ? rules.playerDefense : 2));
+            const damage = Math.max(1, monsters[c.kind].damage - (s.equipment.armor ? rules.playerDefense : 2) - (now<this.guardUntil?professionRules.guardDefense:0));
             s.hp = Math.max(0, s.hp - damage); c.lastAttack = now;
             this.combat('monster', c.id, 'player', c, s.player, damage);
             if (s.hp === 0) { this.die(); return; }
@@ -403,6 +432,7 @@ export class Simulation {
     }
   }
   private die(): void {
+    this.guardUntil=0;
     const m = this.maps.find(m => m.id==='eldoria') ?? this.maps.find(m => !m.combatAllowed) ?? this.maps[0]!;
     this.state.mapId = m.id; this.state.player = { ...m.spawns.entry! };
     this.state.hp = this.state.maxHp; this.state.mana = this.state.maxMana; this.state.selectedId = null; this.state.dialog = null;

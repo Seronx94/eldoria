@@ -11,14 +11,15 @@
       <form id="start-form">
         <label for="name">IMIĘ WĘDROWCA</label>
         <div class="start-row"><input id="name" name="name" value="Wędrowiec" minlength="3" maxlength="16" required autocomplete="off"/><button class="primary" type="submit">Rozpocznij <span>→</span></button></div>
+        <label for="profession">PROFESJA</label><select id="profession"><option value="knight">Knight — miecz i osłona</option><option value="archer">Archer — łuk i strzały</option><option value="mage">Mag — różdżka i magia</option></select>
         <label for="mode">PRZYGODA</label><select id="mode"><option value="adventure">Vareon — Niepokój za bramą</option><option value="trial">Próba Wędrowca — trening walki</option></select>
         <label for="graphics-style">GRAFIKA</label><select id="graphics-style"><option value="colorful">Kolorowy pixel art — do oceny</option><option value="classic">Poprzednia grafika — porównanie</option></select>
         <label class="walk-choice"><input type="checkbox" id="walk-mode"/> Spacer bez potworów — ocena grafiki</label>
         <p id="name-error" role="alert"></p>
       </form>
       <div class="save-menu"><button id="resume" hidden>Wznów przygodę</button><button id="recover" hidden>Odzyskaj kopię zapisu</button><button id="export-save">Eksport zapisu</button><label class="import-label">Import zapisu<input id="import-save" type="file" accept="application/json,.json"/></label><p id="save-menu-status" role="status"></p></div>
-      <div class="menu-meta"><span>0.1.8 · PRZYGODA OFFLINE</span><span>WALKA BEZ CELU · BEZ AUDIO</span></div>
-      <div class="instructions"><strong>Niepokój za bramą</strong><p>Mira stoi obok miejsca startu. Porozmawiaj (F), przyjmij zadanie, przejdź pieszo przez północną bramę i pokonaj pięć stworzeń w lesie. Zbierz łup, wróć po nagrodę, odwiedź Orena i Borina. Mira zleca też odkrycie trzech miejsc dawnego szlaku. Ich historie przeczytasz w kronice w plecaku. Przygoda zapisuje się lokalnie. Trening walki pozostaje dostępny w wyborze przygody.</p><span>WASD / strzałki · T: cel opcjonalny · Spacja: przytrzymaj miecz · E: Iskra · Q: mikstura · F: rozmowa/odkrycie · R: łup · I: plecak</span></div>
+      <div class="menu-meta"><span>0.1.9 · PRZYGODA OFFLINE</span><span>WALKA BEZ CELU · BEZ AUDIO</span></div>
+      <div class="instructions"><strong>Niepokój za bramą</strong><p>Mira stoi obok miejsca startu. Porozmawiaj (F), przyjmij zadanie, przejdź pieszo przez północną bramę i pokonaj pięć stworzeń w lesie. Zbierz łup, wróć po nagrodę, odwiedź Orena i Borina. Mira zleca też odkrycie trzech miejsc dawnego szlaku. Ich historie przeczytasz w kronice w plecaku. Przygoda zapisuje się lokalnie. Trening walki pozostaje dostępny w wyborze przygody.</p><span>WASD / strzałki · T: cel opcjonalny · Spacja: atak podstawowy · E: pierwszy czar · 1–4: przypisane akcje · Q: mikstura · F: rozmowa/odkrycie · R: łup · I: plecak</span></div>
     </div>
     <div class="scene-note">VAREON · MROCZNY LAS <span>01 / 02</span></div>
   </main>
@@ -42,15 +43,22 @@
       </div>
       <div class="journal"><span class="eyebrow">DZIENNIK WĘDRÓWKI</span><p id="message" role="status"></p><span id="rewards"></span><small id="save-status" role="status">Przygoda offline · zapis lokalny</small></div>
       <div class="actions">
-        <button id="cycle-target"><span>◎</span>Cel<small>T · WYBIERZ</small></button>
-        <button id="attack"><span>⚔</span>Miecz<small>SPACJA</small></button>
-        <button id="cast"><span>✧</span>Iskra<small>E · 8 MANY</small></button>
-        <button id="potion"><span>♜</span>Mikstura<small id="potion-count">Q · 3 SZT.</small></button>
-        <button id="loot"><span>◇</span>Łup<small>R · OBOK</small></button><button id="interact"><span>⌁</span><b id="interact-label" style="font:inherit">Rozmowa</b><small>F · OBOK</small></button>
+        <div class="utility-actions">
+          <button id="cycle-target"><span>◎</span>Cel<small>T</small></button>
+          <button id="potion"><span>♜</span>Mikstura<small id="potion-count">Q · 3 SZT.</small></button>
+          <button id="loot"><span>◇</span>Łup<small>R</small></button>
+          <button id="interact"><span>⌁</span><b id="interact-label" style="font:inherit">Rozmowa</b><small>F</small></button>
+        </div>
+        <div id="action-bar" aria-label="Cztery przypisywane akcje">
+          <button id="attack" data-slot="0"><span></span><b>Miecz</b><small></small></button>
+          <button id="cast" data-slot="1"><span></span><b>Iskra ostrza</b><small></small></button>
+          <button id="spell-slot-2" data-slot="2"><span></span><b>Wir ostrzy</b><small></small></button>
+          <button id="spell-slot-3" data-slot="3"><span></span><b>Żelazna osłona</b><small></small></button>
+        </div>
       </div>
     </footer>
   </section>
-  <dialog id="bag"><div class="bag-header"><div><span class="eyebrow">EKWIPUNEK WĘDROWCA</span><h2>Plecak</h2></div><button id="close-bag">Zamknij</button></div><details id="city-guide"><summary>Plan Vareon — znajdź usługę</summary><div id="city-guide-content"></div></details><div id="equipment"></div><p id="bag-gold"></p><div id="bag-slots"></div><details id="chronicle"><summary>Kronika — Ślady dawnego szlaku</summary><div id="chronicle-text"></div></details><p class="bag-note">20 pól · stosy do 99 · brak ciężaru w prototypie</p></dialog>
+  <dialog id="bag"><div class="bag-header"><div><span class="eyebrow">EKWIPUNEK WĘDROWCA</span><h2>Plecak</h2></div><button id="close-bag">Zamknij</button></div><details id="city-guide"><summary>Plan Vareon — znajdź usługę</summary><div id="city-guide-content"></div></details><details id="loadout"><summary>Profesja i cztery akcje</summary><p id="profession-description"></p><div id="loadout-slots"></div><p>Wybierz umiejętność lub atak podstawowy dla każdej pozycji. Na komputerze: klawisze 1–4. Profesję wybierasz przy tworzeniu nowej przygody; wznowienie zachowuje profesję i postęp.</p></details><div id="equipment"></div><p id="bag-gold"></p><div id="bag-slots"></div><details id="chronicle"><summary>Kronika — Ślady dawnego szlaku</summary><div id="chronicle-text"></div></details><p class="bag-note">20 pól · stosy do 99 · brak ciężaru w prototypie</p></dialog>
   <dialog id="npc-dialog"><div class="bag-header"><div><span id="npc-role" class="eyebrow"></span><h2 id="npc-name"></h2></div><button id="close-npc">Zakończ rozmowę</button></div><p id="npc-text"></p><p id="npc-message" role="status"></p><div id="npc-actions"></div></dialog>
   <div id="rotate" role="status"><span>↻</span><strong>Świat jest szerszy niż myślisz.</strong><p>Obróć telefon do poziomu, aby kontynuować.<br/>Twoja próba zostaje w tym samym miejscu.</p></div>
   <script type="module" src="/src/main.ts"></script>

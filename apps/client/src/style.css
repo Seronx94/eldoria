@@ -779,3 +779,41 @@ button:disabled { opacity:.5; cursor:default; }
 .actions #potion { border-color:#b47876; }
 @media(pointer:coarse),(max-height:600px) { .dpad { display:none; } #joystick { display:block; } }
 @media(max-height:600px) { #joystick { width:96px; height:96px; } .actions .action-icon { width:34px; height:34px; } .action-icon svg { width:30px; height:30px; } }
+
+/* Four configurable actions stay together, separated from utility controls. */
+.actions { align-items:center; }
+.utility-actions { display:grid; grid-template-columns:repeat(2,52px); gap:4px; }
+.actions .utility-actions button { width:52px; height:64px; min-height:48px; font-size:10px; gap:2px; }
+.utility-actions .action-icon { width:28px; height:28px; }
+.utility-actions .action-icon svg { width:24px; height:24px; }
+#action-bar { display:grid; grid-template-columns:repeat(4,80px); gap:6px; }
+#action-bar b { font:inherit; line-height:1.05; text-align:center; }
+#action-bar button { position:relative; min-width:48px; min-height:48px; touch-action:none; }
+#action-bar button.cooling { background:#21312eee; }
+#action-bar button.no-mana { border-color:#61556e; opacity:.7; }
+#loadout { margin:12px 0; border:1px solid #829a7044; border-radius:6px; padding:8px; }
+#loadout summary { min-height:48px; cursor:pointer; padding:12px; }
+#loadout p { font:12px/1.5 system-ui,sans-serif; }
+#loadout-slots { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+#loadout-slots label { display:flex; flex-direction:column; gap:4px; font:12px system-ui,sans-serif; }
+#loadout-slots select { min-height:48px; width:100%; }
+@media(pointer:coarse),(max-height:600px) {
+  .controls { min-height:136px; gap:10px; padding:6px max(10px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)); }
+  #action-bar { grid-template-columns:repeat(2,64px); gap:4px; }
+  .actions #action-bar button { width:64px; height:60px; font-size:9px; gap:2px; }
+  .actions #action-bar .action-icon { width:28px; height:28px; }
+  .actions #action-bar .action-icon svg { width:26px; height:26px; }
+  .actions #action-bar small { font-size:8px; }
+  .actions .utility-actions button { height:52px; width:48px; }
+  .utility-actions { grid-template-columns:repeat(2,48px); }
+  .actions { gap:10px; }
+  .journal { min-width:0; flex:1; }
+  .journal p { font-size:10px; overflow-wrap:anywhere; }
+  #joystick { width:96px; height:96px; }
+}
+@media(max-width:650px) { .journal .eyebrow,#save-status { display:none; } .journal p { max-height:44px; overflow:auto; } #loadout-slots { grid-template-columns:1fr; } }
+
+/* Keep the longer profession label separate from HP/MP on narrow screens. */
+.stats>div { display:grid; justify-content:stretch; margin-bottom:0; line-height:1.2; }
+#player-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#hp-label { white-space:nowrap; }

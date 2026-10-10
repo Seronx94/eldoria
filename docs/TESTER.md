@@ -1,4 +1,4 @@
-# Eldoria 0.1.3 — Ślady dawnego szlaku
+# Eldoria 0.1.4 — nowe Vareon
 
 Pierwsza przygoda offline: Vareon 48×48, Mroczny Las 64×64, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
@@ -19,6 +19,16 @@ npm run dev:lan
 ```
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
+
+## Pięć kroków zwiedzania miasta
+
+1. Rozpocznij albo wznów Vareon w kolorowym stylu. Mira czeka w wartowni przy północnej bramie. Wyjdź drzwiami na południu: dach powinien zakryć wnętrze. Wejście z powrotem odsłania dach i Mirę. Północne przejście nadal prowadzi do lasu.
+2. Otwórz **Plecak → Plan Vareon**. Wybierz Orena: wskazówka pokazuje kierunek i odległość, bez automatycznego chodzenia. Idź na zachód od rynku do **Świątyni Świtu** i wejdź drzwiami od południa. Oren leczy tak jak wcześniej.
+3. Przejdź przez brukowany rynek z fontanną i straganami. W planie wybierz Borina i wejdź do sklepu po wschodniej stronie. Porozmawiaj i sprawdź dotychczasowy handel.
+4. Zobacz gospodę i warsztat na południu oraz dwa domy na północy. Wszystkie siedem budynków ma dostępne wnętrza; gospoda, warsztat i domy służą na razie zwiedzaniu, bez dodatkowych NPC/usług. Sprawdź, czy ściany i meble blokują krok, a drzwi pozwalają wejść.
+5. Zapisz grę wewnątrz budynku, odśwież i wznów. Obróć telefon do pionu i z powrotem. Oceń dachy, drzwi, ostrość bruku i czytelność NPC. Stary poprawny zapis zachowuje postęp; gdy dawną pozycję zajęła nowa ściana lub NPC, gracz wraca do wartowni. Nowy zapis wymaga wersji 0.1.4+.
+
+Nowa aranżacja i zestaw miejski czekają na Twoją ocenę. Zrzuty: [rynek — desktop](screenshots/vareon-market-desktop.png), [świątynia — mobilny](screenshots/vareon-temple-mobile.png), [sklep — mobilny](screenshots/vareon-shop-mobile.png). Są to widoki Chromium, nie fizycznego telefonu.
 
 ## Pięć kroków nowej wyprawy
 
@@ -43,7 +53,7 @@ Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Ko
 3. Wróć do menu, wybierz **Poprzednia grafika — porównanie**, rozpocznij ten sam spacer i podejdź pięć kratek na północ. Porównaj te same obiekty; wybór grafiki jest zapamiętywany.
 4. Wybierz ponownie kolorowy styl, tryb Vareon i odznacz spacer. Zobacz Mirę, Orena i Borina, przejdź do lasu i sprawdź czytelność szczura, żuka i wilka podczas walki. Możesz też wznowić swoją przygodę w wybranym stylu.
 
-Napisz, czy ten kierunek jest wystarczająco bliski oczekiwanemu klimatowi, i wskaż element do poprawy: postać, potwory, teren, drzewa lub domy. Nowe mapy na tym zestawie powstaną po Twojej ocenie.
+Napisz, czy ten kierunek jest wystarczająco bliski oczekiwanemu klimatowi, i wskaż element do poprawy: postać, potwory, teren, drzewa lub domy. Kierunek kolorowy został zaakceptowany; nowe wnętrza i aranżacja Vareon czekają na ocenę.
 
 ## Pięć kroków testu
 

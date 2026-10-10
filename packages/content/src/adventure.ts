@@ -1,7 +1,7 @@
 export const npcs = {
   mira: { name: 'Mira', role: 'Strażniczka bramy', text: 'Za bramą rośnie niepokój. Pokonaj pięć leśnych stworzeń i wróć do mnie. Liczą się zwycięstwa po przyjęciu zadania.' },
-  oren: { name: 'Oren', role: 'Uzdrowiciel', text: 'Odpocznij, Wędrowcze. Przywrócę Twoje zdrowie i manę bez opłaty.' },
-  borin: { name: 'Borin', role: 'Kupiec przy kuźni', text: 'Mikstura kosztuje 5 złota. Skóry wilka i chitynę kupuję po 2 złota za sztukę.' },
+  oren: { name: 'Oren', role: 'Uzdrowiciel świątyni', text: 'Witaj w Świątyni Świtu. Odpocznij, Wędrowcze. Przywrócę Twoje zdrowie i manę bez opłaty.' },
+  borin: { name: 'Borin', role: 'Kupiec przy rynku', text: 'Mikstura kosztuje 5 złota. Skóry wilka i chitynę kupuję po 2 złota za sztukę.' },
 } as const;
 export type NpcId = keyof typeof npcs;
 export const questRules = { title: 'Niepokój za bramą', kills: 5, exp: 50, gold: 20, potions: 2 } as const;

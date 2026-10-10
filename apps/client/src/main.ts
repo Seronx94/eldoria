@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
-import { importMap, validateMaps, rules, monsters, items, npcs, questRules, explorationRules, landmarks, type WorldMap } from '@eldoria/content';
+import { importMap, validateMaps, rules, monsters, items, npcs, questRules, explorationRules, landmarks, type WorldMap, type NpcId } from '@eldoria/content';
 import { nameSchema, type Direction } from '@eldoria/protocol';
 import { Simulation, LocalGateway, type Snapshot, type SaveData } from '@eldoria/domain';
+import { CityGuide } from './city-guide';
+import { TownView, townAssetKeys } from './town-view';
 import { CombatEffects } from './combat-effects';
 import { OfflineStorage } from './storage';
 import './style.css';
@@ -28,6 +30,8 @@ let walkingOnly = false;
 let adventure = false;
 let colorful = false;
 let worldEpoch = 0;
+let cityGuide:CityGuide|undefined;
+let guidedNpc:NpcId|undefined;
 const colorfulKeys = ['tree','house','pine','well','rat','beetle','wolf','loot','flowers','rocks','barrel','sign','mira','oren','borin'];
 const graphicsChoice = element<HTMLSelectElement>('#graphics-style');
 try { graphicsChoice.value = localStorage.getItem('eldoria.graphics') === 'classic' ? 'classic' : 'colorful'; } catch { /* The preview works even when preferences cannot be stored. */ }
@@ -72,6 +76,7 @@ class Preload extends Phaser.Scene {
     this.load.spritesheet('colorful-wanderer',`${base}styles/colorful/wanderer.png`,{frameWidth:32,frameHeight:48});
     for (const kind of ['rat','beetle','wolf']) this.load.spritesheet(`colorful-${kind}`,`${base}styles/colorful/${kind}-walk.png`,{frameWidth:32,frameHeight:32});
     for (const key of colorfulKeys.filter(k => !['rat','beetle','wolf'].includes(k))) this.load.image(`colorful-${key}`,`${base}styles/colorful/${key}.png`);
+    for (const key of townAssetKeys) this.load.image(`town-${key}`,`${base}town/${key}.png`);
     for (const key of ['courtyard', 'grove', 'vareon', 'forest']) this.load.json(key, `${base}${key}.json`);
     this.load.on('loaderror', () => { ui.loading.textContent = 'Nie udało się załadować świata. Odśwież stronę i sprawdź połączenie.'; });
   }
@@ -79,7 +84,10 @@ class Preload extends Phaser.Scene {
     try {
       maps = ['courtyard', 'grove', 'vareon', 'forest'].map(id => importMap(this.cache.json.get(id)));
       validateMaps(maps, new Set(['tiles.png']));
-      for (const key of ['tiles', 'wanderer', 'tree', 'house', 'rat', 'beetle', 'wolf', 'colorful-tiles','colorful-wanderer',...colorfulKeys.map(k=>`colorful-${k}`)]) {
+      cityGuide=new CityGuide(maps.find(m=>m.id==='vareon')!,element('#city-guide-content'),id=>{
+        guidedNpc=id;bagDialog.close();resetInput();if(snapshot)updateUI(snapshot);
+      });
+      for (const key of ['tiles', 'wanderer', 'tree', 'house', 'rat', 'beetle', 'wolf', 'colorful-tiles','colorful-wanderer',...colorfulKeys.map(k=>`colorful-${k}`),...townAssetKeys.map(k=>`town-${k}`)]) {
         if (!this.textures.exists(key)) throw new Error(`Brak grafiki ${key}`);
         this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
       }
@@ -101,6 +109,7 @@ class World extends Phaser.Scene {
   private creatureSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private creatureViews = new Map<string, { position: string; until: number; side: boolean; tween?: Phaser.Tweens.Tween }>();
   private effects!: CombatEffects;
+  private town!: TownView;
   private epoch = -1;
   private lastCombatId = 0;
   private actionUntil = 0;
@@ -113,7 +122,7 @@ class World extends Phaser.Scene {
   private movingTween?: Phaser.Tweens.Tween;
   constructor() { super('World'); }
   create(): void {
-    this.effects = new CombatEffects(this);
+    this.effects = new CombatEffects(this); this.town = new TownView(this);
     this.bars = this.add.graphics().setDepth(10000);
     this.hero = this.add.sprite(13 * 32 + 16, 11 * 32 + 32, 'wanderer', 0).setOrigin(.5, 1);
     this.hero.setDepth(this.hero.y);
@@ -121,7 +130,7 @@ class World extends Phaser.Scene {
     this.cameras.main.startFollow(this.hero, true, .12, .12);
     this.resize();
     this.scale.on('resize', this.resize, this);
-    this.events.once('shutdown', () => { this.scale.off('resize', this.resize, this); this.effects.clear(); });
+    this.events.once('shutdown', () => { this.scale.off('resize', this.resize, this); this.effects.clear(); this.town.clear(); });
   }
   private resize(): void {
     const w = this.scale.width, h = this.scale.height;
@@ -160,15 +169,16 @@ class World extends Phaser.Scene {
     }
     for (const d of map.decorations) this.objects.push(this.add.image(d.x * 32 + 16, d.y * 32 + 32, art(colorful && d.kind === 'tree' && (d.x+d.y)%3===0 ? 'pine' : d.kind)).setOrigin(.5, 1).setDepth(d.y * 32 + 33));
     if (colorful) for (const d of map.decorations.filter(d => d.kind === 'house')) this.objects.push(this.add.image((d.x+1)*32+16,d.y*32+32,art('barrel')).setOrigin(.5,1).setDepth(d.y*32+34));
+    this.town.build(map);
     for (const n of map.npcs) {
       const talk = () => { if (playing && !bagDialog.open && !npcDialog.open) gateway?.send({ type:'Interact', npcId:n.id }); };
       const sprite = this.add.sprite(n.x*32+16,n.y*32+32,colorful ? art(n.id) : 'wanderer',0).setOrigin(.5,1).setDepth(n.y*32+32).setInteractive({useHandCursor:true});
       if (!colorful) sprite.setTint(({mira:0xe2b779,oren:0x9cd6bc,borin:0xd3a4a2})[n.id]);
-      sprite.on('pointerdown',talk); this.objects.push(sprite);
+      sprite.on('pointerdown',talk); this.objects.push(sprite); this.town.registerInterior(sprite,n);
       const label = this.add.text(n.x*32+16,n.y*32-20,npcs[n.id].name,{fontFamily:'monospace',fontSize:'11px',color:'#efe2ac',backgroundColor:'#213b32'}).setOrigin(.5).setDepth(n.y*32+34).setInteractive({useHandCursor:true});
-      label.on('pointerdown',talk); this.objects.push(label);
+      label.on('pointerdown',talk); this.objects.push(label); this.town.registerInterior(label,n);
     }
-    if (colorful && map.id === 'vareon') this.objects.push(this.add.image(24*32+16,21*32+32,art('well')).setOrigin(.5,1).setDepth(21*32+33));
+
     for (const l of landmarks.filter(l => l.mapId === map.id)) {
       // Original native-size geometric sign, readable in both graphics modes.
       const sign = this.add.graphics().setDepth(l.y*32+32);
@@ -209,6 +219,7 @@ class World extends Phaser.Scene {
     if (!playing) { this.effects.clear(); ui.hud.dataset.effects = '0'; return; }
     const changedMap = this.mapId !== s.mapId;
     if (newWorld || changedMap || this.colorful !== colorful) this.renderMap(maps.find(m => m.id === s.mapId)!);
+    ui.hud.dataset.building = this.town.update(s.player);
     const position = `${s.player.x},${s.player.y}`;
     if (position !== this.playerPosition) {
       const first = this.playerPosition === '';
@@ -318,6 +329,11 @@ function updateUI(s: Snapshot): void {
     if (!target) ui.targetLabel.textContent = `${explorationHint} · ${gateHint}`;
   }
   if (nearbyLandmark && !target) ui.targetLabel.textContent = `${nearbyLandmark.name} · F / Rozmowa: zbadaj · ${s.exploration.found.includes(nearbyLandmark.id) ? 'odkryte' : 'niezbadane'}`;
+  if(s.dialog===guidedNpc)guidedNpc=undefined;
+  if(adventure&&s.mapId==='vareon'&&guidedNpc) {
+    const npc=map.npcs.find(n=>n.id===guidedNpc)!;
+    ui.targetLabel.textContent=`${npcs[npc.id].name} · ${npcs[npc.id].role} ${npc.x>s.player.x?'→':npc.x<s.player.x?'←':''}${npc.y>s.player.y?'↓':npc.y<s.player.y?'↑':''} · ${distance(npc)} kratek · F: rozmowa`;
+  }
   ui.complete.hidden = !s.complete || completionDismissed;
   if (!ui.complete.hidden) resetInput();
   if (bagDialog.open) renderBag(s);
@@ -329,7 +345,7 @@ function updateUI(s: Snapshot): void {
   ui.hud.dataset.graphics = colorful ? 'colorful' : 'classic';
 }
 function activate(simulation: Simulation): void {
-  chooseGraphics(); worldEpoch++;
+  chooseGraphics(); worldEpoch++; guidedNpc=undefined;
   delete ui.hud.dataset.combat; delete ui.hud.dataset.combatId;
   unsubscribe?.(); gateway?.disconnect(); resetInput();
   completionDismissed = false; ui.complete.hidden = true;
@@ -394,6 +410,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => { if (adventure) saveNow(); clearInterval(movementTimer); gateway?.disconnect(); game.destroy(true); });
 
 function renderBag(s: Snapshot): void {
+  element('#city-guide').hidden=!adventure;cityGuide?.update(s.mapId,s.player);
   const signature = JSON.stringify([s.inventory, s.equipment, s.gold, s.exp, s.exploration]);
   if (signature === bagSignature) return;
   bagSignature = signature;
@@ -508,7 +525,7 @@ function saveNow(explicitRecovery = false): void {
   } catch { element('#save-status').textContent = 'Nie udało się zapisać. Wyeksportuj zapis lub zgłoś błąd.'; }
 }
 function persistentSignature(data: SaveData): string {
-  return JSON.stringify([data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
+  return JSON.stringify([data.cityRevision,data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
 }
 function autosave(s: Snapshot): void {
   const economy = JSON.stringify([s.gold,s.quest.status,s.exploration]);

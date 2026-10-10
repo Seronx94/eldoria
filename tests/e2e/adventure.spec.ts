@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import {walkInTown} from './town-navigation';
 test.use({ actionTimeout:10000 });
 async function move(page:Page,key:string,count=1) {
   for(let i=0;i<count;i++) { await page.waitForTimeout(220); await page.keyboard.press(key); }
@@ -11,7 +12,7 @@ async function begin(page:Page) {
 async function interact(page:Page) { await page.getByRole('button',{name:/Rozmowa \/ Przejdź/}).click(); }
 async function close(page:Page) { await page.getByRole('button',{name:'Zakończ rozmowę'}).click(); }
 test('adventure: accept, five real kills, reward, heal, shop and reload',async({page},info)=>{
-  test.setTimeout(180000);
+  test.setTimeout(240000);
   const errors:string[]=[]; page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error') errors.push(m.text());});
   page.on('response',r=>{if(r.status()>=400) errors.push(`${r.status()} ${r.url()}`);});
@@ -37,15 +38,15 @@ test('adventure: accept, five real kills, reward, heal, shop and reload',async({
   await expect(page.locator('#objective')).toHaveText('✓'); await expect(page.locator('#npc-message')).toContainText('20 złota');
   await expect(page.getByRole('button',{name:'Odbierz nagrodę'})).toHaveCount(0);
   await page.screenshot({path:info.outputPath('reward.png')}); await close(page);
-  await move(page,'A'); await interact(page); await expect(page.locator('#npc-name')).toHaveText('Oren');
+  await walkInTown(page,12,23); await interact(page); await expect(page.locator('#npc-name')).toHaveText('Oren');
   await page.getByRole('button',{name:'Przywróć zdrowie i manę'}).click(); await expect(page.locator('#hp-label')).toHaveText('110 HP · 55 MP'); await close(page);
-  await move(page,'S',2); await move(page,'D',3); await interact(page); await expect(page.locator('#npc-name')).toHaveText('Borin');
+  await walkInTown(page,36,22); await interact(page); await expect(page.locator('#npc-name')).toHaveText('Borin');
   await expect(page.locator('#npc-text')).toContainText('Twoje złoto: 25'); await page.getByRole('button',{name:/Kup miksturę/}).click();
   await expect(page.locator('#npc-text')).toContainText('Twoje złoto: 20'); await close(page);
   await page.reload(); await page.getByRole('button',{name:'Wznów przygodę'}).click();
-  await expect(page.locator('#hud')).toHaveAttribute('data-position','26,14'); await expect(page.locator('#objective')).toHaveText('✓');
+  await expect(page.locator('#hud')).toHaveAttribute('data-position','36,22'); await expect(page.locator('#objective')).toHaveText('✓');
   await expect(page.locator('#potion-count')).toContainText('6 SZT.'); await expect(page.locator('#rewards')).toContainText('20 złota');
-  await move(page,'A',2); await move(page,'W',2); await interact(page); await expect(page.locator('#npc-text')).toContainText('nagroda odebrana');
+  await walkInTown(page,24,12); await interact(page); await expect(page.locator('#npc-text')).toContainText('nagroda odebrana');
   await expect(page.getByRole('button',{name:'Odbierz nagrodę'})).toHaveCount(0); expect(errors).toEqual([]);
 });
 test('five adventure journeys retain gates, creature limits and one movement per press',async({page})=>{

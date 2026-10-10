@@ -1,4 +1,4 @@
-import { items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { legacyTownPositionAllowed, items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
 import { commandSchema, nameSchema, type Command, type Direction } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
@@ -236,7 +236,7 @@ export class Simulation {
     const s = this.state, now = this.time;
     const remaining = (last: number, period: number) => Math.max(0, Math.ceil(period - (now-last)));
     return saveSchema.parse({
-      version: 1, mode: 'offline', name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
+      version: 1, cityRevision: this.maps.find(m=>m.id==='vareon')?.layoutRevision ?? 1, mode: 'offline', name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
       level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, inventory: s.inventory, equipment: s.equipment,
       cooldowns: { move: remaining(this.lastMove,rules.stepMs), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
       maps: [...this.creatureMaps].map(([mapId, creatures]) => ({ mapId, creatures: creatures.map(c => ({ id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, attackIn:remaining(c.lastAttack,rules.monsterAttackMs), moveIn:remaining(c.lastMove,rules.stepMs*2), respawnIn: c.hp === 0 ? remaining(c.diedAt,rules.respawnMs) : 0 })) })),
@@ -252,7 +252,14 @@ export class Simulation {
       const map = maps.find(m => m.id === mapId);
       return map && p.x < map.width && p.y < map.height && map.collision[p.y*map.width+p.x] === 0 && !map.npcs.some(n => distance(n,p) === 0);
     };
-    if (!walkable(data.mapId, data.player)) throw new Error('Pozycja zapisu w ścianie');
+    let relocated = false;
+    const revision = maps.find(m=>m.id==='vareon')?.layoutRevision ?? 1;
+    if (data.cityRevision > revision) throw new Error('Zapis wymaga nowszej mapy miasta');
+    if (!walkable(data.mapId,data.player)) {
+      if (data.mapId==='vareon' && data.cityRevision < revision && legacyTownPositionAllowed(data.player)) {
+        data.player = {...maps.find(m=>m.id==='vareon')!.spawns.entry!}; relocated = true;
+      } else throw new Error('Pozycja zapisu w ścianie');
+    }
     sim.creatureMaps.clear();
     for (const saved of data.maps) {
       const map = maps.find(m => m.id === saved.mapId);
@@ -268,7 +275,7 @@ export class Simulation {
       sim.creatureMaps.set(map.id,creatures);
     }
     if (new Set(data.loot.map(l => l.id)).size !== data.loot.length || data.loot.some(l => !walkable(l.mapId,l))) throw new Error('Nieprawidłowy łup');
-    sim.state = { ...sim.state, name:data.name, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:'Wznowiono przygodę offline.' };
+    sim.state = { ...sim.state, name:data.name, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:relocated ? 'Vareon przebudowano — wznowiono przy wartowni. Postęp i wyposażenie zachowano.' : 'Wznowiono przygodę offline.' };
     sim.lastMove = now+data.cooldowns.move-rules.stepMs;
     sim.lastAttack = now+data.cooldowns.attack-rules.attackMs;
     sim.lastSpell = now+data.cooldowns.spell-rules.spellMs;

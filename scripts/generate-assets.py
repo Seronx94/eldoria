@@ -4,6 +4,7 @@ import struct
 import zlib
 import json
 import shutil
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'assets/source'
@@ -131,6 +132,8 @@ print('Generated original placeholder sprites and two editable sample maps.')
 
 # Adventure maps reuse the reviewed provisional palette, with reproducible Tiled sources.
 for map_id, width, height in [('vareon',48,48),('forest',64,64)]:
+    if map_id == 'vareon':
+        continue  # The detailed city is owned by generate-town.mjs.
     town = map_id == 'vareon'
     cx = 24 if town else 32
     entry = (cx,12) if town else (cx,58)
@@ -180,3 +183,5 @@ for map_id, width, height in [('vareon',48,48),('forest',64,64)]:
     (SOURCE/(map_id+'.tmj')).write_text(text)
     (PUBLIC/(map_id+'.json')).write_text(text)
 print('Generated Vareon 48x48 and forest 64x64 with NPC and monster markers.')
+
+subprocess.run(['node',str(ROOT / 'scripts/generate-town.mjs')],check=True)

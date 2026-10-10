@@ -10,7 +10,7 @@ export const explorationSchema = z.object({
   found: z.array(z.enum(['trail', 'camp', 'stone'])).max(3),
 }).strict().refine(q => new Set(q.found).size === q.found.length && (q.status === 'available' ? q.found.length === 0 : q.status === 'active' ? q.found.length < 3 : q.found.length === 3), 'Nieprawidłowy postęp eksploracji');
 export const saveSchema = z.object({
-  version: z.literal(1), mode: z.literal('offline'), name: nameSchema,
+  version: z.literal(1), cityRevision: z.number().int().min(1).max(2).default(1), mode: z.literal('offline'), name: nameSchema,
   mapId: z.enum(['vareon', 'forest']), player: point, direction: directionSchema,
   level: z.number().int().min(1).max(100), hp: z.number().int().min(1).max(1090), mana: integer(545),
   exp: integer(9999), gold: integer(10000000), kills: integer(10000000),

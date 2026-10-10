@@ -13,7 +13,9 @@ export const monsters = {
   wolf: { name: 'Wilk', hp: 70, damage: 10, defense: 2, exp: 25, gold: 3, aggressive: true },
 } as const;
 export type MonsterKind = keyof typeof monsters;
-export { importMap, validateMaps, type WorldMap, type RawMap } from './maps';
+export { importMap, validateMaps, type WorldMap, type RawMap, type TownBuilding, type TownProp } from './maps';
 
 export { items, inventoryRules, type ItemId } from './items';
 export { npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId } from './adventure';
+
+export {legacyTownPositionAllowed} from './town';

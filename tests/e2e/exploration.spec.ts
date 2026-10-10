@@ -34,7 +34,7 @@ async function walkTo(page:Page,x:number,y:number) {
 }
 test('old trail: real exploration, chronicle, reward once and saved discoveries',async({page},info)=>{
   // Full journey, two reloads and screenshots; this is a functional test, not an FPS budget.
-  test.setTimeout(120000);
+  test.setTimeout(180000);
   const errors:string[]=[];
   page.on('pageerror',e=>errors.push(e.message)); page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
@@ -70,6 +70,8 @@ test('old trail: real exploration, chronicle, reward once and saved discoveries'
   await expect(page.getByRole('button',{name:'Odbierz nagrodę za szlak'})).toHaveCount(0);
   await expect(page.getByRole('button',{name:'Przyjmij zadanie',exact:true})).toBeVisible();
   await page.locator('#close-npc').click();await page.locator('#bag-button').click();
+  // Inspect the guide controls while their disclosure is open, alongside inventory controls.
+  await page.locator('#city-guide summary').click();
   for(const button of await page.locator('#bag button').all()) { const b=await button.boundingBox();expect(b?.height).toBeGreaterThanOrEqual(48); }
   expect(errors).toEqual([]);
 });

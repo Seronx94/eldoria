@@ -45,3 +45,11 @@ Miecz, ślad cięcia, pocisk/rozbłysk Iskry i ślady ataku potwora są autorski
 ## Oznaczenia szlaku 0.1.3
 
 Trzy oznaczenia miejsc odkryć są autorską prostą grafiką proceduralną w `apps/client/src/main.ts` (Phaser Graphics, natywne piksele). Nazwy i opisy historii napisano dla Eldorii w `packages/content/src/adventure.ts`. Bez zewnętrznych assetów, zakupów i kopiowania cudzych materiałów; grafika oznaczeń pozostaje robocza.
+
+## Zestaw miejski 0.1.4
+
+`assets/design/town-atlas.png` — oryginalny atlas wygenerowany przez OpenAI image_gen dla Eldorii z własnym `colorful-world-atlas.png` jako referencją. Bruk, posadzki, ściany, dachówki, drzwi, meble, stragany i fontanna; nie wykorzystano map, sprite’ów ani innych materiałów Tibii/Thais. Te same warunki użycia co kolorowego zestawu powyżej: materiał dla właściciela projektu, do edycji i wykorzystania w Eldorii zgodnie z warunkami OpenAI, bez deklaracji wyłączności i bez zakupów. Oprawa miejska jest robocza, do oceny testera.
+
+Manifest wycięć i natywnych rozmiarów: `assets/design/town-atlas.json`. `npm run assets:import-town` wymaga ImageMagick 7; mechaniczne wycięcia, próg alfa 50%, nearest-neighbour i usunięcie metadanych. Eksporty `assets/source/town/*.png` oraz identyczne `apps/client/public/assets/town/*.png` są zapisane w repozytorium; uruchomienie i build nie wymagają ImageMagick. Kafelki 32×32, meble i dekoracje w natywnych wielokrotnościach pikseli, skalowanie świata całkowite.
+
+Układ Vareon, nazwy budynków i plan SVG napisano dla Eldorii. Edytowalne źródło Tiled: `assets/source/vareon.tmj`, odtwarzalne polecenie `npm run maps:generate-town`. Warstwy CityGround/CityWalls mają osadzone kolekcje tilesetów; Buildings opisuje bryły i wejścia, TownProps — meble i ich footprint. Generator podstawowych assetów również odtwarza nowy układ miasta; nie generuje atlasu image_gen.

@@ -1,0 +1,196 @@
+{
+  "assets": [
+    {
+      "name": "paving",
+      "rect": [
+        43,
+        43,
+        225,
+        225
+      ],
+      "width": 32,
+      "height": 32,
+      "trim": false
+    },
+    {
+      "name": "stone-floor",
+      "rect": [
+        359,
+        45,
+        222,
+        220
+      ],
+      "width": 32,
+      "height": 32,
+      "trim": false
+    },
+    {
+      "name": "wood-floor",
+      "rect": [
+        675,
+        43,
+        217,
+        223
+      ],
+      "width": 32,
+      "height": 32,
+      "trim": false
+    },
+    {
+      "name": "wall-h",
+      "rect": [
+        991,
+        107,
+        180,
+        120
+      ],
+      "width": 32,
+      "height": 32,
+      "trim": false
+    },
+    {
+      "name": "wall-v",
+      "rect": [
+        127,
+        377,
+        60,
+        182
+      ],
+      "width": 32,
+      "height": 32,
+      "trim": false
+    },
+    {
+      "name": "roof",
+      "rect": [
+        352,
+        344,
+        231,
+        245
+      ],
+      "width": 32,
+      "height": 32,
+      "trim": false
+    },
+    {
+      "name": "door",
+      "rect": [
+        640,
+        322,
+        290,
+        292
+      ],
+      "width": 64,
+      "height": 64,
+      "trim": true
+    },
+    {
+      "name": "counter",
+      "rect": [
+        942,
+        383,
+        296,
+        180
+      ],
+      "width": 64,
+      "height": 48,
+      "trim": true
+    },
+    {
+      "name": "altar",
+      "rect": [
+        24,
+        637,
+        275,
+        280
+      ],
+      "width": 64,
+      "height": 80,
+      "trim": true
+    },
+    {
+      "name": "bookcase",
+      "rect": [
+        349,
+        634,
+        258,
+        278
+      ],
+      "width": 48,
+      "height": 64,
+      "trim": true
+    },
+    {
+      "name": "forge",
+      "rect": [
+        642,
+        626,
+        294,
+        298
+      ],
+      "width": 64,
+      "height": 80,
+      "trim": true
+    },
+    {
+      "name": "bed",
+      "rect": [
+        1007,
+        638,
+        177,
+        285
+      ],
+      "width": 32,
+      "height": 64,
+      "trim": true
+    },
+    {
+      "name": "lamp",
+      "rect": [
+        64,
+        926,
+        218,
+        324
+      ],
+      "width": 32,
+      "height": 80,
+      "trim": true
+    },
+    {
+      "name": "crates",
+      "rect": [
+        326,
+        981,
+        288,
+        249
+      ],
+      "width": 48,
+      "height": 48,
+      "trim": true
+    },
+    {
+      "name": "stall",
+      "rect": [
+        640,
+        932,
+        297,
+        315
+      ],
+      "width": 80,
+      "height": 80,
+      "trim": true
+    },
+    {
+      "name": "fountain",
+      "rect": [
+        949,
+        945,
+        299,
+        294
+      ],
+      "width": 96,
+      "height": 96,
+      "trim": true
+    }
+  ]
+}

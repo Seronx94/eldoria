@@ -85,17 +85,17 @@ describe('quest and shop atomicity', () => {
     expect(sim.snapshot()).toMatchObject({gold:40,exp:50,potions:2,quest:{status:'claimed'}});
   });
   it('checks shop proximity, gold, inventory, quantities and repeated sales', () => {
-    const data=readySave([{itemId:'chitin',quantity:1}]); data.player={x:26,y:14}; data.gold=4;
+    const data=readySave([{itemId:'chitin',quantity:1}]); data.player={x:36,y:22}; data.gold=4;
     const sim=Simulation.restore(maps(),data,{now:()=>0}); sim.send({type:'Buy',quantity:1}); expect(sim.snapshot().gold).toBe(4);
     sim.send({type:'Interact',npcId:'borin'}); sim.send({type:'Buy',quantity:1}); expect(sim.snapshot().gold).toBe(4);
     sim.send({type:'Sell',itemId:'chitin',quantity:1}); sim.send({type:'Sell',itemId:'chitin',quantity:1}); expect(sim.snapshot().gold).toBe(6);
     sim.send({type:'Buy',quantity:-1}); sim.send({type:'Buy',quantity:100}); expect(sim.snapshot().gold).toBe(6);
     sim.send({type:'Buy',quantity:1}); sim.send({type:'Buy',quantity:1}); expect(sim.snapshot()).toMatchObject({gold:1,potions:1});
-    const full=readySave(Array.from({length:20},()=>({itemId:'sword',quantity:1}))); full.player={x:26,y:14};
+    const full=readySave(Array.from({length:20},()=>({itemId:'sword',quantity:1}))); full.player={x:36,y:22};
     const fullSim=Simulation.restore(maps(),full,{now:()=>0}); fullSim.send({type:'Interact',npcId:'borin'}); fullSim.send({type:'Buy',quantity:1}); expect(fullSim.snapshot().gold).toBe(20);
   });
   it('Oren heals without taking gold or potions', () => {
-    const data=readySave(); data.player={x:23,y:12}; data.hp=30; data.mana=1;
+    const data=readySave(); data.player={x:12,y:23}; data.hp=30; data.mana=1;
     const sim=Simulation.restore(maps(),data,{now:()=>0}); sim.send({type:'Interact',npcId:'oren'}); sim.send({type:'Heal'});
     expect(sim.snapshot()).toMatchObject({hp:100,mana:50,potions:3,gold:20});
   });

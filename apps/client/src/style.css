@@ -760,3 +760,9 @@ button:disabled { opacity:.5; cursor:default; }
 
 #chronicle { padding:12px 0; line-height:1.6; }
 #chronicle summary { min-height:48px; cursor:pointer; padding:12px; }
+
+#city-guide { margin-bottom:12px; line-height:1.5; }
+#city-guide summary { min-height:48px; padding:12px; cursor:pointer; }
+#city-guide-content svg { display:block; width:min(260px,70vw); max-height:45vh; margin:12px auto; image-rendering:pixelated; }
+.city-guide-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.city-guide-actions button { min-height:48px; padding:8px 14px; }

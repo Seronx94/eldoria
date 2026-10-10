@@ -2,6 +2,7 @@ import { z } from 'zod';
 const property = z.object({ name: z.string(), value: z.string() });
 const objectSchema = z.object({
   id: z.number().int().positive(), name: z.string(), x: z.number().int().nonnegative(), y: z.number().int().nonnegative(),
+  width: z.number().int().nonnegative().optional(), height: z.number().int().nonnegative().optional(),
   properties: z.array(property).default([])
 });
 const layer = z.object({ name: z.string(), type: z.enum(['tilelayer', 'objectgroup']), data: z.array(z.number().int().nonnegative()).optional(), objects: z.array(objectSchema).optional() });
@@ -10,11 +11,15 @@ const schema = z.object({
   width: z.number().int().min(3).max(256), height: z.number().int().min(3).max(256),
   tilewidth: z.literal(32), tileheight: z.literal(32),
   properties: z.array(property), layers: z.array(layer),
-  tilesets: z.array(z.object({ firstgid: z.literal(1), tilecount: z.literal(4), columns: z.literal(4), image: z.string(), tilewidth: z.literal(32), tileheight: z.literal(32) })).length(1)
+  tilesets: z.tuple([z.object({ firstgid: z.literal(1), tilecount: z.literal(4), columns: z.literal(4), image: z.string(), tilewidth: z.literal(32), tileheight: z.literal(32) })]).rest(z.object({firstgid:z.number().int(),name:z.enum(['town-ground','town-walls']),tilewidth:z.literal(32),tileheight:z.literal(32),tilecount:z.number().int(),columns:z.literal(0),tiles:z.array(z.object({id:z.number().int(),image:z.string(),imagewidth:z.literal(32),imageheight:z.literal(32)}))}))
 });
 export type RawMap = z.infer<typeof schema>;
 export interface Point { x: number; y: number }
+export const townPropKinds = ['counter','altar','bookcase','forge','bed','lamp','crates','stall','fountain'] as const;
+export interface TownBuilding extends Point { id:string; label:string; purpose:'guard'|'temple'|'shop'|'inn'|'home'|'workshop'; width:number; height:number; doors:Point[] }
+export interface TownProp extends Point {width:number;kind:typeof townPropKinds[number];buildingId?:string}
 export interface WorldMap {
+  layoutRevision:number; cityGround:number[]; cityWalls:number[]; buildings:TownBuilding[]; townProps:TownProp[];
   id: string; combatAllowed: boolean; width: number; height: number; ground: number[]; details: number[]; above: number[]; collision: number[];
   spawns: Record<string, Point>;
   portals: (Point & { id: string; targetMapId: string; targetSpawnId: string })[];
@@ -64,9 +69,39 @@ export function importMap(input: unknown): WorldMap {
   const monsterSpawns = objects('Spawns').filter(o => o.properties.some(p => p.name === 'monsterId')).map(o => ({ ...point(o), id: o.name, kind: z.enum(['rat', 'beetle', 'wolf']).parse(properties(o.properties, 'monsterId')) }));
   if (monsterSpawns.length > 12) throw new Error(`${id}: limit 12 potworów`);
   const decorations = objects('Decorations').map(o => ({ ...point(o), kind: z.enum(['tree', 'house']).parse(o.name) }));
+  const optionalObjects = (name:string) => {
+    const layers=raw.layers.filter(l=>l.name===name);
+    if(layers.length>1 || layers[0] && layers[0].type!=='objectgroup') throw new Error(`${id}: nieprawidłowa warstwa ${name}`);
+    return layers[0]?.objects ?? [];
+  };
+  const cityLayer = (name:string,min:number,max:number) => {
+    const matches=raw.layers.filter(l=>l.name===name);
+    if(matches.length===0) return Array<number>(raw.width*raw.height).fill(0);
+    const l=matches[0];
+    if(matches.length!==1 || l?.type!=='tilelayer' || l.data?.length!==raw.width*raw.height || l.data.some(v=>v!==0&&(v<min||v>max))) throw new Error(`${id}: nieprawidłowe kafelki ${name}`);
+    return l.data;
+  };
+  const buildings=optionalObjects('Buildings').map(o=>{
+    const p=point(o), w=(o.width??0)/32, h=(o.height??0)/32;
+    if(!Number.isInteger(w)||!Number.isInteger(h)||w<5||h<5||w>24||h>24||p.x+w>raw.width||p.y+h>raw.height) throw new Error(`${id}: nieprawidłowy budynek ${o.name}`);
+    const doors=[{x:p.x+Math.floor(w/2),y:p.y+h-1}];
+    if(o.properties.find(p=>p.name==='passage')?.value==='true') doors.push({x:p.x+Math.floor(w/2),y:p.y});
+    return {...p,id:o.name,label:properties(o.properties,'label'),purpose:z.enum(['guard','temple','shop','inn','home','workshop']).parse(properties(o.properties,'purpose')),width:w,height:h,doors};
+  });
+  const townProps=optionalObjects('TownProps').map(o=>({...point(o),kind:z.enum(townPropKinds).parse(o.name),width:z.coerce.number().int().min(1).max(3).parse(o.properties.find(p=>p.name==='footprintWidth')?.value??1),buildingId:o.properties.find(p=>p.name==='buildingId')?.value}));
+  const cityGround=cityLayer('CityGround',5,7),cityWalls=cityLayer('CityWalls',8,9);
+  if(raw.tilesets.length>1) {
+    const expected=[['town-ground',5,['paving','stone-floor','wood-floor']],['town-walls',8,['wall-h','wall-v']]] as const;
+    if(raw.tilesets.length!==3) throw new Error(`${id}: nieprawidłowe tilesety miasta`);
+    for(let i=0;i<expected.length;i++) {
+      const [name,firstgid,images]=expected[i]!, ts=raw.tilesets[i+1];
+      if(!ts||!('tiles' in ts)||ts.name!==name||ts.firstgid!==firstgid||ts.tilecount!==images.length||ts.tiles.length!==images.length||ts.tiles.some((t,index)=>t.id!==index||t.image!==`town/${images[index]}.png`)) throw new Error(`${id}: nieprawidłowe tilesety miasta`);
+    }
+  } else if(cityGround.some(Boolean)||cityWalls.some(Boolean)||buildings.length||townProps.length) throw new Error(`${id}: brak tilesetów miasta`);
+  const layoutRevision=Number(z.enum(['1','2']).parse(raw.properties.find(p=>p.name==='layoutRevision')?.value??'1'));
   const image = raw.tilesets[0]!.image;
   if (image.startsWith('/') || image.includes('..') || image.includes(':') || !image.endsWith('.png')) throw new Error(`${id}: obraz musi być względnym PNG`);
-  return { id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, npcs, monsterSpawns, image };
+  return { layoutRevision,cityGround,cityWalls,buildings,townProps,id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, npcs, monsterSpawns, image };
 }
 export function validateMaps(maps: WorldMap[], images: ReadonlySet<string>): void {
   const ids = new Set(maps.map(m => m.id));
@@ -75,6 +110,14 @@ export function validateMaps(maps: WorldMap[], images: ReadonlySet<string>): voi
     if (!images.has(map.image)) throw new Error(`${map.id}: brak PNG ${map.image}`);
     for (const spawn of Object.values(map.spawns)) {
       if (map.collision[spawn.y * map.width + spawn.x] !== 0) throw new Error(`${map.id}: spawn w ścianie`);
+    }
+    if(new Set(map.buildings.map(b=>b.id)).size!==map.buildings.length || map.buildings.some(b=>!b.id)) throw new Error(`${map.id}: powtórzony budynek`);
+    for(const b of map.buildings) {
+      if(b.doors.some(p=>map.collision[p.y*map.width+p.x]!==0)) throw new Error(`${map.id}: zablokowane drzwi ${b.id}`);
+      if(map.buildings.some(other=>other!==b&&b.x<other.x+other.width&&b.x+b.width>other.x&&b.y<other.y+other.height&&b.y+b.height>other.y)) throw new Error(`${map.id}: budynki nachodzą na siebie`);
+    }
+    for(const p of map.townProps) {
+      if(p.buildingId && !map.buildings.some(b=>b.id===p.buildingId&&p.x>b.x&&p.x+p.width-1<b.x+b.width-1&&p.y>b.y&&p.y<b.y+b.height-1)) throw new Error(`${map.id}: wyposażenie poza budynkiem`);
     }
     const positions = new Set<string>();
     for (const actor of [...map.npcs, ...map.monsterSpawns]) {

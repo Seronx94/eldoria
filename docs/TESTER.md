@@ -12,10 +12,18 @@ npm ci
 npm run dev
 ```
 
+Jeśli projekt pobrano jako ZIP (`eldoria-main`), pomiń `git pull`. Aktualizację uzyskasz, pobierając nowy ZIP z gałęzi main; po rozpakowaniu uruchom `npm ci`.
+
 Otwórz adres wypisany przez Vite. Aby grać na telefonie podłączonym do **tej samej sieci Wi-Fi**:
 
 ```sh
 npm run dev:lan
+```
+
+Na Windowsie `dev:lan` uruchamia Vite bezpośrednio przez bieżący Node. W starszym ZIP błąd `spawn npm ENOENT` oznacza wadliwy launcher; można uruchomić tę samą grę bez niego:
+
+```bat
+npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 ```
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.

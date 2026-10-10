@@ -43,8 +43,9 @@ magick([...frames,'-append',resolve(source,'wanderer.png')]); copyFileSync(resol
 for(let i=0;i<3;i++) sprite(actors,manifest.actors[i][3],['mira','oren','borin'][i],32,48);
 const monsterAtlas=resolve(root,'assets/design/colorful-monsters-atlas.png');
 for(const [kind,rects] of Object.entries(manifest.monsterWalk)){
- const cells=rects.map((rect,index)=>sprite(monsterAtlas,rect,`${kind}-walk-${index}`,32,32,true,false));
- magick([...cells,'+append',resolve(source,`${kind}-walk.png`)]);
+ const cells=rects.map((rect,index)=>sprite(kind==='beetle'&&index<3?resolve(root,'assets/design/colorful-beetle-front-atlas.png'):monsterAtlas,kind==='beetle'&&index<3?manifest.beetleFront[index]:rect,`${kind}-walk-${index}`,32,32,true,false));
+ for(const [index,rect] of manifest.monsterBack[kind].entries()) cells.push(sprite(resolve(root,'assets/design/colorful-monsters-back-atlas.png'),rect,`${kind}-back-${index}`,32,32,true,false));
+ magick([...cells,'+append','-strip',resolve(source,`${kind}-walk.png`)]);
  copyFileSync(resolve(source,`${kind}-walk.png`),resolve(output,`${kind}-walk.png`));
 }
 // Individual intermediate character frames are useful for source inspection but are not runtime exports.

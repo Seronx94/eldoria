@@ -1,4 +1,4 @@
-# Eldoria 0.1.7 — walka, pościg i dachy
+# Eldoria 0.1.8 — dachy przy podejściu, potwory i fontanna
 
 Pierwsza przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
@@ -28,14 +28,20 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
 
+## Trzy kroki testu nowych poprawek
+
+1. Oddal się od wartowni na południe o pięć kroków. Wróć dwa kroki: dach znika jeszcze na ulicy, widać wnętrze i Mirę. Sprawdź to też przy bocznej ścianie świątyni lub sklepu. Oddal się ponad dwie kratki od najbliższej ściany: dach wraca. Nie musisz wchodzić do środka. Ściany nadal blokują przejście, rozmowa wymaga sąsiedztwa NPC.
+2. Wybierz kolorową grafikę i wyjdź do lasu. Obejdź szczura, żuka i wilka tak, żeby ścigały Cię z góry, z dołu i z boków; używaj mikstury w razie potrzeby. W biegu na północ widać grzbiet i ogon, na południe głowę. Żuk kieruje rogi w stronę biegu. Po zatrzymaniu nie powinny obracać się nagle do przodu.
+3. Podejdź pod fontannę na rynku (na południe od wartowni). Wokół kamiennej misy powinien być bruk, bez kwadratowej plamy wody. Obejdź fontannę: misa pozostaje przeszkodą, na bruk obok można wejść.
+
 ## Cztery kroki testu walki i dachów
 
-1. W przygodzie wyjdź z wartowni na południe: dach powinien zakryć wnętrze, a sąsiednie dachy pozostać widoczne. Wejdź z powrotem: znika tylko dach wartowni, widać Mirę. Powtórz przy świątyni lub sklepie.
+1. W przygodzie wyjdź z wartowni na południe: dach wraca dopiero po oddaleniu ponad dwie kratki od ściany. Podejdź z powrotem: dach znika przed wejściem, widać Mirę. Powtórz przy świątyni lub sklepie.
 2. Wyjdź północną bramą do lasu, nie zaznaczając potwora. Podejdź na kilka kratek do szczura lub żuka: powinien sam podejść i zaatakować. Przytrzymaj Miecz na telefonie albo spację na komputerze. Kolejne zamachy trafiają pobliskiego przeciwnika; po puszczeniu atak się zatrzymuje. Cel / T pozostaje opcjonalny.
 3. Dotknij Iskry bez zaznaczania: obejrzyj krąg pod postacią, iskry, lecący pocisk i rozbłysk. W pustym miejscu najpierw zmień kierunek patrzenia krokiem: czar poleci w tę stronę, kosztując 8 many. W mieście walka pozostaje zablokowana.
 4. Trzymaj gałkę jednym palcem i Miecz drugim; puść tylko Miecz, potem gałkę. Obróć telefon, otwórz plecak i wróć do gry — akcje nie powinny same trwać. Uciekając do miasta, sprawdź zatrzymanie pościgu. Zapisz, odśwież i wznów; zakończone efekty nie mają się powtarzać.
 
-Podglądy produkcyjne: [dachy z ulicy](screenshots/exterior-roofs-mobile.png), [Iskra w trakcie rzucania](screenshots/iskra-cast-mobile.png). Emulacja mobilna, nie fizyczny telefon.
+Podglądy: [fontanna na bruku](screenshots/fountain-paving-mobile.png), [wilk od tyłu](screenshots/wolf-north-mobile.png), [dachy z daleka](screenshots/exterior-roofs-mobile.png), [podejście przed wejściem](screenshots/approaching-roof-mobile.png). Fontanna i dachy: produkcyjny build 0.1.8; wilk: kontrola przeglądarkowa 0.1.8. [Iskra w trakcie rzucania](screenshots/iskra-cast-mobile.png): produkcja 0.1.7. Emulacja mobilna, nie fizyczny telefon.
 
 ## Sprawdź ciągły świat
 

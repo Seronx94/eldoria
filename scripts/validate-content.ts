@@ -3,6 +3,10 @@ import { resolve } from 'node:path';
 import { importMap, validateMaps, landmarks, landmarksOnMap } from '@eldoria/content';
 const source = resolve('assets/source');
 const output = resolve('apps/client/public/assets');
+for(const kind of ['rat','beetle','wolf'])for(const directory of [source,output]){
+  const png=readFileSync(resolve(directory,'styles/colorful',`${kind}-walk.png`));
+  if(png.readUInt32BE(16)!==288||png.readUInt32BE(20)!==32)throw new Error(`Brak dziewięciu klatek kierunkowych potwora: ${kind}`);
+}
 const town = JSON.parse(readFileSync(resolve('assets/design/town-atlas.json'), 'utf8')) as { assets: { name: string; width: number; height: number }[] };
 for (const asset of town.assets) {
   for (const directory of [source, output]) {

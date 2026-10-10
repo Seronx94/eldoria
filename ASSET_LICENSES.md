@@ -65,3 +65,9 @@ Autorskie sześć ikon SVG na siatce 32×32 w `apps/client/src/action-icons.ts`:
 ## Efekty i dachy 0.1.7
 
 Krąg rzucania Iskry, orbitujące iskry, kalenice i cieniowanie połaci są autorskimi rysunkami proceduralnymi w `combat-effects.ts` oraz `town-view.ts`, korzystającymi z istniejących materiałów Eldorii. Nie importowano zewnętrznych assetów ani materiałów Tibii/Kakele. Na tych samych zasadach wkładu Codexa dla projektu; oprawa czeka na ocenę testera.
+
+## Kierunki potworów 0.1.8
+
+Autorskie `assets/design/colorful-monsters-back-atlas.png` (1254×1254) i `colorful-beetle-front-atlas.png` (2172×724) wygenerowano przez OpenAI image_gen z własnym colorful-monsters-atlas.png jako referencją. Pierwszy dodaje trzy klatki od tyłu dla każdego gatunku; drugi poprawia trzy południowe klatki żuka (głowa/rogi w dół). Te same warunki użycia co wcześniejsze autorskie atlasy; brak materiałów innych gier. Wycięcia w monsterBack i beetleFront w colorful-atlas.json. Import mechaniczny, nearest-neighbour, alfa i natywne klatki 32×32.
+
+Bieżące rat-walk.png, beetle-walk.png i wolf-walk.png mają **288×32, dziewięć klatek**: trzy z przodu, trzy z prawego boku, trzy od tyłu. Lewy bok jest odbiciem prawego. Zastępują runtime’owe sześcioklatkowe arkusze opisane w historycznym etapie 0.1.2. Fontanna zachowuje własną grafikę z atlasu miasta; poprawiono podłoże w edytowalnych mapach, bez modyfikowania PNG i bez dodawania obcych assetów.

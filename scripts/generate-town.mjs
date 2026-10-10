@@ -47,7 +47,8 @@ const props=[
 ];
 for(const [kind,x,y,,w] of props) {
   for(let dx=0;dx<w;dx++) collision[y*48+x+dx]=1;
-  if(kind==='fountain') area(23,21,3,3,i=>{collision[i]=1;ground[i]=3;cityGround[i]=0;});
+  // The sprite contains its water and stone basin. Its transparent edge must reveal paving, not a square lake.
+  if(kind==='fountain') area(23,21,3,3,i=>{collision[i]=1;ground[i]=4;cityGround[i]=1;});
 }
 const trees=[[5,5],[18,7],[29,7],[43,5],[5,19],[43,19],[5,32],[43,32],[19,40],[29,40],[5,42],[43,42]];
 for(const [x,y] of trees)collision[y*48+x]=1;

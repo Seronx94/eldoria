@@ -9,6 +9,7 @@ import { CombatEffects } from './combat-effects';
 import { OfflineStorage } from './storage';
 import {VirtualJoystick} from './virtual-joystick';
 import {renderActionIcons} from './action-icons';
+import {creatureFacing,creatureFrames} from './creature-facing';
 import './style.css';
 
 function element<T extends HTMLElement>(selector: string): T {
@@ -107,7 +108,7 @@ class Preload extends Phaser.Scene {
       for (const [index, d] of ['down', 'left', 'right', 'up'].entries()) {
         for (const prefix of ['', 'colorful-']) this.anims.create({ key: `${prefix}walk-${d}`, frames: this.anims.generateFrameNumbers(`${prefix}wanderer`, { start: index * 3, end: index * 3 + 2 }), frameRate: 10, repeat: -1 });
       }
-      for (const kind of ['rat','beetle','wolf']) for (const [facing,start] of [['front',0],['side',3]] as const) this.anims.create({key:`colorful-${kind}-${facing}`,frames:this.anims.generateFrameNumbers(`colorful-${kind}`,{start,end:start+2}),frameRate:9,repeat:-1});
+      for (const kind of ['rat','beetle','wolf']) for (const [facing,start] of [['down',0],['right',3],['left',3],['up',6]] as const) this.anims.create({key:`colorful-${kind}-${facing}`,frames:this.anims.generateFrameNumbers(`colorful-${kind}`,{start,end:start+2}),frameRate:9,repeat:-1});
       this.scene.start('World'); this.scene.start('Menu');
     } catch (error) { ui.loading.textContent = `Błąd zawartości: ${error instanceof Error ? error.message : 'nieznany'}`; }
   }
@@ -120,7 +121,7 @@ class World extends Phaser.Scene {
   private hero!: Phaser.GameObjects.Sprite;
   private objects: Phaser.GameObjects.GameObject[] = [];
   private creatureSprites = new Map<string, Phaser.GameObjects.Sprite>();
-  private creatureViews = new Map<string, { position: string; until: number; side: boolean; tween?: Phaser.Tweens.Tween }>();
+  private creatureViews = new Map<string, { position: string; until: number; facing: Direction; tween?: Phaser.Tweens.Tween }>();
   private effects!: CombatEffects;
   private town!: TownView;
   private epoch = -1;
@@ -270,23 +271,29 @@ class World extends Phaser.Scene {
       sprite.setVisible(creature.hp > 0);
       let view = this.creatureViews.get(creature.id);
       const creaturePosition = `${creature.x},${creature.y}`;
-      if (!view) { view = {position:creaturePosition,until:0,side:false}; this.creatureViews.set(creature.id,view); }
+      if (!view) { view = {position:creaturePosition,until:0,facing:'down'}; this.creatureViews.set(creature.id,view); }
       if (creature.hp === 0) { view.tween?.stop(); sprite.anims.stop(); view.until = 0; continue; }
       if (revived) { view.tween?.stop(); sprite.setPosition(creature.x*32+16,creature.y*32+32); view.position = creaturePosition; view.until = 0; }
       if (view.position !== creaturePosition) {
-        const [oldX] = view.position.split(',').map(Number);
-        view.side = creature.x !== oldX; sprite.setFlipX(view.side && creature.x < oldX!);
+        const [oldX,oldY] = view.position.split(',').map(Number);
+        view.facing=creatureFacing({x:oldX!,y:oldY!},creature,view.facing);
         view.position = creaturePosition; view.until = this.time.now + rules.stepMs*2;
         view.tween?.stop(); view.tween = this.tweens.add({targets:sprite,x:creature.x*32+16,y:creature.y*32+32,duration:rules.stepMs*2,ease:'Linear'});
       }
-      if (colorful && this.time.now < view.until) sprite.play(`colorful-${creature.kind}-${view.side ? 'side' : 'front'}`,true);
-      else { sprite.anims.stop(); sprite.setFrame(colorful && view.side ? 3 : 0); }
+      const pose=creatureFrames[view.facing];sprite.setFlipX(colorful&&pose.flipX);
+      if (colorful && this.time.now < view.until) sprite.play(`colorful-${creature.kind}-${view.facing}`,true);
+      else { sprite.anims.stop(); sprite.setFrame(colorful ? pose.start : 0); }
       sprite.setDepth(sprite.y);
       const selected = creature.id === s.selectedId;
       if (selected) this.bars.lineStyle(1, 0xefd18a).strokeEllipse(sprite.x, sprite.y - 3, 28, 13);
       this.bars.fillStyle(0x263c35).fillRect(sprite.x - 12, sprite.y - 30, 24, 3);
       this.bars.fillStyle(selected ? 0xdac083 : 0x9ba582).fillRect(sprite.x - 12, sprite.y - 30, 24 * creature.hp / monsters[creature.kind].hp, 3);
     }
+    // Read-only diagnostics of the actual rendered frames, useful when checking directional art.
+    ui.hud.dataset.creaturePoses=JSON.stringify(s.creatures.filter(c=>c.hp>0).map(c=>{
+      const sprite=this.creatureSprites.get(c.id)!,view=this.creatureViews.get(c.id)!;
+      return {id:c.id,x:c.x,y:c.y,facing:view.facing,frame:Number(sprite.frame.name),flip:sprite.flipX,animation:sprite.anims.isPlaying?sprite.anims.currentAnim?.key:null};
+    }));
     for (const event of s.combatEvents) {
       if (event.id <= this.lastCombatId) continue;
       this.lastCombatId = event.id;

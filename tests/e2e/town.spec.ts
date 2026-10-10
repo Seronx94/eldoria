@@ -14,6 +14,7 @@ test('Vareon: located services, doors, roofs, plan, market, resize and old save 
   await page.waitForTimeout(350);await page.screenshot({path:info.outputPath('temple.png')});
   await page.locator('#interact').click();await expect(page.locator('#npc-name')).toHaveText('Oren');await page.getByRole('button',{name:'Przywróć zdrowie i manę'}).click();await page.locator('#close-npc').click();
   await walkInTown(page,12,27);await expect(page.locator('#hud')).toHaveAttribute('data-building','outside');
+  await walkInTown(page,24,24);await page.waitForTimeout(350);await page.screenshot({path:info.outputPath('fountain-paving.png')});
   await walkInTown(page,24,28);await page.waitForTimeout(350);await page.screenshot({path:info.outputPath('market.png')});
   await page.locator('#bag-button').click();await page.locator('[data-guide="borin"]').click();
   await expect(page.locator('#target-label')).toContainText('Kupiec przy rynku');

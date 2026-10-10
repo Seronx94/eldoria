@@ -1,8 +1,10 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.7 — walka bez zaznaczania, pościg i efekty Iskry**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.8 — dachy przy podejściu, kierunki potworów i fontanna**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
+
+W **0.1.8** dach odsłania wnętrze i NPC już do dwóch kratek od ściany, również z boku budynku; oddalenie przywraca dach. Kolorowe szczury, żuki i wilki mają osobne ujęcie chodu od tyłu, z przodu i z boku (lewy bok odbija prawy), a po zatrzymaniu zachowują kierunek ostatniego kroku. Żuk idący w dół ma głowę i rogi skierowane w dół. Pod fontanną jest bruk — woda pozostaje w kamiennej misie, bez kwadratowej łaty jeziora. Kolizje fontanny i ścian, pościg, walka, zapis i ekonomia pozostają zgodne z 0.1.7. Starszy prosty zestaw porównawczy nadal używa statycznych placeholderów potworów.
 
 W katalogu repozytorium, z Node.js 24.19.0:
 
@@ -17,7 +19,7 @@ Wersja **0.1.7** pozwala walczyć bez wybierania celu. Przytrzymaj **Miecz** alb
 
 **Iskra** automatycznie trafia wybrany lub najbliższy widoczny cel w zasięgu czterech kratek. Gdy nie ma celu, leci w kierunku patrzenia do przeszkody lub granicy bezpiecznego miasta. Każde przyjęte użycie kosztuje 8 many, również w powietrze, i ma cooldown 1,5 s. Rzucanie pokazuje krąg pod postacią, unoszące się iskry, pocisk oraz rozbłysk; liczby obrażeń pojawiają się wyłącznie przy trafieniu. Iskra jest obecnie jedynym czarem.
 
-Szczury, żuki i wilki zauważają gracza z sześciu kratek, jeśli nie zasłania go ściana, i podążają za nim bez prowokowania. Pościg nie przekracza strefy miasta; oddalenie potwora ponad dziesięć kratek od spawnu powoduje powrót. Dachy siedmiu miejskich budynków są widoczne z ulicy i z daleka; dopiero wejście odsłania wnętrze danego budynku. Dodano kalenicę, cień połaci i krawędź dachu. Format zapisu pozostaje zgodny z 0.1.6.
+Szczury, żuki i wilki zauważają gracza z sześciu kratek, jeśli nie zasłania go ściana, i podążają za nim bez prowokowania. Pościg nie przekracza strefy miasta; oddalenie potwora ponad dziesięć kratek od spawnu powoduje powrót. W historycznej wersji 0.1.7 dopiero wejście odsłaniało wnętrze; od 0.1.8 wystarczy podejście na dwie kratki do budynku. Dodano kalenicę, cień połaci i krawędź dachu. Format zapisu pozostaje zgodny z 0.1.6.
 
 Wersja **0.1.6** łączy Vareon i Mroczny Las w jedną mapę **64×112 kratek**. Z wartowni idź na północ i dalej drogą przez bramę; nie używasz F ani przycisku przejścia. Kamera podąża za postacią, potwory i łup pozostają w tym samym świecie. Powrót do miasta odbywa się tą samą drogą na południe. Vareon jest strefą bezpieczną: nie można z niego atakować lasu, potwory nie przekraczają granicy i przerywają pościg. F / **Rozmowa** służy NPC i odkryciom. Trening i stare sceny wzorcowe nadal są oddzielnymi demonstracjami w menu.
 

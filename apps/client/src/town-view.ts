@@ -1,11 +1,9 @@
 import Phaser from 'phaser';
 import {createTileLayer} from './tile-layer';
 import type {WorldMap,TownBuilding} from '@eldoria/content';
+import {insideBuilding,nearBuilding} from './building-visibility';
 const floorKeys=['paving','stone-floor','wood-floor'];
 export const townAssetKeys=[...floorKeys,'wall-h','wall-v','roof','door','counter','altar','bookcase','forge','bed','lamp','crates','stall','fountain'];
-export function insideBuilding(b:TownBuilding,p:{x:number;y:number}):boolean {
-  return p.x>=b.x&&p.y>=b.y&&p.x<b.x+b.width&&p.y<b.y+b.height;
-}
 /** A view of Tiled geometry. Roof visibility never changes domain collisions. */
 export class TownView {
   private objects:Phaser.GameObjects.GameObject[]=[];
@@ -63,12 +61,14 @@ export class TownView {
   }
   update(player:{x:number;y:number}):string {
     const id=this.buildings.find(b=>insideBuilding(b,player))?.id??'outside';
-    if(id!==this.current) {
-      this.current=id;
-      for(const [key,roof]of this.roofs)roof.setVisible(key!==id);
-      // Keep the entrance readable from the street, then sort it normally inside.
-      for(const [key,doors]of this.doors)for(const door of doors)door.setDepth(key===id?door.y+2:9999);
-      for(const [key,objects]of this.interiors)for(const o of objects)o.setVisible(key===id);
+    const revealed=new Set(this.buildings.filter(b=>nearBuilding(b,player)).map(b=>b.id));
+    const signature=[id,...revealed].join(',');
+    if(signature!==this.current) {
+      this.current=signature;
+      for(const [key,roof]of this.roofs)roof.setVisible(!revealed.has(key));
+      // Approaching reveals the room and its occupants, without changing collisions or talk range.
+      for(const [key,doors]of this.doors)for(const door of doors)door.setDepth(revealed.has(key)?door.y+2:9999);
+      for(const [key,objects]of this.interiors)for(const o of objects)o.setVisible(revealed.has(key));
     }
     return id;
   }

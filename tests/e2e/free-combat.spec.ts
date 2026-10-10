@@ -7,10 +7,17 @@ test('free sword and spark: hold, release, blur, empty cast and roof visibility'
   await expect(hud).toHaveAttribute('data-building','gatehouse');
   await expect(hud).toHaveAttribute('data-roofs',/temple/);await expect(hud).not.toHaveAttribute('data-roofs',/gatehouse/);
   for(let i=0;i<2;i++){await page.waitForTimeout(230);await page.keyboard.press('s');}
-  await expect(hud).toHaveAttribute('data-building','outside');await expect(hud).toHaveAttribute('data-roofs',/gatehouse/);
+  await expect(hud).toHaveAttribute('data-building','outside');await expect(hud).not.toHaveAttribute('data-roofs',/gatehouse/);
+  for(let i=0;i<3;i++){await page.waitForTimeout(230);await page.keyboard.press('s');}
+  await expect(hud).toHaveAttribute('data-position','32,81');await expect(hud).toHaveAttribute('data-roofs',/gatehouse/);
   expect((await hud.getAttribute('data-roofs'))!.split(',')).toHaveLength(7);
   await page.waitForTimeout(300);await page.screenshot({path:info.outputPath('exterior-roofs.png')});
-  for(let i=0;i<2;i++){await page.waitForTimeout(230);await page.keyboard.press('w');}
+  await page.waitForTimeout(230);await page.keyboard.press('w');
+  await expect(hud).toHaveAttribute('data-roofs',/gatehouse/);
+  await page.waitForTimeout(230);await page.keyboard.press('w');
+  await expect(hud).toHaveAttribute('data-building','outside');await expect(hud).not.toHaveAttribute('data-roofs',/gatehouse/);
+  await page.screenshot({path:info.outputPath('approaching-roof.png')});
+  for(let i=0;i<3;i++){await page.waitForTimeout(230);await page.keyboard.press('w');}
   await expect(hud).not.toHaveAttribute('data-roofs',/gatehouse/);expect((await hud.getAttribute('data-roofs'))!.split(',')).toHaveLength(6);
   await page.locator('#menu-button').click();await page.locator('#mode').selectOption('trial');await page.locator('#walk-mode').check();await page.getByRole('button',{name:/Rozpocznij/}).click();
   for(let i=0;i<7;i++){await page.waitForTimeout(230);await page.keyboard.press('w');}

@@ -6,6 +6,14 @@ import {Simulation,type SaveData} from './index';
 const maps=[importMap(town),importMap(forest)];
 function save(){return new Simulation(maps,'Tester',{now:()=>0}).exportSave();}
 describe('walkable town and service locations',()=>{
+  it('keeps the fountain basin blocked but paved beneath its transparent outline',()=>{
+    const m=maps[0]!;
+    for(let y=21;y<=23;y++)for(let x=23;x<=25;x++){
+      expect(m.collision[y*m.width+x]).toBe(1);
+      expect(m.cityGround[y*m.width+x]).toBe(5);
+      expect(m.ground[y*m.width+x]).not.toBe(3);
+    }
+  });
   it('connects all seven interiors and NPC neighbours without walking through walls or furnishings',()=>{
     validateMaps(maps,new Set(['tiles.png']));const m=maps[0]!;
     const actors=new Set(m.npcs.map(n=>`${n.x},${n.y}`));

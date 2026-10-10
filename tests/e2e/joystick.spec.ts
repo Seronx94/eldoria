@@ -8,15 +8,15 @@ test('thumb stick: dead zone, cardinal drag, pointer ownership, release, resize 
   const session=await page.context().newCDPSession(page);
   const touch=(x:number,y:number,id=1)=>({x,y,id});
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[touch(cx+2,cy)]});await page.waitForTimeout(450);
-  await expect(page.locator('#hud')).toHaveAttribute('data-position','24,12');
+  await expect(page.locator('#hud')).toHaveAttribute('data-position','32,76');
   await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[touch(cx-30,cy)]});
   const position=async()=>(await page.locator('#hud').getAttribute('data-position'))!.split(',').map(Number);
-  await expect.poll(async()=>(await position())[0]).toBeLessThan(24);
+  await expect.poll(async()=>(await position())[0]).toBeLessThan(32);
   // Center before reading: a held stick can legitimately make several steps during a slow DOM read.
   await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[touch(cx,cy)]});
-  const left=await position();expect(left[0]).toBeGreaterThanOrEqual(22);expect(left[1]).toBe(12);
+  const left=await position();expect(left[0]).toBeGreaterThanOrEqual(30);expect(left[1]).toBe(76);
   await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[touch(cx,cy-30)]});
-  await expect.poll(async()=>(await position())[1]).toBeLessThan(12);
+  await expect.poll(async()=>(await position())[1]).toBeLessThan(76);
   await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[touch(cx,cy)]});
   expect((await position())[0]).toBe(left[0]);
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});

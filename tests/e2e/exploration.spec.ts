@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import forest from '../../apps/client/public/assets/forest.json' with {type:'json'};
+import forest from '../../apps/client/public/assets/eldoria.json' with {type:'json'};
 async function move(page:Page,key:string,count:number) {
   for(let i=0;i<count;i++) { await page.waitForTimeout(240); await page.keyboard.press(key); }
 }
@@ -16,7 +16,7 @@ async function walkTo(page:Page,x:number,y:number) {
     let route:string[]|undefined;
     while(queue.length) {
       const p=queue.shift()!, k=`${p.x},${p.y}`;
-      if(seen.has(k)||blocked.has(k)||p.x<0||p.y<0||p.x>=64||p.y>=64||collision[p.y*64+p.x]) continue;
+      if(seen.has(k)||blocked.has(k)||p.x<0||p.y<0||p.x>=forest.width||p.y>=forest.height||collision[p.y*64+p.x]) continue;
       seen.add(k);
       if(p.x===x&&p.y===y) { route=p.keys; break; }
       for(const [key,dx,dy] of [['w',0,-1],['s',0,1],['a',-1,0],['d',1,0]] as const) queue.push({x:p.x+dx,y:p.y+dy,keys:[...p.keys,key]});
@@ -28,7 +28,7 @@ async function walkTo(page:Page,x:number,y:number) {
       const delta=({w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]} as const)[key as 'w'|'s'|'a'|'d'];
       blocked.add(`${start[0]!+delta[0]},${start[1]!+delta[1]}`);
     }
-    expect(state.map).toBe('forest');
+    expect(state.map).toBe('eldoria');
   }
   throw new Error('Exploration route exceeded movement budget');
 }
@@ -41,7 +41,7 @@ test('old trail: real exploration, chronicle, reward once and saved discoveries'
   await page.goto('/');await page.getByRole('button',{name:/Rozpocznij/}).click();
   await page.locator('#interact').click();await page.getByRole('button',{name:'Przyjmij: Ślady dawnego szlaku'}).click();
   await expect(page.locator('#npc-text')).toContainText('0/3');await page.locator('#close-npc').click();
-  await move(page,'w',7);await page.locator('#interact').click();
+  await move(page,'w',18);
   await expect(page.locator('#target-label')).toContainText('Stary drogowskaz');
   await walkTo(page,32,53);await expect(page.locator('#hud')).toHaveAttribute('data-position','32,53');
   await page.locator('#interact').click();await expect(page.locator('#message')).toContainText('Odkrycia 1/3');
@@ -59,8 +59,8 @@ test('old trail: real exploration, chronicle, reward once and saved discoveries'
   const lastNote=page.locator('#chronicle-text p').last();
   await lastNote.scrollIntoViewIfNeeded();await expect(lastNote).toBeVisible();
   await page.screenshot({path:info.outputPath('chronicle.png')});await page.locator('#close-bag').click();
-  await walkTo(page,32,59);await page.locator('#interact').click();
-  await expect(page.locator('#hud')).toHaveAttribute('data-map','vareon');
+  await walkTo(page,32,76);
+  await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');
   await page.locator('#interact').click();await page.getByRole('button',{name:'Odbierz nagrodę za szlak'}).click();
   await expect(page.locator('#npc-message')).toContainText('75 EXP, 25 złota');
   await expect(page.getByRole('button',{name:'Odbierz nagrodę za szlak'})).toHaveCount(0);

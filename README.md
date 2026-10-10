@@ -1,18 +1,21 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.5 — mobilna gałka ruchu i ikony akcji**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.6 — jeden ciągły świat: miasto i las**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
 
 W katalogu repozytorium, z Node.js 24.19.0:
 
 ```sh
-git pull
 npm ci
 npm run dev
 ```
 
 Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.md) opisuje pięć kroków przygody, sterowanie i zapis. Domyślnie zaczynasz w Vareon obok Miry: rozmowa i quest → brama na północy → pięć zabójstw w lesie → łup → powrót po nagrodę → handel i wznowienie. **Próba Wędrowca** w menu pozostaje treningiem walki zaczynającym się od razu przy potworach. **Spacer bez potworów** pokazuje stare sceny wzorcowe. Trening i spacer nie są zapisywane.
+
+Wersja **0.1.6** łączy Vareon i Mroczny Las w jedną mapę **64×112 kratek**. Z wartowni idź na północ i dalej drogą przez bramę; nie używasz F ani przycisku przejścia. Kamera podąża za postacią, potwory i łup pozostają w tym samym świecie. Powrót do miasta odbywa się tą samą drogą na południe. Vareon jest strefą bezpieczną: nie można z niego atakować lasu, potwory nie przekraczają granicy i przerywają pościg. F / **Rozmowa** służy NPC i odkryciom. Trening i stare sceny wzorcowe nadal są oddzielnymi demonstracjami w menu.
+
+Stare poprawne zapisy Vareon/lasu są automatycznie sprawdzane i przenoszone do wspólnych współrzędnych. Zasoby, questy, wyposażenie, łup, stan potworów i pozostałe cooldowny są zachowane; las zachowuje współrzędne, miasto przesuwa się o 8 kratek na wschód i 64 na południe. Nowe zapisy używają mapId `eldoria` i wymagają klienta 0.1.6 lub nowszego. Nie usuwaj zapisu przy aktualizacji; eksport w menu pozwala zachować własną kopię. Źródłem świata jest edytowalny `assets/source/eldoria.tmj`; `node scripts/generate-world.mjs` odtwarza go z zachowanych map lokalnych, a `npm run maps:generate-town` odtwarza miasto i wspólny świat.
 
 W wersji 0.1.2 potwory animują chód podczas pościgu i powrotu. Dalsze stworzenia w lesie spacerują w promieniu dwóch kratek od miejsca odrodzenia co 1,6 s; blisko gracza i wejścia zachowano spokojne cele do nauki walki. Miecz ma zamach i ślad cięcia, Iskra lecący pocisk i rozbłysk, trafienia krótki błysk oraz liczbę obrażeń. Efekty wynikają z potwierdzonych zdarzeń symulacji, respektują zasięg i cooldown oraz nie są odtwarzane ponownie po wznowieniu.
 
@@ -24,7 +27,7 @@ Wersja 0.1.4 przebudowuje Vareon w autorskie miasto klasycznego RPG: brukowany r
 
 Zapis v1 ma teraz `cityRevision: 2`. Poprawna pozycja ze starego Vareon, którą zajęła nowa ściana lub NPC, przenosi gracza do wartowni z zachowaniem zasobów i zadań. Poprawne pozycje nadal dostępne pozostają na miejscu. Migracja nie dopuszcza pozycji ze starych ścian ani wadliwych zapisów; las pozostaje bez zmiany układu. Zapisy z 0.1.4 wymagają klienta 0.1.4 lub nowszego.
 
-Przygoda zapisuje się w tej przeglądarce przy zmianie mapy, odkryciu miejsca, przyjęciu zadania, nagrodzie, handlu, powrocie do menu, ukryciu strony i co 30 sekund po zmianie stanu. Dostępne są przycisk Zapisz, wznowienie, eksport/import JSON oraz odzyskanie poprzedniego poprawnego zapisu. Uszkodzenie nie usuwa danych automatycznie; brak miejsca jest pokazany w dzienniku. Rozpoczęcie nowej przygody zastępuje bieżący zapis, zachowując poprzedni w kopii. Zapis jest wyłącznie offline i nie przeniesie się do przyszłej ekonomii online.
+Przygoda zapisuje się w tej przeglądarce przy zmianie regionu, odkryciu miejsca, przyjęciu zadania, nagrodzie, handlu, powrocie do menu, ukryciu strony i co 30 sekund po zmianie stanu. Dostępne są przycisk Zapisz, wznowienie, eksport/import JSON oraz odzyskanie poprzedniego poprawnego zapisu. Uszkodzenie nie usuwa danych automatycznie; brak miejsca jest pokazany w dzienniku. Rozpoczęcie nowej przygody zastępuje bieżący zapis, zachowując poprzedni w kopii. Zapis jest wyłącznie offline i nie przeniesie się do przyszłej ekonomii online.
 
 W menu wybierz **Kolorowy pixel art — do oceny** (domyślny) lub **Poprzednia grafika — porównanie**. Nowy zestaw ma zielony teren, dachówki, drzewa liściaste i iglaste, odrębne stroje NPC oraz postać z animacją czterech kierunków. Do porównania wybierz trening i **Spacer bez potworów**. Zmiana grafiki działa również przy wznowieniu zapisu.
 

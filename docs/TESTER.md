@@ -1,6 +1,6 @@
-# Eldoria 0.1.5 — gałka i ikony akcji
+# Eldoria 0.1.6 — jeden ciągły świat
 
-Pierwsza przygoda offline: Vareon 48×48, Mroczny Las 64×64, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
+Pierwsza przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
 ## Uruchomienie na komputerze
 
@@ -28,6 +28,17 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
 
+## Sprawdź ciągły świat
+
+1. Rozpocznij lub wznów przygodę. Z wartowni idź na północ gałką albo W, przez zwykłą bramę i dalej do lasu. Nie naciskaj F ani żadnego przycisku przejścia. Kamera powinna prowadzić cały spacer bez przeskoku.
+2. Zawróć na południe do Miry. Powtórz wyjście i powrót pięć razy. Nazwa regionu zmienia się na Vareon / Mroczny Las, ale pozycja przesuwa się tylko o jeden krok, a potwory zachowują stan.
+3. W lesie wybierz stworzenie, użyj miecza lub Iskry i zbierz łup. Cofnij się do miasta: walka w strefie bezpiecznej jest zablokowana, a pościg nie przekracza jej granicy.
+4. Porozmawiaj z Mirą, Orenem i Borinem; sprawdź plan miasta oraz zadania. F / Rozmowa służy dialogom i odkryciom. Zapisz w lesie, odśwież stronę i wznów — wracasz na to samo miejsce.
+5. Jeżeli masz stary eksport zapisu, zaimportuj go: zasoby i postęp mają pozostać. Nie usuwaj localStorage. Przetestuj też gałkę z drugim palcem używającym czaru oraz obrót telefonu.
+
+
+Podgląd produkcyjny: [droga między miastem a lasem](screenshots/continuous-gate-mobile.png), [powrót do wartowni po omdleniu](screenshots/world-respawn-mobile.png). Emulacja mobilnego Chromium, nie test fizycznego telefonu.
+
 ## Cztery kroki testu gałki na telefonie
 
 1. Obróć telefon poziomo. Po lewej jest okrągła gałka. Przytrzymaj środek: postać stoi. Przesuń palec w lewo/prawo lub w górę/dół: zaczyna chodzić. Po przekątnej wybierany jest jeden kierunek, bez szybszego ruchu. Gałka podąża za palcem także poza swoim kołem, a po puszczeniu wraca na środek i zatrzymuje ruch.
@@ -43,16 +54,16 @@ Podgląd: [gałka i pasek akcji — mobilny Chromium](screenshots/joystick-mobil
 2. Otwórz **Plecak → Plan Vareon**. Wybierz Orena: wskazówka pokazuje kierunek i odległość, bez automatycznego chodzenia. Idź na zachód od rynku do **Świątyni Świtu** i wejdź drzwiami od południa. Oren leczy tak jak wcześniej.
 3. Przejdź przez brukowany rynek z fontanną i straganami. W planie wybierz Borina i wejdź do sklepu po wschodniej stronie. Porozmawiaj i sprawdź dotychczasowy handel.
 4. Zobacz gospodę i warsztat na południu oraz dwa domy na północy. Wszystkie siedem budynków ma dostępne wnętrza; gospoda, warsztat i domy służą na razie zwiedzaniu, bez dodatkowych NPC/usług. Sprawdź, czy ściany i meble blokują krok, a drzwi pozwalają wejść.
-5. Zapisz grę wewnątrz budynku, odśwież i wznów. Obróć telefon do pionu i z powrotem. Oceń dachy, drzwi, ostrość bruku i czytelność NPC. Stary poprawny zapis zachowuje postęp; gdy dawną pozycję zajęła nowa ściana lub NPC, gracz wraca do wartowni. Nowy zapis wymaga wersji 0.1.4+.
+5. Zapisz grę wewnątrz budynku, odśwież i wznów. Obróć telefon do pionu i z powrotem. Oceń dachy, drzwi, ostrość bruku i czytelność NPC. Stary poprawny zapis zachowuje postęp; gdy dawną pozycję zajęła nowa ściana lub NPC, gracz wraca do wartowni. Nowy zapis wspólnego świata wymaga wersji 0.1.6+.
 
 Nowa aranżacja i zestaw miejski czekają na Twoją ocenę. Zrzuty: [rynek — desktop](screenshots/vareon-market-desktop.png), [świątynia — mobilny](screenshots/vareon-temple-mobile.png), [sklep — mobilny](screenshots/vareon-shop-mobile.png). Są to widoki Chromium, nie fizycznego telefonu.
 
 ## Pięć kroków nowej wyprawy
 
 1. Rozpocznij lub wznów przygodę Vareon. U Miry wybierz **Przyjmij: Ślady dawnego szlaku**. Możesz wykonać to zadanie niezależnie od pięciu zabójstw.
-2. Wyjdź północną bramą. Bez wybranego celu walki wskazówka nad mapą pokazuje kolejne miejsce i kierunek. Stary drogowskaz leży na północ od wejścia, obóz na zachodzie, kamień pamięci dalej na północnym wschodzie. Podejdź do oznaczenia i wybierz **Rozmowa / Przejdź (F)**; kliknięcie oznaczenia też działa w zasięgu jednej kratki.
+2. Wyjdź północną bramą. Bez wybranego celu walki wskazówka nad mapą pokazuje kolejne miejsce i kierunek. Stary drogowskaz leży na północ od wejścia, obóz na zachodzie, kamień pamięci dalej na północnym wschodzie. Podejdź do oznaczenia i wybierz **Rozmowa (F)**; kliknięcie oznaczenia też działa w zasięgu jednej kratki.
 3. Po pierwszym odkryciu odśwież stronę i wznów. Postęp powinien zostać. Zbadaj ponownie to samo miejsce: licznik nie zwiększa się. Otwórz **Plecak → Kronika**, aby przeczytać opisy; na telefonie przewiń okno plecaka. W lesie potwory nadal działają przy otwartym plecaku.
-4. Po odkryciu trzech miejsc wróć przez południową bramę do Miry. Odbierz **nagrodę za szlak**: 75 EXP, 25 złota i 2 mikstury. Przy pełnym plecaku nagroda pozostaje do odebrania.
+4. Po odkryciu trzech miejsc wróć na południe tą samą drogą do Miry. Odbierz **nagrodę za szlak**: 75 EXP, 25 złota i 2 mikstury. Przy pełnym plecaku nagroda pozostaje do odebrania.
 5. Odśwież stronę i wznów. Kronika powinna zachować wszystkie odkrycia, a Mira nie wypłaca nagrody drugi raz. Zgłoś czy wskazówki i tekst są czytelne na Twoim telefonie.
 
 ## Trzy kroki testu animacji
@@ -74,11 +85,11 @@ Napisz, czy ten kierunek jest wystarczająco bliski oczekiwanemu klimatowi, i ws
 
 ## Pięć kroków testu
 
-1. Wybierz **Vareon — Niepokój za bramą**, pozostaw spacer odznaczony i rozpocznij. Stoisz obok **Miry**. Kliknij ją lub użyj **Rozmowa / Przejdź (F)**, a potem **Przyjmij zadanie**. Ruch, atak i czar pod dialogiem mają być zablokowane. Zamknij rozmowę. WASD/strzałki oraz D-pad poruszają postacią; Caps Lock działa.
-2. Idź na północ do świecącej bramy. Podejdź na sąsiednią kratkę i kliknij ją lub naciśnij **F**. W lesie szczur jest blisko na północy po prawej; żuk dalej na prawo. Wybierz **Cel (T)** albo dotknij stworzenia. **Iskra (E)** działa do 4 kratek, kosztuje 8 many i odnawia się przez 1,5 s; **Miecz (Spacja)** działa z sąsiedniej kratki co 0,8 s. Wilki głębiej w lesie atakują same; szczury i żuki dopiero po zaczepieniu. Potwory odradzają się po 20 s. Pokonaj pięć — licznik zadania rośnie tylko po jego przyjęciu.
+1. Wybierz **Vareon — Niepokój za bramą**, pozostaw spacer odznaczony i rozpocznij. Stoisz obok **Miry**. Kliknij ją lub użyj **Rozmowa (F)**, a potem **Przyjmij zadanie**. Ruch, atak i czar pod dialogiem mają być zablokowane. Zamknij rozmowę. WASD/strzałki oraz D-pad poruszają postacią; Caps Lock działa.
+2. Idź na północ przez wartownię i zwykłą bramę; kontynuuj spacer do lasu bez naciskania **F**. W lesie szczur jest blisko na północy po prawej; żuk dalej na prawo. Wybierz **Cel (T)** albo dotknij stworzenia. **Iskra (E)** działa do 4 kratek, kosztuje 8 many i odnawia się przez 1,5 s; **Miecz (Spacja)** działa z sąsiedniej kratki co 0,8 s. Wilki głębiej w lesie atakują same; szczury i żuki dopiero po zaczepieniu. Potwory odradzają się po 20 s. Pokonaj pięć — licznik zadania rośnie tylko po jego przyjęciu.
 3. Podejdź obok każdej sakiewki i wybierz **Łup (R)**. Sprawdź materiały i złoto w **Plecaku (I)**. **Mikstura (Q)** przywraca do 40 HP co 3 s, pełne HP jej nie zużywa. Można zdjąć i założyć miecz/tunikę. Śmierć wraca do Vareon z pełnym HP/maną i zachowanymi zdobyczami. Brama powrotna jest na południe od wejścia do lasu; samo podejście nie teleportuje.
 4. Wróć do Miry i odbierz **50 EXP, 20 złota i 2 mikstury**. Nagroda musi być wypłacona tylko raz. Gdy nie mieści się w plecaku, pozostaje do odebrania. **Oren** dwa pola na zachód od miejsca startu leczy za darmo. **Borin** stoi trzy pola na wschód i dwa na południe: sprzedaje mikstury po 5 złota i kupuje skóry/chitynę po 2. Rozmowa działa wyłącznie obok NPC.
-5. Użyj **Zapisz**, odśwież stronę i wybierz **Wznów przygodę**. Pozycja, poziom, wyposażenie, zasoby i odebrana nagroda powinny pozostać. W menu wyeksportuj zapis do pliku, a następnie zaimportuj go. Jest też **Odzyskaj kopię zapisu** — wraca do poprzedniego checkpointu, więc część ostatniego postępu może cofnąć się. Sprawdź pięć podróży między mapami, obrót telefonu, ostrość kamery oraz jednoczesny ruch i czar.
+5. Użyj **Zapisz**, odśwież stronę i wybierz **Wznów przygodę**. Pozycja, poziom, wyposażenie, zasoby i odebrana nagroda powinny pozostać. W menu wyeksportuj zapis do pliku, a następnie zaimportuj go. Jest też **Odzyskaj kopię zapisu** — wraca do poprzedniego checkpointu, więc część ostatniego postępu może cofnąć się. Sprawdź pięć spacerów między miastem i lasem, obrót telefonu, ostrość kamery oraz jednoczesny ruch i czar.
 
 ## Zapis i tryby
 

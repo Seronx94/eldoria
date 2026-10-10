@@ -18,7 +18,12 @@ export interface Point { x: number; y: number }
 export const townPropKinds = ['counter','altar','bookcase','forge','bed','lamp','crates','stall','fountain'] as const;
 export interface TownBuilding extends Point { id:string; label:string; purpose:'guard'|'temple'|'shop'|'inn'|'home'|'workshop'; width:number; height:number; doors:Point[] }
 export interface TownProp extends Point {width:number;kind:typeof townPropKinds[number];buildingId?:string}
+export interface WorldRegion extends Point { id:string; label:string; width:number; height:number; combatAllowed:boolean }
+export function regionAt(map:WorldMap,p:Point):WorldRegion|undefined { return map.regions.find(r=>p.x>=r.x&&p.y>=r.y&&p.x<r.x+r.width&&p.y<r.y+r.height); }
+export function combatAllowedAt(map:WorldMap,p:Point):boolean { return map.combatAllowed && (regionAt(map,p)?.combatAllowed ?? true); }
+export function landmarksOnMap(mapId:string,landmarkMapId:string):boolean {return mapId===landmarkMapId || mapId==='eldoria' && landmarkMapId==='forest';}
 export interface WorldMap {
+  regions:WorldRegion[];
   layoutRevision:number; cityGround:number[]; cityWalls:number[]; buildings:TownBuilding[]; townProps:TownProp[];
   id: string; combatAllowed: boolean; width: number; height: number; ground: number[]; details: number[]; above: number[]; collision: number[];
   spawns: Record<string, Point>;
@@ -81,6 +86,12 @@ export function importMap(input: unknown): WorldMap {
     if(matches.length!==1 || l?.type!=='tilelayer' || l.data?.length!==raw.width*raw.height || l.data.some(v=>v!==0&&(v<min||v>max))) throw new Error(`${id}: nieprawidłowe kafelki ${name}`);
     return l.data;
   };
+  const regions=optionalObjects('Regions').map(o=>{
+    const p=point(o),width=(o.width??0)/32,height=(o.height??0)/32;
+    if(!Number.isInteger(width)||!Number.isInteger(height)||width<1||height<1||p.x+width>raw.width||p.y+height>raw.height)throw new Error(`${id}: nieprawidłowy region`);
+    return {...p,id:o.name,label:properties(o.properties,'label'),width,height,combatAllowed:z.enum(['true','false']).parse(properties(o.properties,'combatAllowed'))==='true'};
+  });
+  if(new Set(regions.map(r=>r.id)).size!==regions.length||regions.some(r=>!r.id||regions.some(other=>other!==r&&r.x<other.x+other.width&&r.x+r.width>other.x&&r.y<other.y+other.height&&r.y+r.height>other.y)))throw new Error(`${id}: powtórzone/nakładające się regiony`);
   const buildings=optionalObjects('Buildings').map(o=>{
     const p=point(o), w=(o.width??0)/32, h=(o.height??0)/32;
     if(!Number.isInteger(w)||!Number.isInteger(h)||w<5||h<5||w>24||h>24||p.x+w>raw.width||p.y+h>raw.height) throw new Error(`${id}: nieprawidłowy budynek ${o.name}`);
@@ -101,12 +112,13 @@ export function importMap(input: unknown): WorldMap {
   const layoutRevision=Number(z.enum(['1','2']).parse(raw.properties.find(p=>p.name==='layoutRevision')?.value??'1'));
   const image = raw.tilesets[0]!.image;
   if (image.startsWith('/') || image.includes('..') || image.includes(':') || !image.endsWith('.png')) throw new Error(`${id}: obraz musi być względnym PNG`);
-  return { layoutRevision,cityGround,cityWalls,buildings,townProps,id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, npcs, monsterSpawns, image };
+  return { regions,layoutRevision,cityGround,cityWalls,buildings,townProps,id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, npcs, monsterSpawns, image };
 }
 export function validateMaps(maps: WorldMap[], images: ReadonlySet<string>): void {
   const ids = new Set(maps.map(m => m.id));
   if (ids.size !== maps.length) throw new Error('Powtórzone mapId');
   for (const map of maps) {
+    if(map.id==='eldoria' && (map.portals.length||combatAllowedAt(map,map.spawns.entry!)||!map.regions.some(r=>r.id==='forest'&&r.combatAllowed)||!map.regions.some(r=>r.id==='vareon'&&!r.combatAllowed)))throw new Error('Nieprawidłowe regiony ciągłego świata');
     if (!images.has(map.image)) throw new Error(`${map.id}: brak PNG ${map.image}`);
     for (const spawn of Object.values(map.spawns)) {
       if (map.collision[spawn.y * map.width + spawn.x] !== 0) throw new Error(`${map.id}: spawn w ścianie`);
@@ -119,6 +131,7 @@ export function validateMaps(maps: WorldMap[], images: ReadonlySet<string>): voi
     for(const p of map.townProps) {
       if(p.buildingId && !map.buildings.some(b=>b.id===p.buildingId&&p.x>b.x&&p.x+p.width-1<b.x+b.width-1&&p.y>b.y&&p.y<b.y+b.height-1)) throw new Error(`${map.id}: wyposażenie poza budynkiem`);
     }
+    if(map.monsterSpawns.some(p=>!combatAllowedAt(map,p)))throw new Error(`${map.id}: potwór w strefie bezpiecznej`);
     const positions = new Set<string>();
     for (const actor of [...map.npcs, ...map.monsterSpawns]) {
       const position = `${actor.x},${actor.y}`;

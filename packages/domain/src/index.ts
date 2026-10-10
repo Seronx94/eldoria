@@ -1,4 +1,4 @@
-import { legacyTownPositionAllowed, items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
 import { commandSchema, nameSchema, type Command, type Direction } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
@@ -48,7 +48,7 @@ export class Simulation {
     const map = maps[0];
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
-    this.state = { exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: map.id === 'vareon' ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa / Przejdź (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    this.state = { exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
     this.spawnCreatures();
   }
   private map(): WorldMap { return this.maps.find(m => m.id === this.state.mapId)!; }
@@ -162,7 +162,7 @@ export class Simulation {
       const npc = this.map().npcs.find(n => (!command.npcId || n.id === command.npcId) && distance(n, s.player) <= 1);
       if (npc) { s.dialog = npc.id; this.notify(`${npcs[npc.id].name}: ${npcs[npc.id].role}`); return; }
       if (command.npcId) { this.notify('Podejdź obok NPC, aby porozmawiać.'); return; }
-      const landmark = landmarks.find(l => l.mapId === s.mapId && distance(l,s.player) <= 1);
+      const landmark = landmarks.find(l => landmarksOnMap(s.mapId,l.mapId) && distance(l,s.player) <= 1);
       if (landmark) {
         const q = s.exploration;
         if (q.status === 'active' && !q.found.includes(landmark.id)) {
@@ -173,7 +173,7 @@ export class Simulation {
         return;
       }
       const portal = this.map().portals.find(p => distance(p, s.player) <= 1);
-      if (!portal) { this.notify('Podejdź do świecącej bramy i wybierz Przejdź.'); return; }
+      if (!portal) { this.notify(s.mapId==='eldoria' ? 'Podejdź obok NPC lub odkrycia. Przez bramę przechodzisz pieszo.' : 'Podejdź do świecącej bramy i wybierz Przejdź.'); return; }
       const target = this.maps.find(m => m.id === portal.targetMapId);
       const spawn = target?.spawns[portal.targetSpawnId];
       if (!target || !spawn) { this.notify('Brama nie ma poprawnego celu.'); return; }
@@ -190,9 +190,10 @@ export class Simulation {
       s.inventory = removeItem(s.inventory, 'potion', 1)!; s.potions = countItem(s.inventory, 'potion'); s.hp = Math.min(s.maxHp, s.hp + rules.potionHeal); this.lastPotion = now;
       this.notify('Odzyskano zdrowie.'); return;
     }
-    if (!this.map().combatAllowed) { this.notify('Na dziedzińcu nie ma walki.'); return; }
+    if (!combatAllowedAt(this.map(),s.player)) { this.notify('Strefa bezpieczna — tutaj nie ma walki.'); return; }
     const target = s.creatures.find(c => c.id === s.selectedId && c.hp > 0);
     if (!target) { this.notify('Dotknij szczura, aby wybrać cel.'); return; }
+    if(!combatAllowedAt(this.map(),target)){this.notify('Cel w strefie bezpiecznej.');return;}
     const casting = command.type === 'Cast';
     if (!casting && !s.equipment.weapon) { this.notify('Załóż miecz w plecaku.'); return; }
     const range = casting ? rules.spellRange : 1;
@@ -210,14 +211,14 @@ export class Simulation {
     if (target.hp === 0) {
       target.state = 'dead'; target.diedAt = now; s.selectedId = null;
       this.gainExp(monsters[target.kind].exp); s.kills++;
-      if (s.mapId === 'forest' && s.quest.status === 'active') {
+      if (['forest','eldoria'].includes(s.mapId) && s.quest.status === 'active') {
         s.quest.kills = Math.min(questRules.kills, s.quest.kills + 1);
         if (s.quest.kills === questRules.kills) s.quest.status = 'ready';
       }
       s.loot.push({ id: `${s.mapId}:${target.id}:${s.eventId}`, mapId: s.mapId, x: target.x, y: target.y, gold: monsters[target.kind].gold, items: target.kind === 'rat' ? [] : [{ itemId: target.kind === 'wolf' ? 'skin' : 'chitin', quantity: 1 }] });
       if (!s.defeatedKinds.includes(target.kind)) s.defeatedKinds.push(target.kind);
       s.complete = s.mapId === 'grove' && s.defeatedKinds.length === 3;
-      this.notify(s.complete ? 'Próba ukończona! Pokonano 3 stworzenia. Wróć do menu, aby rozpocząć nową próbę.' : s.mapId === 'forest' ? `Pokonano ${monsters[target.kind].name.toLowerCase()}. ${s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę.' : s.quest.status === 'active' ? `Zadanie: ${s.quest.kills}/5.` : 'Przyjmij zadanie u Miry.'}` : `Pokonano ${monsters[target.kind].name.toLowerCase()}. Próba: ${s.defeatedKinds.length}/3.`);
+      this.notify(s.complete ? 'Próba ukończona! Pokonano 3 stworzenia. Wróć do menu, aby rozpocząć nową próbę.' : ['forest','eldoria'].includes(s.mapId) ? `Pokonano ${monsters[target.kind].name.toLowerCase()}. ${s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę.' : s.quest.status === 'active' ? `Zadanie: ${s.quest.kills}/5.` : 'Przyjmij zadanie u Miry.'}` : `Pokonano ${monsters[target.kind].name.toLowerCase()}. Próba: ${s.defeatedKinds.length}/3.`);
     }
   }
   private freeArrival(map: WorldMap, spawn: Point): Point | undefined {
@@ -236,7 +237,7 @@ export class Simulation {
     const s = this.state, now = this.time;
     const remaining = (last: number, period: number) => Math.max(0, Math.ceil(period - (now-last)));
     return saveSchema.parse({
-      version: 1, cityRevision: this.maps.find(m=>m.id==='vareon')?.layoutRevision ?? 1, mode: 'offline', name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
+      version: 1, cityRevision: (this.maps.find(m=>m.id==='eldoria')??this.maps.find(m=>m.id==='vareon'))?.layoutRevision ?? 1, mode: 'offline', name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
       level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, inventory: s.inventory, equipment: s.equipment,
       cooldowns: { move: remaining(this.lastMove,rules.stepMs), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
       maps: [...this.creatureMaps].map(([mapId, creatures]) => ({ mapId, creatures: creatures.map(c => ({ id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, attackIn:remaining(c.lastAttack,rules.monsterAttackMs), moveIn:remaining(c.lastMove,rules.stepMs*2), respawnIn: c.hp === 0 ? remaining(c.diedAt,rules.respawnMs) : 0 })) })),
@@ -244,7 +245,17 @@ export class Simulation {
     });
   }
   static restore(maps: WorldMap[], input: unknown, clock: Clock): Simulation {
-    const data = saveSchema.parse(input);
+    let data = saveSchema.parse(input);
+    const world=maps.find(m=>m.id==='eldoria');
+    if(world && data.mapId!=='eldoria'){
+      const legacy=Simulation.restore(maps.filter(m=>m.id==='vareon'||m.id==='forest'),data,clock).exportSave();
+      const initial=new Simulation([world],data.name,clock).exportSave();
+      const town=world.regions.find(r=>r.id==='vareon');
+      if(!town)throw new Error('Brak regionu miasta do migracji');
+      const offset=(p:Point,mapId:string)=>mapId==='vareon'?{x:p.x+town.x,y:p.y+town.y}:{x:p.x,y:p.y};
+      data={...legacy,mapId:'eldoria',player:offset(legacy.player,legacy.mapId),maps:[{mapId:'eldoria',creatures:legacy.maps.find(m=>m.mapId==='forest')?.creatures??initial.maps[0]!.creatures}],loot:legacy.loot.map(l=>({...l,...offset(l,l.mapId),mapId:'eldoria'}))};
+    }
+    if(world && (data.maps.length!==1||data.maps[0]?.mapId!=='eldoria'||data.loot.some(l=>l.mapId!=='eldoria')))throw new Error('Nieprawidłowe regiony zapisu świata');
     if (new Set(data.maps.map(m => m.mapId)).size !== data.maps.length || !data.maps.some(m => m.mapId === data.mapId)) throw new Error('Nieprawidłowe mapy zapisu');
     const sim = new Simulation(maps, data.name, clock);
     const now = sim.time;
@@ -253,7 +264,7 @@ export class Simulation {
       return map && p.x < map.width && p.y < map.height && map.collision[p.y*map.width+p.x] === 0 && !map.npcs.some(n => distance(n,p) === 0);
     };
     let relocated = false;
-    const revision = maps.find(m=>m.id==='vareon')?.layoutRevision ?? 1;
+    const revision = (maps.find(m=>m.id==='eldoria')??maps.find(m=>m.id==='vareon'))?.layoutRevision ?? 1;
     if (data.cityRevision > revision) throw new Error('Zapis wymaga nowszej mapy miasta');
     if (!walkable(data.mapId,data.player)) {
       if (data.mapId==='vareon' && data.cityRevision < revision && legacyTownPositionAllowed(data.player)) {
@@ -268,7 +279,7 @@ export class Simulation {
       const creatures: Creature[] = saved.creatures.map(c => {
         const spawn = map.monsterSpawns.find(p => p.id === c.id && p.kind === c.kind);
         const key = `${c.x},${c.y}`;
-        if (!spawn || !walkable(map.id,c) || c.hp > monsters[c.kind].hp || (c.hp === 0) !== (c.state === 'dead') || c.hp > 0 && (occupied.has(key) || map.id === data.mapId && distance(c,data.player) === 0)) throw new Error('Nieprawidłowy stan stworzenia');
+        if (!spawn || !walkable(map.id,c) || !combatAllowedAt(map,c) || c.hp > monsters[c.kind].hp || (c.hp === 0) !== (c.state === 'dead') || c.hp > 0 && (occupied.has(key) || map.id === data.mapId && distance(c,data.player) === 0)) throw new Error('Nieprawidłowy stan stworzenia');
         if (c.hp > 0) occupied.add(key);
         return { id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, spawn:{x:spawn.x,y:spawn.y}, lastAttack:now+c.attackIn-rules.monsterAttackMs, lastMove:now+c.moveIn-rules.stepMs*2, diedAt:now+c.respawnIn-rules.respawnMs };
       });
@@ -318,7 +329,7 @@ export class Simulation {
       for (const v of Object.values(vectors)) {
         const next = { x: current.x + v.x, y: current.y + v.y }, nextKey = key(next);
         const nextCost = cost.get(key(current))! + 1;
-        if (closed.has(nextKey) || !this.walkable(next) || this.occupied(next, creature.id) || distance(next, this.state.player) === 0 || nextCost >= (cost.get(nextKey) ?? Infinity)) continue;
+        if (closed.has(nextKey) || !this.walkable(next) || !combatAllowedAt(this.map(),next) || this.occupied(next, creature.id) || distance(next, this.state.player) === 0 || nextCost >= (cost.get(nextKey) ?? Infinity)) continue;
         previous.set(nextKey, current); cost.set(nextKey, nextCost); open.push(next);
       }
     }
@@ -344,7 +355,8 @@ export class Simulation {
         }
         continue;
       }
-      if (monsters[c.kind].aggressive && distance(c, s.player) <= 6 && c.state === 'idle') c.state = 'chase';
+      if(!combatAllowedAt(this.map(),s.player) && (c.state==='chase'||c.state==='attack'))c.state='return';
+      if (combatAllowedAt(this.map(),s.player) && monsters[c.kind].aggressive && distance(c, s.player) <= 6 && c.state === 'idle') c.state = 'chase';
       if ((c.state === 'chase' || c.state === 'attack') && distance(c, c.spawn) > 10) c.state = 'return';
       if (c.state === 'return' && distance(c, c.spawn) === 0) { c.hp = monsters[c.kind].hp; c.state = 'idle'; }
       if (c.state === 'chase' || c.state === 'attack') {
@@ -358,7 +370,7 @@ export class Simulation {
           }
         } else c.state = 'chase';
       }
-      if (this.map().id === 'forest' && c.state === 'idle' && distance(c, s.player) > 6) {
+      if (['forest','eldoria'].includes(this.map().id) && c.state === 'idle' && distance(c, s.player) > 6) {
         const key = `${s.mapId}:${c.id}`, due = this.patrolDue.get(key);
         if (due === undefined) this.patrolDue.set(key, now + rules.patrolMs);
         else if (now >= due) {
@@ -368,7 +380,7 @@ export class Simulation {
           for (let i = 0; i < 4; i++) {
             const v = directions[(Math.floor(now / rules.patrolMs) + hash + i) % 4]!;
             const next = { x: c.x + v.x, y: c.y + v.y };
-            if (distance(next, c.spawn) > rules.patrolRadius || distance(next, s.player) <= 6 || !this.walkable(next) || this.occupied(next, c.id) || this.map().portals.some(p => distance(p, next) <= 1)) continue;
+            if (distance(next, c.spawn) > rules.patrolRadius || distance(next, s.player) <= 6 || !this.walkable(next) || !combatAllowedAt(this.map(),next) || this.occupied(next, c.id) || this.map().portals.some(p => distance(p, next) <= 1)) continue;
             Object.assign(c, next); c.lastMove = now; break;
           }
         }
@@ -381,11 +393,11 @@ export class Simulation {
     }
   }
   private die(): void {
-    const m = this.maps.find(m => !m.combatAllowed) ?? this.maps[0]!;
+    const m = this.maps.find(m => m.id==='eldoria') ?? this.maps.find(m => !m.combatAllowed) ?? this.maps[0]!;
     this.state.mapId = m.id; this.state.player = { ...m.spawns.entry! };
     this.state.hp = this.state.maxHp; this.state.mana = this.state.maxMana; this.state.selectedId = null; this.state.dialog = null;
     this.spawnCreatures(); this.lastMove = this.time;
-    this.notify(`Omdlenie. Wracasz do ${m.id === 'vareon' ? 'Vareon' : 'bezpiecznego dziedzińca'} z pełnym zdrowiem i maną, bez utraty zdobyczy.`);
+    this.notify(`Omdlenie. Wracasz do ${['vareon','eldoria'].includes(m.id) ? 'Vareon' : 'bezpiecznego dziedzińca'} z pełnym zdrowiem i maną, bez utraty zdobyczy.`);
   }
 }
 export class LocalGateway implements GameGateway {

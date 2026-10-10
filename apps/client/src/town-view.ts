@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import {createTileLayer} from './tile-layer';
 import type {WorldMap,TownBuilding} from '@eldoria/content';
 const floorKeys=['paving','stone-floor','wood-floor'];
 export const townAssetKeys=[...floorKeys,'wall-h','wall-v','roof','door','counter','altar','bookcase','forge','bed','lamp','crates','stall','fountain'];
@@ -19,9 +20,9 @@ export class TownView {
   }
   build(map:WorldMap):void {
     this.clear();this.buildings=map.buildings;
+    for(const [i,key]of floorKeys.entries())if(map.cityGround.includes(i+5))this.objects.push(createTileLayer(this.scene,`town-${key}`,map.width,map.height,(x,y)=>map.cityGround[y*map.width+x]===i+5?0:-1,-95));
     for(let y=0;y<map.height;y++)for(let x=0;x<map.width;x++) {
-      const i=y*map.width+x,gid=map.cityGround[i]!,wall=map.cityWalls[i]!;
-      if(gid)this.objects.push(this.scene.add.image(x*32,y*32,`town-${floorKeys[gid-5]}`).setOrigin(0).setDepth(-95));
+      const i=y*map.width+x,wall=map.cityWalls[i]!;
       if(wall)this.objects.push(this.scene.add.image(x*32,y*32,`town-${wall===8?'wall-h':'wall-v'}`).setOrigin(0).setDepth(y*32+32));
     }
     for(const b of map.buildings) {

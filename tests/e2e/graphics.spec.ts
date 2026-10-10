@@ -12,9 +12,10 @@ test('colorful art: native sprites, walking, NPC, portal, real combat and revers
   await page.waitForTimeout(700); await page.screenshot({path:info.outputPath('colorful-town.png')});
   await page.locator('#interact').click(); await expect(page.locator('#npc-name')).toHaveText('Mira');
   await page.getByRole('button',{name:'Przyjmij zadanie'}).click(); await page.locator('#close-npc').click();
-  for(let i=0;i<7;i++){await page.waitForTimeout(220); await page.keyboard.press('W');}
-  await page.locator('#interact').click(); await expect(page.locator('#hud')).toHaveAttribute('data-map','forest');
+  for(let i=0;i<18;i++){await page.waitForTimeout(220); await page.keyboard.press('W');}
+  await page.locator('#interact').click(); await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');
   await page.waitForTimeout(700); await page.screenshot({path:info.outputPath('colorful-forest.png')});
+  await page.waitForTimeout(230);await page.keyboard.press('W'); // Within spell range of the patrolling rat.
   await page.locator('#cycle-target').click(); await expect(page.locator('#target-label')).toContainText('Szczur');
   await page.locator('#cast').click(); await page.waitForTimeout(1550); await page.locator('#cast').click();
   await expect(page.locator('#objective')).toHaveText('1 / 5');

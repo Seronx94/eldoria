@@ -57,3 +57,7 @@ Układ Vareon, nazwy budynków i plan SVG napisano dla Eldorii. Edytowalne źró
 ## Ikony akcji 0.1.5
 
 Autorskie sześć ikon SVG na siatce 32×32 w `apps/client/src/action-icons.ts`: cel, miecz, płomień Iskry, flakon mikstury, sakiewka łupu i przejście. Narysowane z prostych ścieżek dla Eldorii; bez zewnętrznych assetów, zakupów lub kopiowania ikon Kakele/Tibii. Renderowane bez filtrowania tekstur, z shape-rendering crispEdges; podpisy przycisków pozostają dostępne. Gałka jest oryginalną grafiką CSS w style.css. Materiały robocze do oceny testera, na tych samych zasadach wkładu Codexa dla projektu jak powyżej.
+
+## Ciągły świat 0.1.6
+
+`assets/source/eldoria.tmj` i identyczny eksport `apps/client/public/assets/eldoria.json` — autorski układ 64×112, łączący własne Vareon i las drogą przez północną bramę. `scripts/generate-world.mjs` odtwarza połączenie ze źródeł lokalnych; Regions opisuje miasto i las oraz ochronę miasta. Wszystkie obrazy pozostają z istniejących własnych atlasów. Nie skopiowano mapy Tibii ani żadnych zewnętrznych materiałów; nowy układ pozostaje do oceny testera.

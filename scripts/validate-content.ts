@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { importMap, validateMaps, landmarks } from '@eldoria/content';
+import { importMap, validateMaps, landmarks, landmarksOnMap } from '@eldoria/content';
 const source = resolve('assets/source');
 const output = resolve('apps/client/public/assets');
 const town = JSON.parse(readFileSync(resolve('assets/design/town-atlas.json'), 'utf8')) as { assets: { name: string; width: number; height: number }[] };
@@ -20,8 +20,11 @@ for (const directory of [source, output]) {
   validateMaps(maps, new Set(readdirSync(directory)));
   if (new Set(landmarks.map(l=>l.id)).size !== landmarks.length) throw new Error('Powtórzone ID odkrycia');
   for (const l of landmarks) {
-    const map = maps.find(m=>m.id===l.mapId);
-    if (!map || l.x < 0 || l.y < 0 || l.x >= map.width || l.y >= map.height || map.collision[l.y*map.width+l.x] !== 0 || [...map.npcs,...map.portals].some(p=>Math.abs(p.x-l.x)+Math.abs(p.y-l.y)<=2)) throw new Error(`Nieprawidłowe miejsce odkrycia: ${l.id}`);
+    const matching=maps.filter(m=>landmarksOnMap(m.id,l.mapId));
+    if(!matching.length)throw new Error(`Brak mapy odkrycia: ${l.id}`);
+    for(const map of matching) {
+      if (l.x < 0 || l.y < 0 || l.x >= map.width || l.y >= map.height || map.collision[l.y*map.width+l.x] !== 0 || [...map.npcs,...map.portals].some(p=>Math.abs(p.x-l.x)+Math.abs(p.y-l.y)<=2)) throw new Error(`Nieprawidłowe miejsce odkrycia: ${l.id}`);
+    }
   }
 }
 for (const name of readdirSync(source, { recursive: true }).filter((n): n is string => typeof n === 'string' && n.endsWith('.png'))) {

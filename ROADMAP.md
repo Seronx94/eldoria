@@ -5,7 +5,7 @@ Każdy etap kończy się grywalnym wynikiem i sprawdzeniem kryteriów. Brak dat 
 | Etap | Wynik | Kryterium przejścia |
 |---|---|---|
 | M0: fundament i wygląd | Projekt startuje; wzorcowa scena i sterowanie | Kontrole kodu przechodzą; scena czytelna na telefonie; tester akceptuje styl lub podaje konkretne poprawki |
-| M1: eksploracja | Vareon, las, NPC, portale | Brak przejścia przez ściany; ruch 4 kierunki; dialogi; 5 przejść bez wycieku listenerów i awarii |
+| M1: eksploracja | Vareon, las, NPC, ciągły świat | Brak przejścia przez ściany; ruch 4 kierunki; dialogi; 5 spacerów przez bramę bez wycieku listenerów i awarii |
 | M2: wersja 0.1 offline | Walka, łup, sklep, quest, zapis | Pełny ciąg: quest → 5 zabójstw → nagroda → zapis → wznowienie; śmierć nie blokuje gry; wypłata tylko raz |
 | M3: zamknięta alfa online | Dwie osoby w jednym świecie; konta i trwały zapis | Serwer rozstrzyga grę; reconnect i restart; walidacja oszustw; brak duplikacji wypłat; test 2 urządzeń |
 | M4: Android alfa | Instalowalny testowy APK | Uruchomienie na fizycznym telefonie, multitouch, safe-area, tło/powrót, reconnect, pomiary FPS |
@@ -16,7 +16,7 @@ Każdy etap kończy się grywalnym wynikiem i sprawdzeniem kryteriów. Brak dat 
 T01–T03. Wzorzec obejmuje środowisko, postać i UI z tego samego stylu. Jeśli tester nie zaakceptuje grafiki, poprawiamy ją przed rozbudową mapy. Domena i automatyczne testy mogą rozwijać się równolegle z oceną.
 
 ## M1
-T04–T06 oraz T05a: przebudowa Vareon w 0.1.4 na polecenie testera — rynek, siedem wnętrz, NPC w budynkach usług i plan miasta. Nowa aranżacja czeka na ocenę. Logiczną siatkę i portale stosujemy od początku, aby online nie wymagało zmiany sposobu ruchu. Brak pustej demonstracji: spacer po mieście, dialog i wyjście do lasu mają działać z telefonu.
+T04–T06 oraz T05a: przebudowa Vareon w 0.1.4 na polecenie testera — rynek, siedem wnętrz, NPC w budynkach usług i plan miasta. Nowa aranżacja czeka na ocenę. Aktualizacja 0.1.6 na polecenie testera łączy miasto i las w jeden świat 64×112: spacer przez bramę, bez przycisku i teleportu. Strefa miasta chroni przed walką i pościgiem; stare zapisy migrują po walidacji. Brak pustej demonstracji: spacer po mieście, dialog i wyjście do lasu mają działać z telefonu.
 
 ## M2
 T07–T11; aktualizacja T11 w 0.1.5 dodaje gałkę mobilną i ikony akcji na polecenie testera. Z dodatkowym T09a wybranym przez testera: eksploracyjne „Ślady dawnego szlaku” i kronika odkryć w 0.1.3. Wersja 0.1 ma dawać około 10–15 minut sensownej gry. Tester ocenia: ostrość, wygodę sterowania, wybór celu, czytelność obrażeń i tempo walki. Nie blokujemy wydania brakiem muzyki, jeśli została jawnie wyłączona.

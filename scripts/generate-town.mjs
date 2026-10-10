@@ -1,4 +1,4 @@
-/** Rebuild only Vareon. Forest, sample maps and reviewed sprites remain separate. */
+/** Rebuild Vareon and its continuous world; retain legacy forest/sample sources and sprites. */
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 const root=resolve(import.meta.dirname,'..');
@@ -70,3 +70,5 @@ m.nextlayerid=13;m.nextobjectid=250;
 const data=JSON.stringify(m,null,2)+'\n';
 writeFileSync(resolve(root,'assets/source/vareon.tmj'),data);writeFileSync(resolve(root,'apps/client/public/assets/vareon.json'),data);
 console.log('Generated Vareon revision 2: seven enterable buildings, market and located services.');
+
+await import('./generate-world.mjs');

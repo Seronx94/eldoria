@@ -1,6 +1,6 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.0.1 — grywalna scena wzorcowa offline**, przed akceptacją grafiki M0. Pełna wersja 0.1, NPC, sklep, quest i zapis nie są jeszcze ukończone. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.0.2 — grywalna scena wzorcowa offline**, przed akceptacją grafiki M0. Pełna wersja 0.1, NPC, sklep, quest i zapis nie są jeszcze ukończone. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżący prototyp
 
@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.md) opisuje sterowanie, pięć kroków próby i ograniczenia. Bieżąca pętla: bezpieczny dziedziniec → brama → szczur/żuk/wilk → łup i plecak → ukończona próba. Dostępny również spacer bez potworów do oceny grafiki. Stan tej próby nie jest zapisywany.
+Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.md) opisuje sterowanie, pięć kroków próby i ograniczenia. Domyślna próba zaczyna się od razu w zagajniku obok potworów: szczur/żuk/wilk → łup i plecak → ukończona próba. Przez bramę można wrócić na bezpieczny dziedziniec. Dostępny również spacer bez potworów do oceny grafiki. Stan tej próby nie jest zapisywany.
 
 Mapy wzorcowe i sprite’y są autorskimi placeholderami; źródła i opis w [ASSET_LICENSES.md](ASSET_LICENSES.md). Zanim powstaną pełne mapy T05, tester ocenia scenę T02. Weryfikacja i kolejka: [TASKS.md](TASKS.md).
 
@@ -119,7 +119,7 @@ npm run test:e2e
 npm run validate:content
 npm run build
 ```
-Wszystkie powyższe polecenia są już dostępne w prototypie 0.0.1. Testy e2e wymagają Chromium (instrukcja w docs/TESTER.md). dev:lan ma drukować adres do testów w tej samej sieci; nie wystawiać serwera automatycznie do Internetu. Etap online dodaje compose dla PostgreSQL i komendę dev:online. Etap Android dodaje komendy sync/build oraz opis SDK/JDK zgodny z wybraną wersją Capacitor. Bez podpisywania kluczem produkcyjnym ani publikowania w sklepie bez polecenia właściciela.
+Wszystkie powyższe polecenia są już dostępne w prototypie 0.0.2. Testy e2e wymagają Chromium (instrukcja w docs/TESTER.md). dev:lan ma drukować adres do testów w tej samej sieci; nie wystawiać serwera automatycznie do Internetu. Etap online dodaje compose dla PostgreSQL i komendę dev:online. Etap Android dodaje komendy sync/build oraz opis SDK/JDK zgodny z wybraną wersją Capacitor. Bez podpisywania kluczem produkcyjnym ani publikowania w sklepie bez polecenia właściciela.
 
 ## Zakres późniejszych wersji
 Cztery autorskie profesje (wojownik, łucznik, mag ognia, opiekun natury), lochy, questy fabularne i bossowie. Po stabilizacji: handel, PvP na oznaczonych terenach, gildie, moderacja. Monetyzacja dopiero po weryfikacji gry i wymogów platformy; preferowane kosmetyki, brak sprzedaży przewagi w pierwszej wersji.

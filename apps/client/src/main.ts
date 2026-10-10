@@ -22,6 +22,7 @@ let gateway: LocalGateway | undefined;
 let snapshot: Snapshot | undefined;
 let unsubscribe: (() => void) | undefined;
 let playing = false;
+let walkingOnly = false;
 const bagDialog = element<HTMLDialogElement>('#bag');
 let completionDismissed = false;
 let bagSignature = '';
@@ -108,11 +109,19 @@ class World extends Phaser.Scene {
     }
     for (const d of map.decorations) this.objects.push(this.add.image(d.x * 32 + 16, d.y * 32 + 32, d.kind).setOrigin(.5, 1).setDepth(d.y * 32 + 33));
     for (const p of map.portals) {
+      const enter = () => {
+        if (playing && ui.complete.hidden && !bagDialog.open) gateway?.send({ type: 'Interact' });
+      };
       const glow = this.add.graphics().setDepth(-10);
+      glow.setInteractive(new Phaser.Geom.Ellipse(p.x * 32 + 16, p.y * 32 + 16, 48, 48), Phaser.Geom.Ellipse.Contains);
+      glow.input!.cursor = 'pointer';
+      glow.on('pointerdown', enter);
       glow.lineStyle(2, 0xd1c785, .9).strokeEllipse(p.x * 32 + 16, p.y * 32 + 16, 27, 18);
       glow.fillStyle(0xa7c7a0, .5).fillEllipse(p.x * 32 + 16, p.y * 32 + 16, 17, 10);
       this.objects.push(glow);
-      this.objects.push(this.add.text(p.x * 32 + 16, p.y * 32 - 14, 'BRAMA', { fontFamily: 'monospace', fontSize: '9px', color: '#efe2ac', backgroundColor: '#213b32' }).setOrigin(.5));
+      const label = this.add.text(p.x * 32 + 16, p.y * 32 - 14, p.targetMapId === 'grove' ? 'DO ZAGAJNIKA' : 'NA DZIEDZINIEC', { fontFamily: 'monospace', fontSize: '10px', color: '#efe2ac', backgroundColor: '#213b32' }).setOrigin(.5).setInteractive({ useHandCursor: true });
+      label.on('pointerdown', enter);
+      this.objects.push(label);
     }
     this.cameras.main.setBounds(0, 0, map.width * 32, map.height * 32);
     this.playerPosition = '';
@@ -179,7 +188,20 @@ function updateUI(s: Snapshot): void {
   ui.rewards.textContent = `${s.exp} EXP · ${s.gold} złota (próba)`;
   ui.potionCount.textContent = `Q · ${s.potions} SZT.`;
   const target = s.creatures.find(c => c.id === s.selectedId && c.hp > 0);
-  ui.targetLabel.textContent = target ? `${monsters[target.kind].name} · ${target.hp} HP · ${target.x > s.player.x ? '→' : target.x < s.player.x ? '←' : ''}${target.y > s.player.y ? '↓' : target.y < s.player.y ? '↑' : ''} ${Math.abs(target.x - s.player.x) + Math.abs(target.y - s.player.y)} kratek` : 'Dotknij potwora, aby wybrać cel';
+  const map = maps.find(m => m.id === s.mapId)!;
+  const distance = (p: { x: number; y: number }) => Math.abs(p.x - s.player.x) + Math.abs(p.y - s.player.y);
+  const portal = [...map.portals].sort((a, b) => distance(a) - distance(b))[0];
+  const gateHint = portal ? `Brama ${portal.x > s.player.x ? '→' : portal.x < s.player.x ? '←' : ''}${portal.y > s.player.y ? '↓' : portal.y < s.player.y ? '↑' : ''} · ${distance(portal)} kratek · Przejdź (F)` : '';
+  const interact = element<HTMLButtonElement>('#interact');
+  interact.classList.toggle('ready', !!portal && distance(portal) <= 1);
+  interact.title = portal && distance(portal) <= 1 ? 'Brama w zasięgu — kliknij Przejdź lub bramę' : 'Podejdź obok bramy; można też kliknąć ją na mapie';
+  if (walkingOnly) ui.targetLabel.textContent = `Spacer bez potworów · ${gateHint}`;
+  else if (!map.combatAllowed) ui.targetLabel.textContent = `Bezpieczny dziedziniec · Potwory za bramą · ${gateHint}`;
+  else if (target) ui.targetLabel.textContent = `${monsters[target.kind].name} · ${target.hp} HP · ${target.x > s.player.x ? '→' : target.x < s.player.x ? '←' : ''}${target.y > s.player.y ? '↓' : target.y < s.player.y ? '↑' : ''} ${distance(target)} kratek`;
+  else {
+    const count = s.creatures.filter(c => c.hp > 0).length;
+    ui.targetLabel.textContent = count ? `Potwory: ${count} · Dotknij stworzenia lub wybierz Cel (T)` : 'Potwory odradzają się — zaczekaj lub rozpocznij nową próbę';
+  }
   ui.complete.hidden = !s.complete || completionDismissed;
   if (!ui.complete.hidden) resetInput();
   if (bagDialog.open) renderBag(s);
@@ -189,7 +211,9 @@ function updateUI(s: Snapshot): void {
 }
 function start(name: string): void {
   unsubscribe?.(); gateway?.disconnect(); resetInput();
-  gateway = new LocalGateway(new Simulation(maps, name, { now: () => performance.now() }, element<HTMLInputElement>('#walk-mode').checked ? [] : undefined));
+  walkingOnly = element<HTMLInputElement>('#walk-mode').checked;
+  const startingMaps = walkingOnly ? maps : [...maps.filter(m => m.combatAllowed), ...maps.filter(m => !m.combatAllowed)];
+  gateway = new LocalGateway(new Simulation(startingMaps, name, { now: () => performance.now() }, walkingOnly ? [] : undefined));
   unsubscribe = gateway.subscribe(updateUI); gateway.connect();
   completionDismissed = false; ui.complete.hidden = true; playing = true; ui.menu.hidden = true; ui.hud.hidden = false;
 }
@@ -217,18 +241,19 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('[data-directi
   });
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(name, event => pointerDirections.delete((event as PointerEvent).pointerId));
 }
-const keyDirections: Record<string, Direction> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
+const keyDirections: Record<string, Direction> = { arrowup: 'up', arrowdown: 'down', arrowleft: 'left', arrowright: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
 window.addEventListener('keydown', event => {
   if (!playing || event.target instanceof HTMLInputElement) return;
-  if (event.key === 't' && !event.repeat && !bagDialog.open) { event.preventDefault(); cycleTarget(); return; }
-  if (event.key === 'i' && !event.repeat) { event.preventDefault(); toggleBag(); return; }
+  const key = event.key.toLowerCase();
+  if (key === 't' && !event.repeat && !bagDialog.open) { event.preventDefault(); cycleTarget(); return; }
+  if (key === 'i' && !event.repeat) { event.preventDefault(); toggleBag(); return; }
   if (!ui.complete.hidden || bagDialog.open) return;
-  const d = keyDirections[event.key];
-  if (d) { event.preventDefault(); heldKeys.set(event.key, d); if (!event.repeat) movement(); return; }
-  const type = ({ ' ': 'Attack', e: 'Cast', q: 'UseItem', f: 'Interact', r: 'Loot' } as const)[event.key as ' ' | 'e' | 'q' | 'f' | 'r'];
+  const d = keyDirections[key];
+  if (d) { event.preventDefault(); heldKeys.set(key, d); if (!event.repeat) movement(); return; }
+  const type = ({ ' ': 'Attack', e: 'Cast', q: 'UseItem', f: 'Interact', r: 'Loot' } as const)[key as ' ' | 'e' | 'q' | 'f' | 'r'];
   if (type && !event.repeat) { event.preventDefault(); gateway?.send({ type }); }
 });
-window.addEventListener('keyup', event => { heldKeys.delete(event.key); });
+window.addEventListener('keyup', event => { heldKeys.delete(event.key.toLowerCase()); });
 window.addEventListener('blur', resetInput);
 window.addEventListener('resize', resetInput);
 document.addEventListener('visibilitychange', () => {

@@ -163,6 +163,17 @@ Aktualne wymogi Android/Google Play, prywatność, usuwanie konta, podpisywanie,
 
 `apps/client`, `packages/domain`, `packages/content`, `packages/protocol`, `assets/source`, `scripts`, `tests/e2e`, konfiguracja monorepo i CI, `ASSET_LICENSES.md`, `docs/TESTER.md`, screenshoty, README i ten dziennik. Zmiany przygotowane lokalnie do zapisania; brak automatycznego wdrożenia.
 
+## Stan sesji — 10 października 2026
+
+- Wersja do testów: **0.0.2**. Zgłoszenie testera: „Nie mam żadnych potworów”, screenshot bezpiecznego dziedzińca z komunikatem o zablokowanym ruchu.
+- Przyczyna: domyślny start na bezpiecznej mapie i nieczytelna instrukcja dojścia do zagajnika. Normalna próba zaczyna się teraz w zagajniku: szczur i żuk są w pobliżu, wilk dalej na południowym wschodzie. Tryb spaceru nadal zaczyna się na dziedzińcu i stale pokazuje informację „Spacer bez potworów”.
+- Naprawione: stała wskazówka do bramy (kierunek i odległość), informacja o potworach za bramą na dziedzińcu, licznik żywych potworów w zagajniku, wyróżnienie dostępnego przejścia oraz kliknięcie bramy. Domena nadal wymaga podejścia do bramy. Klawiatura działa również z Caps Lock.
+- Zmienione pliki: klient, testy e2e, wersje manifestów i lockfile, README, docs/TESTER.md, screenshoty oraz TASKS.md.
+- Kontrole: `npm run typecheck` — PASS; `npm run lint` — PASS; `npm test` — **29 PASS**; `npm run build` (wraz z validate:content) — PASS, 2 mapy. `npm run test:e2e` — **11 PASS, 1 SKIPPED**, desktop i mobilny Chromium; pominięty duplikat wielodotyku na desktopie, scenariusz mobilny zaliczony. Pełny przebieg ok. 3,2 min.
+- Nowy scenariusz regresji: start przy potworach → dziedziniec → blokada ruchu bez utraty wskazówki → brak teleportu z daleka → kliknięcie pobliskiej bramy → wybór szczura i rzucenie Iskry. Testuje też wielkie litery klawiatury. Dotychczasowa pełna próba walki, łupu i restartu nadal przechodzi na obu viewportach.
+- Test fizycznego telefonu i audio — NIE WYKONANO. Grafika nadal robocza; T02 pozostaje REVIEW, dalsze pełne mapy czekają na akceptację stylistyki według AGENTS.md. Pozostałe statusy zadań bez zmian.
+- Następny test właściciela: uruchomić 0.0.2 bez zaznaczonego spaceru, pokonać szczura/żuka/wilka, zebrać łup i sprawdzić powrót przez bramę. Instrukcja w docs/TESTER.md.
+
 ## Szablon raportu zadania
 ID / status / zmienione pliki / wykonane komendy i wyniki / test manualny / ograniczenia / następny krok.
 

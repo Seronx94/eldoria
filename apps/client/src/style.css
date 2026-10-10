@@ -732,3 +732,14 @@ h2 {
   height:20px;
   accent-color:var(--gold)
 }
+
+.actions #interact.ready {
+  border-color: var(--gold);
+  background: #4b5134;
+}
+.world-label {
+  max-width: calc(100vw - 24px);
+  white-space: normal;
+  text-align: center;
+  line-height: 1.4;
+}

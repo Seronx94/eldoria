@@ -6,11 +6,16 @@ async function start(page: Page, walk = false) {
   await page.getByRole('button', { name: 'Rozpocznij' }).click();
   await expect(page.locator('#hud')).toBeVisible();
   await expect(page.locator('#hud')).toHaveAttribute('data-position', '13,11');
-  await page.waitForTimeout(500);
-  for (let i = 0; i < 7; i++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(220); }
-  await page.getByRole('button', { name: /Przejdź/ }).click();
-  await expect(page.locator('#hud')).toHaveAttribute('data-map', 'grove');
-  await expect(page.locator('#hud')).toHaveAttribute('data-position', '13,11');
+  await expect(page.locator('#hud')).toHaveAttribute('data-map', walk ? 'courtyard' : 'grove');
+  if (walk) {
+    await expect(page.locator('#target-label')).toContainText('Spacer bez potworów');
+    await page.waitForTimeout(220);
+    for (let i = 0; i < 7; i++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(220); }
+    await page.getByRole('button', { name: /Przejdź/ }).click();
+    await expect(page.locator('#hud')).toHaveAttribute('data-map', 'grove');
+    await expect(page.locator('#hud')).toHaveAttribute('data-position', '13,11');
+    await expect(page.locator('#target-label')).toContainText('Spacer bez potworów');
+  } else await expect(page.locator('#target-label')).toContainText('Potwory: 3');
   await page.waitForTimeout(500);
 }
 async function selectRat(page: Page, offsetX: number, offsetY: number) {
@@ -129,4 +134,32 @@ test('style review screenshots and touch control sizes', async ({ page }, testIn
     const box = await button.boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(48); expect(box?.height).toBeGreaterThanOrEqual(48);
   }
+});
+
+
+test('safe courtyard keeps directions visible and clicking its nearby gate returns to monsters', async ({ page }) => {
+  test.setTimeout(60000);
+  await start(page);
+  for (let i = 0; i < 7; i++) { await page.waitForTimeout(220); await page.keyboard.press('W'); }
+  await page.getByRole('button', { name: /Przejdź/ }).click();
+  await expect(page.locator('#hud')).toHaveAttribute('data-map', 'courtyard');
+  await expect(page.locator('#target-label')).toContainText('Potwory za bramą');
+  for (let i = 0; i < 11; i++) { await page.waitForTimeout(220); await page.keyboard.press('W'); }
+  await expect(page.locator('#message')).toHaveText('Przejście zablokowane.');
+  await expect(page.locator('#target-label')).toContainText('Potwory za bramą');
+  await page.getByRole('button', { name: /Przejdź/ }).click();
+  await expect(page.locator('#hud')).toHaveAttribute('data-map', 'courtyard');
+  for (let i = 0; i < 3; i++) { await page.waitForTimeout(220); await page.keyboard.press('S'); }
+  await expect(page.locator('#hud')).toHaveAttribute('data-position', '13,4');
+  await expect(page.locator('#interact')).toHaveClass(/ready/);
+  await page.waitForTimeout(700);
+  const viewport = page.viewportSize()!;
+  const top = viewport.height <= 600 ? 60 : 76, bottom = viewport.height <= 600 ? 104 : 168;
+  const zoom = viewport.width >= 1000 && viewport.height >= 600 ? 2 : 1;
+  await page.locator('canvas').click({ position: { x: viewport.width / 2, y: top + (viewport.height - top - bottom) / 2 - 48 * zoom } });
+  await expect(page.locator('#hud')).toHaveAttribute('data-map', 'grove');
+  await page.getByRole('button', { name: /Cel/ }).click();
+  await expect(page.locator('#target-label')).toContainText('Szczur');
+  await page.getByRole('button', { name: /Iskra/ }).click();
+  await expect(page.locator('#hp-label')).toContainText('42 MP');
 });

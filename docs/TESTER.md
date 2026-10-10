@@ -1,4 +1,4 @@
-# Eldoria 0.0.1 — pierwsza próba gry
+# Eldoria 0.0.2 — pierwsza próba gry
 
 To grywalny prototyp offline M0 i niezależnych mechanik T07/T08, **nie pełna wersja 0.1**. Obie mapy 28×22 to sceny wzorcowe. Pełne Vareon 48×48, las 64×64, NPC, sklep, quest i zapis pozostają przed nami. Grafika jest autorskim placeholderem, audio celowo wyłączone. Odświeżenie strony lub rozpoczęcie nowej próby zeruje postęp.
 
@@ -21,15 +21,15 @@ Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Ko
 
 ## Pięć kroków testu
 
-1. Wpisz imię i rozpocznij. Strzałkami/WASD lub D-padem idź w górę do świecącej bramy. Stojąc na niej lub obok, wybierz **Przejdź** (F). Samo podejście nie teleportuje. Na dziedzińcu nie ma walki.
-2. W zagajniku dotknij szczura albo wybierz **Cel** (T). Iskra (E) trafia do 4 kratek, kosztuje 8 many i odnawia się przez 1,5 s. Miecz (Spacja) działa z sąsiedniej kratki co 0,8 s. Powtórz walkę z żukiem; wilka szukaj głębiej na południowym wschodzie. Wskaźnik celu pokazuje kierunek i odległość. Wilk atakuje sam; pozostałe stworzenia dopiero po zaczepieniu.
+1. Wpisz imię i rozpocznij z odznaczonym „Spacerem bez potworów”. Trafisz od razu do zagajnika: szczur jest powyżej po prawej, żuk dalej na prawo, a wilk na południowym wschodzie. Na górze zobaczysz „Potwory: 3”. WASD/strzałki i D-pad poruszają postacią; wielkie litery i Caps Lock również działają.
+2. Dotknij szczura albo wybierz **Cel** (T). Iskra (E) trafia do 4 kratek, kosztuje 8 many i odnawia się przez 1,5 s. Miecz (Spacja) działa z sąsiedniej kratki co 0,8 s. Powtórz walkę z żukiem; wilka szukaj głębiej na południowym wschodzie. Wskaźnik celu pokazuje kierunek i odległość. Wilk atakuje sam; pozostałe stworzenia dopiero po zaczepieniu.
 3. Gdy HP spadnie, użyj **Mikstury** (Q). Masz trzy, każda leczy do 40 HP, z przerwą 3 s. Pełne HP nie zużywa mikstury. Po pokonaniu stworzenia podejdź do sakiewki i wybierz **Łup** (R), osobno dla każdej sakiewki. EXP jest przyznawane za pokonanie; złoto i materiały dopiero po podniesieniu.
 4. Otwórz **Plecak** (I). Sprawdź złoto, chitynę/skórę, mikstury i wyposażenie. Zdejmij i załóż miecz/tunikę. Ruch pod otwartym oknem ma być zablokowany. Pokonanie każdego z trzech typów kończy próbę. Zamknij komunikat przyciskiem „Zbierz pozostały łup”, jeśli chcesz jeszcze zwiedzać. Śmierć przywraca HP/manę na bezpiecznym dziedzińcu bez utraty EXP/łupu.
-5. W menu można zaznaczyć **Spacer bez potworów**, aby ocenić wygląd bez walki. Zrób pięć podróży przez bramę w obie strony, sprawdź ściany/podstawy drzew, ostrość podczas ruchu, obrót telefonu i jednoczesny ruch + atak/czar. Potem rozpocznij nową próbę — postęp powinien się wyzerować, bo zapis z T10 nie jest jeszcze zaimplementowany.
+5. Brama na północy prowadzi na bezpieczny dziedziniec. Stań na niej lub obok, a następnie wybierz **Przejdź** (F) albo kliknij bramę. Przycisk podświetla się w zasięgu; samo podejście nie teleportuje. Wskazówka na górze pokazuje kierunek i odległość do bramy na dziedzińcu. W menu można zaznaczyć **Spacer bez potworów**, aby ocenić wygląd bez walki — oznaczenie tego trybu jest widoczne przez całą grę, również w zagajniku. Zrób pięć podróży w obie strony, sprawdź ściany/podstawy drzew, ostrość, obrót telefonu i jednoczesny ruch + atak/czar. Potem rozpocznij nową próbę — postęp powinien się wyzerować, bo zapis z T10 nie jest jeszcze zaimplementowany.
 
 ## Scena do oceny
 
-[Widok desktopowy](screenshots/scene-desktop.png) · [widok mobilny](screenshots/scene-mobile.png) · [ukończona próba](screenshots/trial-mobile.png). To zrzuty z końcowych testów, z placeholderami.
+[Potwory po starcie — desktop](screenshots/combat-desktop.png) · [potwory po starcie — telefon](screenshots/combat-mobile.png) · [Widok desktopowy stylu](screenshots/scene-desktop.png) · [widok mobilny](screenshots/scene-mobile.png) · [ukończona próba](screenshots/trial-mobile.png). To zrzuty z końcowych testów, z placeholderami.
 
 ## Co zgłosić
 

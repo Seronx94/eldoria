@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { importMap, validateMaps, rules, monsters, items, npcs, questRules, type WorldMap } from '@eldoria/content';
+import { importMap, validateMaps, rules, monsters, items, npcs, questRules, explorationRules, landmarks, type WorldMap } from '@eldoria/content';
 import { nameSchema, type Direction } from '@eldoria/protocol';
 import { Simulation, LocalGateway, type Snapshot, type SaveData } from '@eldoria/domain';
 import { CombatEffects } from './combat-effects';
@@ -169,6 +169,19 @@ class World extends Phaser.Scene {
       label.on('pointerdown',talk); this.objects.push(label);
     }
     if (colorful && map.id === 'vareon') this.objects.push(this.add.image(24*32+16,21*32+32,art('well')).setOrigin(.5,1).setDepth(21*32+33));
+    for (const l of landmarks.filter(l => l.mapId === map.id)) {
+      // Original native-size geometric sign, readable in both graphics modes.
+      const sign = this.add.graphics().setDepth(l.y*32+32);
+      sign.fillStyle(0x71502e).fillRect(l.x*32+14,l.y*32+5,4,23);
+      sign.fillStyle(0xd3b66d).fillRect(l.x*32+4,l.y*32+2,24,12);
+      sign.lineStyle(1,0x493821).strokeRect(l.x*32+4,l.y*32+2,24,12);
+      sign.lineStyle(2,0x356e60).strokeTriangle(l.x*32+12,l.y*32+5,l.x*32+20,l.y*32+8,l.x*32+12,l.y*32+11);
+      const inspect = () => { if (playing && !bagDialog.open && !npcDialog.open) gateway?.send({type:'Interact'}); };
+      sign.setInteractive(new Phaser.Geom.Rectangle(l.x*32,l.y*32,32,32),Phaser.Geom.Rectangle.Contains).on('pointerdown',inspect);
+      sign.input!.cursor = 'pointer'; this.objects.push(sign);
+      const label = this.add.text(l.x*32+16,l.y*32-10,l.name,{fontFamily:'monospace',fontSize:'10px',color:'#ffe3a2',backgroundColor:'#213b32'}).setOrigin(.5).setDepth(l.y*32+34).setInteractive({useHandCursor:true});
+      label.on('pointerdown',inspect); this.objects.push(label);
+    }
     for (const p of map.portals) {
       const enter = () => {
         if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) gateway?.send({ type: 'Interact' });
@@ -273,6 +286,10 @@ function updateUI(s: Snapshot): void {
   ui.mapName.textContent = ({courtyard:'DZIEDZINIEC WZORCOWY',grove:'ZAGAJNIK WZORCOWY',vareon:'VAREON',forest:'MROCZNY LAS'})[s.mapId] ?? s.mapId;
   ui.objective.textContent = adventure ? s.quest.status === 'available' ? 'Mira →' : s.quest.status === 'claimed' ? '✓' : `${s.quest.kills} / 5` : `${s.defeatedKinds.length} / 3`;
   element('#objective-title').textContent = adventure ? 'NIEPOKÓJ ZA BRAMĄ' : 'PRÓBA WĘDROWCA';
+  if (adventure && ['available','claimed'].includes(s.quest.status) && ['active','ready'].includes(s.exploration.status)) {
+    element('#objective-title').textContent = explorationRules.title.toUpperCase();
+    ui.objective.textContent = `${s.exploration.found.length} / 3`;
+  }
   ui.message.textContent = s.message;
   ui.rewards.textContent = `${s.exp} EXP · ${s.gold} złota`;
   ui.potionCount.textContent = `Q · ${s.potions} SZT.`;
@@ -283,7 +300,8 @@ function updateUI(s: Snapshot): void {
   const gateHint = portal ? `Brama ${portal.x > s.player.x ? '→' : portal.x < s.player.x ? '←' : ''}${portal.y > s.player.y ? '↓' : portal.y < s.player.y ? '↑' : ''} · ${distance(portal)} kratek · Przejdź (F)` : '';
   const interact = element<HTMLButtonElement>('#interact');
   const nearbyNpc = map.npcs.find(n => distance(n) <= 1);
-  interact.classList.toggle('ready', !!nearbyNpc || !!portal && distance(portal) <= 1);
+  const nearbyLandmark = landmarks.find(l => l.mapId === s.mapId && distance(l) <= 1);
+  interact.classList.toggle('ready', !!nearbyLandmark || !!nearbyNpc || !!portal && distance(portal) <= 1);
   interact.title = portal && distance(portal) <= 1 ? 'Brama w zasięgu — kliknij Przejdź lub bramę' : 'Podejdź obok bramy; można też kliknąć ją na mapie';
   if (adventure && !map.combatAllowed) ui.targetLabel.textContent = `${s.quest.status === 'available' ? 'Porozmawiaj z Mirą obok (F)' : s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę (F)' : s.quest.status === 'claimed' ? 'Zadanie ukończone · Oren leczy, Borin handluje' : 'Pokonaj 5 stworzeń w lesie'} · ${gateHint}`;
   else if (walkingOnly) ui.targetLabel.textContent = `Spacer bez potworów · ${gateHint}`;
@@ -294,6 +312,12 @@ function updateUI(s: Snapshot): void {
     const count = s.creatures.filter(c => c.hp > 0).length;
     ui.targetLabel.textContent = count ? `Potwory: ${count} · Dotknij stworzenia lub wybierz Cel (T)` : 'Potwory odradzają się — zaczekaj lub rozpocznij nową próbę';
   }
+  if (adventure && s.exploration.status !== 'available' && s.exploration.status !== 'claimed') {
+    const next = landmarks.find(l => !s.exploration.found.includes(l.id));
+    const explorationHint = s.exploration.status === 'ready' ? 'Szlak 3/3 — wróć do Miry po nagrodę' : s.mapId === 'forest' && next ? `Szlak ${s.exploration.found.length}/3 · ${next.name} ${next.x > s.player.x ? '→' : next.x < s.player.x ? '←' : ''}${next.y > s.player.y ? '↓' : next.y < s.player.y ? '↑' : ''} · ${distance(next)} kratek · F: zbadaj` : `Szlak ${s.exploration.found.length}/3 · miejsca w Mrocznym Lesie`;
+    if (!target) ui.targetLabel.textContent = `${explorationHint} · ${gateHint}`;
+  }
+  if (nearbyLandmark && !target) ui.targetLabel.textContent = `${nearbyLandmark.name} · F / Rozmowa: zbadaj · ${s.exploration.found.includes(nearbyLandmark.id) ? 'odkryte' : 'niezbadane'}`;
   ui.complete.hidden = !s.complete || completionDismissed;
   if (!ui.complete.hidden) resetInput();
   if (bagDialog.open) renderBag(s);
@@ -370,9 +394,19 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => { if (adventure) saveNow(); clearInterval(movementTimer); gateway?.disconnect(); game.destroy(true); });
 
 function renderBag(s: Snapshot): void {
-  const signature = JSON.stringify([s.inventory, s.equipment, s.gold, s.exp]);
+  const signature = JSON.stringify([s.inventory, s.equipment, s.gold, s.exp, s.exploration]);
   if (signature === bagSignature) return;
   bagSignature = signature;
+  element('#chronicle').hidden = !adventure;
+  const chronicle = element('#chronicle-text'); chronicle.replaceChildren();
+  const progress = document.createElement('p');
+  progress.textContent = s.exploration.status === 'available' ? 'Porozmawiaj z Mirą i przyjmij zadanie. Odkrycia sprzed przyjęcia nie liczą się.' : s.exploration.status === 'claimed' ? 'Szlak odkryty — nagroda odebrana.' : `Odkrycia: ${s.exploration.found.length}/3. ${s.exploration.status === 'ready' ? 'Wróć do Miry po nagrodę.' : 'Zbadaj oznaczone miejsca w lesie (F).'}`;
+  chronicle.append(progress);
+  for (const l of landmarks) {
+    const note = document.createElement('p');
+    note.textContent = s.exploration.found.includes(l.id) ? `✓ ${l.name}: ${l.text}` : `◇ ${l.name} — jeszcze nieodkryte`;
+    chronicle.append(note);
+  }
   const equipment = element('#equipment'); equipment.replaceChildren();
   for (const slot of ['weapon', 'armor'] as const) {
     const row = document.createElement('div'); row.className = 'equipment-row';
@@ -419,7 +453,7 @@ element('#cycle-target').addEventListener('click', event => { if (event.detail =
 let npcSignature = '';
 function renderNpc(s: Snapshot): void {
   if (!s.dialog) { if (npcDialog.open) npcDialog.close(); npcSignature = ''; return; }
-  const signature = JSON.stringify([s.dialog,s.quest,s.gold,s.inventory,s.message]);
+  const signature = JSON.stringify([s.dialog,s.quest,s.exploration,s.gold,s.inventory,s.message]);
   if (signature === npcSignature) return;
   npcSignature = signature;
   resetInput();
@@ -440,6 +474,13 @@ function renderNpc(s: Snapshot): void {
     else if (status === 'ready') action('Odbierz nagrodę',{type:'ClaimReward'});
     else if (status === 'active') element('#npc-text').textContent += '\nWróć po pokonaniu pięciu stworzeń.';
   }
+  if (s.dialog === 'mira') {
+    const q = s.exploration;
+    element('#npc-text').textContent += `\n\n${explorationRules.title}: ${q.status === 'claimed' ? 'ukończone — nagroda odebrana' : `${q.found.length}/3`}\nZnajdź stary drogowskaz na północ od bramy, obóz na zachodzie i kamień pamięci na północnym wschodzie. Podejdź i zbadaj (F). Nagroda: 75 EXP, 25 złota, 2 mikstury.`;
+    for (const l of landmarks) if (q.found.includes(l.id)) element('#npc-text').textContent += `\n✓ ${l.name}: ${l.text}`;
+    if (q.status === 'available') action('Przyjmij: Ślady dawnego szlaku',{type:'AcceptQuest',questId:'exploration'});
+    else if (q.status === 'ready') action('Odbierz nagrodę za szlak',{type:'ClaimReward',questId:'exploration'});
+  }
   if (s.dialog === 'oren') action('Przywróć zdrowie i manę',{type:'Heal'});
   if (s.dialog === 'borin') {
     element('#npc-text').textContent += `\nTwoje złoto: ${s.gold}`;
@@ -458,19 +499,19 @@ npcDialog.addEventListener('close', resetInput);
 function saveNow(explicitRecovery = false): void {
   if (!gateway || !adventure) return;
   lastSaveTime = performance.now();
-  if (snapshot) { lastSavedMap = snapshot.mapId; lastSavedEconomy = JSON.stringify([snapshot.gold,snapshot.quest.status]); }
+  if (snapshot) { lastSavedMap = snapshot.mapId; lastSavedEconomy = JSON.stringify([snapshot.gold,snapshot.quest.status,snapshot.exploration]); }
   try {
     const data = gateway.exportSave();
     const error = storage.write(data,explicitRecovery);
     element('#save-status').textContent = error ?? 'Przygoda zapisana lokalnie';
-    if (!error) { lastSaveTime = performance.now(); lastSavedSignature = persistentSignature(data); lastSavedMap = data.mapId; lastSavedEconomy = JSON.stringify([data.gold,data.quest.status]); }
+    if (!error) { lastSaveTime = performance.now(); lastSavedSignature = persistentSignature(data); lastSavedMap = data.mapId; lastSavedEconomy = JSON.stringify([data.gold,data.quest.status,data.exploration]); }
   } catch { element('#save-status').textContent = 'Nie udało się zapisać. Wyeksportuj zapis lub zgłoś błąd.'; }
 }
 function persistentSignature(data: SaveData): string {
-  return JSON.stringify([data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
+  return JSON.stringify([data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
 }
 function autosave(s: Snapshot): void {
-  const economy = JSON.stringify([s.gold,s.quest.status]);
+  const economy = JSON.stringify([s.gold,s.quest.status,s.exploration]);
   if (s.mapId !== lastSavedMap || economy !== lastSavedEconomy || performance.now()-lastSaveTime >= 30000) {
     const data = gateway?.exportSave();
     if (data && persistentSignature(data) !== lastSavedSignature) saveNow();

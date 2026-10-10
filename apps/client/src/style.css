@@ -757,3 +757,6 @@ select { display:block; min-height:48px; width:100%; color:#ece6cf; background:#
 #npc-actions button { padding:8px 14px; }
 button:disabled { opacity:.5; cursor:default; }
 @media(max-height:600px) { .topbar { gap:8px; } .brand>span { letter-spacing:1px; } .actions #interact { font-size:10px; } #save-status { display:block; max-width:150px; font-size:8px; } }
+
+#chronicle { padding:12px 0; line-height:1.6; }
+#chronicle summary { min-height:48px; cursor:pointer; padding:12px; }

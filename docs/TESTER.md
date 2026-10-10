@@ -1,4 +1,4 @@
-# Eldoria 0.1.2 — ruch potworów i animowana walka
+# Eldoria 0.1.3 — Ślady dawnego szlaku
 
 Pierwsza przygoda offline: Vareon 48×48, Mroczny Las 64×64, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
@@ -19,6 +19,14 @@ npm run dev:lan
 ```
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
+
+## Pięć kroków nowej wyprawy
+
+1. Rozpocznij lub wznów przygodę Vareon. U Miry wybierz **Przyjmij: Ślady dawnego szlaku**. Możesz wykonać to zadanie niezależnie od pięciu zabójstw.
+2. Wyjdź północną bramą. Bez wybranego celu walki wskazówka nad mapą pokazuje kolejne miejsce i kierunek. Stary drogowskaz leży na północ od wejścia, obóz na zachodzie, kamień pamięci dalej na północnym wschodzie. Podejdź do oznaczenia i wybierz **Rozmowa / Przejdź (F)**; kliknięcie oznaczenia też działa w zasięgu jednej kratki.
+3. Po pierwszym odkryciu odśwież stronę i wznów. Postęp powinien zostać. Zbadaj ponownie to samo miejsce: licznik nie zwiększa się. Otwórz **Plecak → Kronika**, aby przeczytać opisy; na telefonie przewiń okno plecaka. W lesie potwory nadal działają przy otwartym plecaku.
+4. Po odkryciu trzech miejsc wróć przez południową bramę do Miry. Odbierz **nagrodę za szlak**: 75 EXP, 25 złota i 2 mikstury. Przy pełnym plecaku nagroda pozostaje do odebrania.
+5. Odśwież stronę i wznów. Kronika powinna zachować wszystkie odkrycia, a Mira nie wypłaca nagrody drugi raz. Zgłoś czy wskazówki i tekst są czytelne na Twoim telefonie.
 
 ## Trzy kroki testu animacji
 

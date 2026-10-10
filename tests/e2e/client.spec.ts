@@ -62,7 +62,13 @@ test('menu, assets, real combat loop and restart', async ({ page }, testInfo) =>
   for (let i = 0; i < 2; i++) await page.getByRole('button', { name: /Łup/ }).click();
   for (let i = 0; i < 6; i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(220); }
   for (let i = 0; i < 3; i++) { await page.keyboard.press('ArrowDown'); await page.waitForTimeout(220); }
-  await page.getByRole('button', { name: /Cel/ }).click();
+  // Earlier monsters may respawn during a slow browser run. Cycle the real
+  // selector until the wolf is selected instead of assuming it is the only survivor.
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole('button', { name: /Cel/ }).click();
+    await page.waitForTimeout(80);
+    if ((await page.locator('#target-label').textContent())?.includes('Wilk')) break;
+  }
   await expect(page.locator('#target-label')).toContainText('Wilk');
   await page.getByRole('button', { name: /Iskra/ }).click();
   for (let i = 0; i < 6; i++) { await page.getByRole('button', { name: /Miecz/ }).click(); await page.waitForTimeout(850); if (i === 2) await page.getByRole('button', { name: /Mikstura/ }).click(); }

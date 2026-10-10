@@ -5,12 +5,16 @@ import { inventorySchema } from './inventory';
 const integer = (max: number) => z.number().int().min(0).max(max);
 const point = z.object({ x: integer(255), y: integer(255) }).strict();
 export const questSchema = z.object({ status: z.enum(['available', 'active', 'ready', 'claimed']), kills: integer(5) }).strict().refine(q => q.status === 'available' ? q.kills === 0 : q.status === 'active' ? q.kills < 5 : q.kills === 5, 'Nieprawidłowy postęp zadania');
+export const explorationSchema = z.object({
+  status: z.enum(['available', 'active', 'ready', 'claimed']),
+  found: z.array(z.enum(['trail', 'camp', 'stone'])).max(3),
+}).strict().refine(q => new Set(q.found).size === q.found.length && (q.status === 'available' ? q.found.length === 0 : q.status === 'active' ? q.found.length < 3 : q.found.length === 3), 'Nieprawidłowy postęp eksploracji');
 export const saveSchema = z.object({
   version: z.literal(1), mode: z.literal('offline'), name: nameSchema,
   mapId: z.enum(['vareon', 'forest']), player: point, direction: directionSchema,
   level: z.number().int().min(1).max(100), hp: z.number().int().min(1).max(1090), mana: integer(545),
   exp: integer(9999), gold: integer(10000000), kills: integer(10000000),
-  quest: questSchema, inventory: inventorySchema,
+  quest: questSchema, exploration: explorationSchema.default({status:'available',found:[]}), inventory: inventorySchema,
   equipment: z.object({ weapon: z.literal('sword').nullable(), armor: z.literal('tunic').nullable() }).strict(),
   cooldowns: z.object({ move: integer(rules.stepMs), attack: integer(rules.attackMs), spell: integer(rules.spellMs), potion: integer(rules.potionMs), mana: integer(rules.manaRegenMs) }).strict(),
   maps: z.array(z.object({ mapId: z.enum(['vareon', 'forest']), creatures: z.array(z.object({

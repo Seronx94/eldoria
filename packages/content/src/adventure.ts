@@ -11,3 +11,11 @@ export const sampleSpawns = [
   { id: 'beetle-1', kind: 'beetle', x: 18, y: 11 },
   { id: 'wolf-1', kind: 'wolf', x: 22, y: 16 },
 ] as const;
+
+export const explorationRules = { title: 'Ślady dawnego szlaku', exp: 75, gold: 25, potions: 2 } as const;
+// Coordinates are content, shared by the domain and the view. These do not block movement.
+export const landmarks = [
+  { id: 'trail', mapId: 'forest', x: 32, y: 52, name: 'Stary drogowskaz', text: 'Pod mchem odczytujesz znak Vareon. Dawny szlak prowadził na zachód, ku polanie zbieraczy.' },
+  { id: 'camp', mapId: 'forest', x: 24, y: 48, name: 'Opuszczony obóz', text: 'Wygasłe ognisko i pusta sakwa. Wędrowcy opuścili obóz w pośpiechu. Na kamieniu wyryli znak wschodniego szlaku.' },
+  { id: 'stone', mapId: 'forest', x: 40, y: 44, name: 'Kamień pamięci', text: 'Tu kończy się stary szlak. Kamień nosi imiona pierwszych strażników Vareon. Mira zechce usłyszeć o tym odkryciu.' },
+] as const;

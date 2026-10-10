@@ -1,6 +1,6 @@
 # Eldoria — kolejka implementacji
 
-Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżąca wersja 0.1.2 jest przygodą offline z animowaną walką; nie jest wydaniem online ani APK.
+Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżąca wersja 0.1.3 jest przygodą offline z odkrywaniem dawnego szlaku; nie jest wydaniem online ani APK.
 
 ## Zasady kolejki
 Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVIEW można budować domenę, lecz nie rozbudowywać finalnej mapy przed akceptacją stylu. Każdy wpis po pracy uzupełnij o dowód: polecenia/wyniki, pliki, screenshot lub scenariusz manualny. Opisane niżej testy są wymaganiem, nie raportem ich wykonania.
@@ -18,6 +18,7 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 | T09 | M2 | DONE | Sklep i quest | T06, T08 |
 | T10 | M2 | DONE | Zapis i odtworzenie | T09 |
 | T11 | M2 | REVIEW | Wydanie 0.1 i poprawki mobilne | T05–T10 |
+| T09a | M2 | DONE | Ślady dawnego szlaku — quest eksploracji i kronika (wybór testera) | T05, T06, T09, T10 |
 | T12 | M3 | TODO | Serwer i protokół | T11 |
 | T13 | M3 | TODO | Konta i PostgreSQL | T12 |
 | T14 | M3 | TODO | Gospodarka i trwałość | T13 |
@@ -96,6 +97,12 @@ Szczur/żuk/wilk, AI idle/chase/attack/return/dead, cooldowny, wybór celu, Iskr
 
 **Kryteria docelowe:**
 Quest i sklep według README. Quest liczy zabójstwa tylko po przyjęciu, nagroda najwyżej raz; pełny plecak zostawia odbiór pending bez wypłacania części wielokrotnie. Zakup atomowy, brak ujemnego złota. Test powtórnej wypłaty, braku złota i pełnego plecaka.
+
+### T09a — DONE
+
+**Zakres wybrany przez testera:** „Więcej zadań i eksploracji”. Zadanie Miry „Ślady dawnego szlaku” obok dotychczasowego questa: trzy oznaczone miejsca w istniejącym lesie, opisy w kronice, kierunek i odległość do celu, zapis odkryć, jednorazowa nagroda 75 EXP / 25 złota / 2 mikstury. Zadanie nie wymaga ukończenia pięciu zabójstw; T11 nadal REVIEW na telefonie, T12 nie rozpoczęto.
+
+**Kryteria:** akceptacja u NPC w zasięgu, odkrycia dopiero po przyjęciu i w zasięgu jednej kratki, osiągalne miejsca, brak duplikatów postępu i nagród, pełny plecak zachowuje nagrodę, wznowienie i starsze zapisy, czytelne opisy na mobilnym ekranie. Dowody w raporcie 0.1.3 poniżej.
 
 ### T10 — DONE
 
@@ -217,6 +224,18 @@ Aktualne wymogi Android/Google Play, prywatność, usuwanie konta, podpisywanie,
 - Media: docs/screenshots/animated-spark-desktop.png i animated-sword-mobile.png z końcowego testu; docs/videos/animated-combat-desktop.webm (3,566 s, 556 KB), 72 rzeczywiste klatki z Chromium przez CDP, zakodowane lokalnym systemowym FFmpeg, sprawdzone ffprobe i pełnym dekodowaniem. Nagranie pokazuje Iskrę, chód, otrzymane trafienie i miecz; bez zewnętrznego pobierania.
 - Produkcyjny `Vite preview` — PASS: menu 0.1.2, nowe sprite’y i efekty bez błędów HTTP/konsoli, Iskra → pościg → miecz/zabójstwo → wygaszenie → nowa próba w klasycznym stylu bez odtwarzania trafień. Dist ok. 2 MB.
 - Ograniczenia: animacja stworzeń przód/bok bez osobnej klatki tyłu; poza bohatera używa istniejących klatek wraz z animowanym mieczem, nie nowego pełnego zestawu uderzenia. Brak audio. Test fizycznego telefonu/FPS/15 minut — NIE WYKONANO. Następny krok: tester przechodzi trzy kroki animacji w docs/TESTER.md i zgłasza czytelność/płynność.
+
+## Eksploracja — 10 października 2026, wersja 0.1.3
+
+- Wybór testera: „Więcej zadań i eksploracji”. Dodano T09a w M2 z ukończonymi zależnościami T05/T06/T09/T10; T11 nadal REVIEW na fizycznym telefonie, T12 i online nie rozpoczęto.
+- Mira oferuje niezależne „Ślady dawnego szlaku”. Trzy miejsca w istniejącym lesie: stary drogowskaz (32,52), opuszczony obóz (24,48), kamień pamięci (40,44). Autorskie opisy, proceduralne znaki w obu stylach, kierunek/odległość do następnego celu bez wybranego potwora, wyróżnienie interakcji w zasięgu, kronika odkryć w plecaku i podsumowanie u Miry. Cel eksploracji w głównym HUD, gdy quest walki nie jest aktywny. Nie dodano nowego regionu ani zmiany statystyk walki.
+- Domena sprawdza przyjęcie i dystans ≤1, nie zlicza powtórnych badań. Nagroda 75 EXP, 25 złota i 2 mikstury tylko raz; pełny plecak pozostawia ją gotową. Zapis v1 rozszerzono o walidowany postęp; stare zapisy wczytują zadanie jako dostępne. Zapisy 0.1.3 wymagają klienta 0.1.3 lub nowszego. Przyjęcie i każde odkrycie wywołują autosave; odzyskanie/import zachowują postęp.
+- `npm run typecheck`, `npm run lint`, `npm test` — PASS, **55 testów / 7 plików**. Nowe testy: osiągalność miejsc, zasięg/przyjęcie, powtórne badanie, trwałość, jednorazowa nagroda niezależna od pierwszego questa, pełny plecak → zwolnienie pola → wypłata, wadliwe/zdublowane odkrycia, zgodność starych zapisów. `npm run build` z validate:content — PASS: 4 mapy, PNG, spawny, portale i nowe miejsca odkryć; JS 1,339 MB / 362 KB gzip, dist ok. 2 MB. Pozostaje ostrzeżenie Vite o chunku Phaser >500 KB.
+- Pierwszy scenariusz e2e zatrzymał się na próbie przejścia prosto przez drzewo i patrolującą postać (2 FAIL). Poprawiono trasę testu: BFS po kolizjach i omijanie zajętych pól przez rzeczywiste klawisze, bez teleportowania. Następny start testu: błąd importu JSON Node 24 (0 testów); dodano wymaganą deklarację typu JSON. Końcowy przebieg eksploracji: **2 PASS**, desktop i mobilny poziomy Chromium, 2,4 min. Cała realna wyprawa, powtórne badanie, reload po pierwszym odkryciu, kronika, nagroda i reload bez ponownej wypłaty. Dodano też sprawdzenie widoczności opisu po przewinięciu kroniki: mobilny przebieg PASS, desktop przekroczył 90 s przy końcowej kontroli przycisków, już po nagrodzie i reloadzie (1 PASS / 1 FAIL). Zmniejszono liczbę odczytów DOM w prowadzeniu postaci, zachowując kontrolę mapy po każdym kroku; limit całej wyprawy zwiększono do 120 s bez zmiany asercji funkcjonalnych. `npm run typecheck`, `npm run lint` — PASS; końcowy `npm run test:e2e -- tests/e2e/exploration.spec.ts --workers=1` — **2 PASS**, desktop/mobilny poziomy, 3,5 min. Zaliczone wszystkie kontrole, w tym rzeczywista widoczność ostatniego opisu po przewinięciu, nagroda/reload i przyciski plecaka ≥48 CSS px. Łącznie wszystkie 25 wykonywanych scenariuszy e2e mają PASS po poprawkach i ponowieniach (plus 1 jawny SKIPPED); nie jest to raport jednego pełnego zielonego przebiegu.
+- Regresja dotychczasowych 24 przypadków (`npm run test:e2e -- tests/e2e/client.spec.ts tests/e2e/adventure.spec.ts tests/e2e/graphics.spec.ts tests/e2e/animation.spec.ts --workers=2`) — **21 PASS / 1 SKIPPED / 2 FAIL**, 7,3 min. FAIL na desktopie: test zakładał brak odrodzenia szczura przed wyborem wilka; drugi test 10 przejść treningowych przekroczył 90 s przy dwóch równoległych przeglądarkach. Poprawiono test wyboru wilka przez realny przycisk Cel (do trzech kliknięć, bez zmiany asercji trafień/nagrody), pozostawiono limit czasu. `npm run test:e2e -- tests/e2e/client.spec.ts --project=desktop --grep 'menu, assets|five return journeys' --workers=1` — **2 PASS**, 1,4 min; pięć podróży w obie strony 44,5 s. Wszystkie 23 wykonywane stare scenariusze mają wynik PASS po poprawce/ponowieniu; pełnego przebiegu bez wcześniejszych FAIL nie powtarzano. SKIPPED to wyłącznie desktopowy duplikat wielodotyku; mobilny wielodotyk zaliczony. Domyślna konfiguracja/CI nadal używa jednego workera.
+- Produkcyjny Vite preview — PASS: realne przyjęcie i pierwsze odkrycie, zapis, import poprawnego przygotowanego stanu ready, czytelny opis kroniki po przewinięciu w mobilnym viewportcie, powrót po jedną nagrodę i reload bez ponownej wypłaty; brak błędów HTTP/konsoli. Importowany stan służył kontroli UI; nie traktujemy go jako drugiej kompletnej wyprawy.
+- Screenshoty ocenione: docs/screenshots/old-trail-desktop.png, old-trail-mobile.png (realna wyprawa e2e), chronicle-mobile.png (produkcyjny smoke z importowanym stanem). Źródła/pochodzenie znaków i opisów w ASSET_LICENSES.md. Zaktualizowane README, ROADMAP, docs/TESTER i wersje manifestów/lockfile.
+- Test fizycznego telefonu, FPS, ręczny wielodotyk i 15 minut stabilności — NIE WYKONANO. Audio wyłączone, brak nowego regionu, multiplayer i APK. Następny konkretny test: pięć kroków szlaku w docs/TESTER.md; zgłosić czytelność wskazówek/kroniki oraz czas wyprawy na własnym urządzeniu.
 
 ## Szablon raportu zadania
 ID / status / zmienione pliki / wykonane komendy i wyniki / test manualny / ograniczenia / następny krok.

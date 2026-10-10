@@ -16,4 +16,4 @@ export type MonsterKind = keyof typeof monsters;
 export { importMap, validateMaps, type WorldMap, type RawMap } from './maps';
 
 export { items, inventoryRules, type ItemId } from './items';
-export { npcs, questRules, shopRules, sampleSpawns, type NpcId } from './adventure';
+export { npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId } from './adventure';

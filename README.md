@@ -1,6 +1,6 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.2 — przygoda offline z animowaną walką**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.3 — przygoda offline z odkrywaniem dawnego szlaku**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
 
@@ -16,7 +16,9 @@ Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.m
 
 W wersji 0.1.2 potwory animują chód podczas pościgu i powrotu. Dalsze stworzenia w lesie spacerują w promieniu dwóch kratek od miejsca odrodzenia co 1,6 s; blisko gracza i wejścia zachowano spokojne cele do nauki walki. Miecz ma zamach i ślad cięcia, Iskra lecący pocisk i rozbłysk, trafienia krótki błysk oraz liczbę obrażeń. Efekty wynikają z potwierdzonych zdarzeń symulacji, respektują zasięg i cooldown oraz nie są odtwarzane ponownie po wznowieniu.
 
-Przygoda zapisuje się w tej przeglądarce przy zmianie mapy, nagrodzie, handlu, powrocie do menu, ukryciu strony i co 30 sekund po zmianie stanu. Dostępne są przycisk Zapisz, wznowienie, eksport/import JSON oraz odzyskanie poprzedniego poprawnego zapisu. Uszkodzenie nie usuwa danych automatycznie; brak miejsca jest pokazany w dzienniku. Rozpoczęcie nowej przygody zastępuje bieżący zapis, zachowując poprzedni w kopii. Zapis jest wyłącznie offline i nie przeniesie się do przyszłej ekonomii online.
+Wersja 0.1.3 dodaje niezależne zadanie Miry **Ślady dawnego szlaku**: przyjmij je, zbadaj (F) stary drogowskaz, opuszczony obóz i kamień pamięci, potem wróć po 75 EXP, 25 złota i 2 mikstury. Wskazówka nad mapą pokazuje kierunek i odległość, gdy nie masz wybranego celu walki. **Plecak → Kronika** przechowuje opisy odkryć. Odkrycia liczą się po przyjęciu zadania, nagroda jest jednorazowa i czeka przy pełnym plecaku. Dotychczasowe zapisy v1 są wczytywane z nowym zadaniem do przyjęcia; zapisy utworzone przez 0.1.3 wymagają klienta 0.1.3 lub nowszego.
+
+Przygoda zapisuje się w tej przeglądarce przy zmianie mapy, odkryciu miejsca, przyjęciu zadania, nagrodzie, handlu, powrocie do menu, ukryciu strony i co 30 sekund po zmianie stanu. Dostępne są przycisk Zapisz, wznowienie, eksport/import JSON oraz odzyskanie poprzedniego poprawnego zapisu. Uszkodzenie nie usuwa danych automatycznie; brak miejsca jest pokazany w dzienniku. Rozpoczęcie nowej przygody zastępuje bieżący zapis, zachowując poprzedni w kopii. Zapis jest wyłącznie offline i nie przeniesie się do przyszłej ekonomii online.
 
 W menu wybierz **Kolorowy pixel art — do oceny** (domyślny) lub **Poprzednia grafika — porównanie**. Nowy zestaw ma zielony teren, dachówki, drzewa liściaste i iglaste, odrębne stroje NPC oraz postać z animacją czterech kierunków. Do porównania wybierz trening i **Spacer bez potworów**. Zmiana grafiki działa również przy wznowieniu zapisu.
 

@@ -1,4 +1,4 @@
-import { items, monsters, rules, npcs, questRules, shopRules, sampleSpawns, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
 import { commandSchema, nameSchema, type Command, type Direction } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
@@ -16,6 +16,7 @@ export interface CombatEvent {
   sourceId: string; targetId: string; from: Point; to: Point; damage: number;
 }
 export interface Snapshot {
+  exploration: SaveData['exploration'];
   combatEvents: CombatEvent[];
   dialog: NpcId | null; quest: { status: 'available' | 'active' | 'ready' | 'claimed'; kills: number };
   name: string; mapId: string; player: Point; direction: Direction;
@@ -47,7 +48,7 @@ export class Simulation {
     const map = maps[0];
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
-    this.state = { combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: map.id === 'vareon' ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa / Przejdź (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    this.state = { exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: map.id === 'vareon' ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa / Przejdź (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
     this.spawnCreatures();
   }
   private map(): WorldMap { return this.maps.find(m => m.id === this.state.mapId)!; }
@@ -89,6 +90,17 @@ export class Simulation {
       if (!npc) { this.notify('Podejdź do NPC i rozpocznij rozmowę.'); return; }
       if (command.type === 'Heal' && npc.id === 'oren') {
         s.hp = s.maxHp; s.mana = s.maxMana; this.notify('Oren przywrócił zdrowie i manę.');
+      } else if ((command.type === 'AcceptQuest' || command.type === 'ClaimReward') && command.questId === 'exploration' && npc.id === 'mira') {
+        const q = s.exploration;
+        if (command.type === 'AcceptQuest' && q.status === 'available') {
+          q.status = 'active'; this.notify('Przyjęto zadanie: Ślady dawnego szlaku. Zbadaj trzy oznaczone miejsca w lesie (F).');
+        } else if (command.type === 'ClaimReward' && q.status === 'ready') {
+          const inventory = addItems(s.inventory, [{itemId:'potion',quantity:explorationRules.potions}]);
+          if (!inventory) { this.notify('Pełny plecak — nagroda za odkrycia czeka u Miry.'); return; }
+          s.inventory = inventory; s.potions = countItem(inventory,'potion'); s.gold += explorationRules.gold;
+          this.gainExp(explorationRules.exp); q.status = 'claimed';
+          this.notify('Mira: Szlak znów żyje w naszej pamięci. Otrzymujesz 75 EXP, 25 złota i 2 mikstury.');
+        } else this.notify('Ta opcja nie jest teraz dostępna.');
       } else if (command.type === 'AcceptQuest' && npc.id === 'mira' && s.quest.status === 'available') {
         s.quest = { status: 'active', kills: 0 }; this.notify('Przyjęto zadanie: Niepokój za bramą. Pokonaj 5 stworzeń w lesie.');
       } else if (command.type === 'ClaimReward' && npc.id === 'mira' && s.quest.status === 'ready') {
@@ -150,6 +162,16 @@ export class Simulation {
       const npc = this.map().npcs.find(n => (!command.npcId || n.id === command.npcId) && distance(n, s.player) <= 1);
       if (npc) { s.dialog = npc.id; this.notify(`${npcs[npc.id].name}: ${npcs[npc.id].role}`); return; }
       if (command.npcId) { this.notify('Podejdź obok NPC, aby porozmawiać.'); return; }
+      const landmark = landmarks.find(l => l.mapId === s.mapId && distance(l,s.player) <= 1);
+      if (landmark) {
+        const q = s.exploration;
+        if (q.status === 'active' && !q.found.includes(landmark.id)) {
+          q.found.push(landmark.id);
+          if (q.found.length === landmarks.length) q.status = 'ready';
+        }
+        this.notify(`${landmark.name} — opis w kronice (Plecak). ${q.status === 'available' ? 'Mira ma zadanie związane z tym szlakiem.' : q.status === 'ready' ? 'Odkrycia 3/3 — wróć do Miry po nagrodę.' : q.status === 'claimed' ? 'Odkrycie zapisane w kronice.' : `Odkrycia ${q.found.length}/3.`}`);
+        return;
+      }
       const portal = this.map().portals.find(p => distance(p, s.player) <= 1);
       if (!portal) { this.notify('Podejdź do świecącej bramy i wybierz Przejdź.'); return; }
       const target = this.maps.find(m => m.id === portal.targetMapId);
@@ -215,7 +237,7 @@ export class Simulation {
     const remaining = (last: number, period: number) => Math.max(0, Math.ceil(period - (now-last)));
     return saveSchema.parse({
       version: 1, mode: 'offline', name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
-      level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, inventory: s.inventory, equipment: s.equipment,
+      level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, inventory: s.inventory, equipment: s.equipment,
       cooldowns: { move: remaining(this.lastMove,rules.stepMs), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
       maps: [...this.creatureMaps].map(([mapId, creatures]) => ({ mapId, creatures: creatures.map(c => ({ id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, attackIn:remaining(c.lastAttack,rules.monsterAttackMs), moveIn:remaining(c.lastMove,rules.stepMs*2), respawnIn: c.hp === 0 ? remaining(c.diedAt,rules.respawnMs) : 0 })) })),
       loot: s.loot, eventId: s.eventId,
@@ -246,7 +268,7 @@ export class Simulation {
       sim.creatureMaps.set(map.id,creatures);
     }
     if (new Set(data.loot.map(l => l.id)).size !== data.loot.length || data.loot.some(l => !walkable(l.mapId,l))) throw new Error('Nieprawidłowy łup');
-    sim.state = { ...sim.state, name:data.name, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:'Wznowiono przygodę offline.' };
+    sim.state = { ...sim.state, name:data.name, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:'Wznowiono przygodę offline.' };
     sim.lastMove = now+data.cooldowns.move-rules.stepMs;
     sim.lastAttack = now+data.cooldowns.attack-rules.attackMs;
     sim.lastSpell = now+data.cooldowns.spell-rules.spellMs;

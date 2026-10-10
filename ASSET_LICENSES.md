@@ -41,3 +41,7 @@ Wkład wygenerowany dla właściciela projektu, do edycji i wykorzystania w Eldo
 `assets/design/colorful-monsters-atlas.png` — oryginalny atlas chodzących szczurów, żuków i wilków, wygenerowany przez image_gen z trzema wcześniejszymi autorskimi sprite’ami Eldorii jako referencjami. To samo pochodzenie i warunki użycia co powyżej; bez zewnętrznych grafik. Współrzędne w `monsterWalk` w colorful-atlas.json. Importer wycina i pakuje `rat-walk.png`, `beetle-walk.png`, `wolf-walk.png` w obu katalogach source/runtime: 192×32, sześć klatek 32×32 (trzy ujęcia chodu z przodu i trzy z boku). Lewy bok to odbicie prawego; oddzielne ujęcie tyłu pozostaje do dopracowania. Starsze pojedyncze PNG zachowano jako materiały źródłowe.
 
 Miecz, ślad cięcia, pocisk/rozbłysk Iskry i ślady ataku potwora są autorskimi efektami rysowanymi przez Phaser w `apps/client/src/combat-effects.ts`; nie potrzebują zewnętrznych tekstur ani licencji. Krótka poza ataku bohatera korzysta z istniejących klatek postaci wraz z animowanym mieczem; nie jest osobnym nowym spritesheetem uderzenia. Efekty są roboczą animacją do testów. Audio pozostaje wyłączone.
+
+## Oznaczenia szlaku 0.1.3
+
+Trzy oznaczenia miejsc odkryć są autorską prostą grafiką proceduralną w `apps/client/src/main.ts` (Phaser Graphics, natywne piksele). Nazwy i opisy historii napisano dla Eldorii w `packages/content/src/adventure.ts`. Bez zewnętrznych assetów, zakupów i kopiowania cudzych materiałów; grafika oznaczeń pozostaje robocza.

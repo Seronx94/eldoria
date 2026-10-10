@@ -1,6 +1,6 @@
 # Eldoria — kolejka implementacji
 
-Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżąca wersja 0.1.0 jest przygodą offline do testów; nie jest wydaniem online ani APK.
+Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżąca wersja 0.1.1 jest przygodą offline z kolorową grafiką do oceny; nie jest wydaniem online ani APK.
 
 ## Zasady kolejki
 Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVIEW można budować domenę, lecz nie rozbudowywać finalnej mapy przed akceptacją stylu. Każdy wpis po pracy uzupełnij o dowód: polecenia/wyniki, pliki, screenshot lub scenariusz manualny. Opisane niżej testy są wymaganiem, nie raportem ich wykonania.
@@ -8,7 +8,7 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 | ID | Etap | Status | Zadanie | Zależności |
 |---|---|---|---|---|
 | T01 | M0 | DONE | Szkielet repozytorium | — |
-| T02 | M0 | DONE | Zestaw assetów i scena wzorcowa | T01 |
+| T02 | M0 | REVIEW | Zestaw assetów i scena wzorcowa | T01 |
 | T03 | M0 | DONE | Gateway, ruch i mobilny HUD | T01 |
 | T04 | M1 | DONE | Pipeline Tiled i walidacja | T01 |
 | T05 | M1 | DONE | Vareon, las i portale | T02 zaakceptowane, T03, T04 |
@@ -37,9 +37,11 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 **Kryteria docelowe:**
 Monorepo npm workspaces, Vite/Phaser 3, TypeScript strict, Vitest, lint i lockfile. Uruchamia się menu z wersją. Udostępnione komendy z README, .env.example i ignorowanie sekretów. Dowód: czysta instalacja, typecheck, test i build; Playwright otwiera menu.
 
-### T02 — DONE (zestaw roboczy do dalszej budowy)
+### T02 — REVIEW (nowy zestaw kolorowy; poprzedni roboczy ukończony)
 
 **Wynik sesji:** Autorskie placeholdery: kafelki 32×32, postać 4 kierunki × 3 klatki 32×48, dom, drzewa i trzy stworzenia. Źródła PNG/Tiled + odtwarzalny generator, ASSET_LICENSES.md. Zrzuty desktop/mobilny: docs/screenshots/. Oceniono ostrość i kamerę; brak audio. Po raporcie 0.0.2 z oznaczeniem grafiki roboczej tester polecił „dobra idź dalej”. Odnotowano zgodę na kontynuację z obecnym zestawem; nie oznacza ona zatwierdzenia finalnej grafiki ani pomiaru na fizycznym telefonie.
+
+**Aktualizacja 0.1.1:** Tester wybrał kolorowy pixel art, zielony świat, wyraźne kontury i szczegółowe postacie. Nowa próbka jest przełączalna w menu, obejmuje istniejące sceny i czeka na ocenę stylistyki. Wcześniejsza zgoda na budowę przygody pozostaje odnotowana; ukończone T05–T10 zachowują dowody. Nie rozszerzamy teraz map ani reguł gry.
 
 **Kryteria docelowe:**
 Katalog licencji i jeden zestaw graficzny. Scena z domem, drzewem, ścieżką, postacią 4-kierunkową i UI; test nearest filtering oraz kamery. Screenshot na desktopie i viewport mobilny, jasno wymienione placeholdery. Oddaj do REVIEW; odnotuj akceptację lub uwagi testera. Brak licencji blokuje wykorzystanie assetu.
@@ -186,6 +188,19 @@ Aktualne wymogi Android/Google Play, prywatność, usuwanie konta, podpisywanie,
 - Źródła/pliki: assets/source/{vareon,forest}.tmj i eksporty, packages/content/adventure.ts i importer map, packages/protocol komendy, packages/domain symulacja/save.ts/testy, apps/client dialog/menu/storage.ts/testy, testy e2e i konfiguracja Vitest, dokumentacja i nowe screenshoty.
 - Fizyczny telefon/Android, ręczny wielodotyk, FPS, 15-minutowa stabilność, czas przygody i audio — NIE WYKONANO. Brak multiplayer, kont i APK. T11 czeka na ocenę właściciela, zgodnie z kryteriami; nie zaliczamy tych brakujących testów automatem.
 - Następne konkretne działanie: tester przechodzi pięć kroków docs/TESTER.md na swoim telefonie i zgłasza urządzenie, czas przygody oraz uwagi. Poprawki mają pierwszeństwo przed T12.
+
+## Grafika do oceny — 10 października 2026, wersja 0.1.1
+
+- Uwagi testera: wygląd zbliżony klimatem do Kakele Online; wybrany kierunek: „Kolorowy pixel art: zielony świat, wyraźne kontury i szczegółowe postacie”. To wybór kierunku, nie akceptacja gotowych assetów. T02 wraca do REVIEW dla nowego zestawu; T11 nadal REVIEW.
+- Wykonano oryginalne atlasy świata i postaci przez image_gen, zapisano źródła i współrzędne wycięć. Mechaniczny importer do natywnych klatek używa nearest-neighbour i normalizacji alfa. Pochodzenie/warunki użycia w ASSET_LICENSES.md. Nie kopiowano assetów Kakele.
+- Klient: 16 wariantów terenu 32×32, nieregularne brzegi ścieżek, dom, beczki, drzewa liściaste i iglaste, studnia w istniejącym miejscu rynku, nowe szczur/żuk/wilk, Wędrowiec 4 kierunki × 3 klatki 32×48 i odrębne stroje Miry/Orena/Borina. Menu przełącza kolorowy zestaw i poprzedni wygląd, zapamiętuje wybór i stosuje go przy wznowieniu.
+- Mapy, kolizje, reguły domeny i schemat zapisu zachowane. Brak nowej zawartości świata przed oceną grafiki; dodatkowe kwiaty/kamienie/sakiewka/tablica pozostają rezerwą atlasu. Audio nadal wyłączone.
+- Kontrole: `npm run assets:import-colorful` — PASS; natywne rozmiary PNG sprawdzone ImageMagick; `npm run typecheck` i `npm run lint` — PASS; `npm test` — 46 PASS / 5 plików; `npm run build` (z validate:content) — PASS, zgodność wszystkich źródeł PNG/eksportów i 4 map. JS 1,327 MB / 358 KB gzip, dist ok. 2 MB; pozostaje ostrzeżenie o chunku Phaser.
+- Nowy scenariusz `npm run test:e2e -- tests/e2e/graphics.spec.ts` — 2 PASS (desktop i mobilny poziomy Chromium): nowa grafika, dialog, portal, realne zabójstwo i łup, spacer, ruch kamery, przyciski ≥48 CSS px, przełączenie poprzedniego stylu i zachowanie preferencji. Usunięto niestabilne założenie o jednym kroku podczas robienia screenshotu z przytrzymanym klawiszem: czas wykonania zrzutu jest zmienny, sprawdzamy rzeczywisty ruch w zadanym kierunku.
+- Produkcyjny Vite preview — PASS: kolorowe assety bez błędów HTTP/konsoli, Mira/quest, przejście do lasu, zabójstwo, zapis, reload i wznowienie zachowanego postępu.
+- Screenshoty w docs/screenshots/: colorful-sample-desktop, classic-sample-desktop (ta sama scena), colorful-town-desktop/mobile, colorful-forest-mobile oraz colorful-moving-mobile. Oceniono scenę wzorcową i czytelność aktorów w docelowej skali. README i docs/TESTER.md opisują porównanie oraz uruchomienie.
+- Pełny `npm run test:e2e`: 22 przypadki, 20 PASS / 1 SKIPPED / 1 FAIL (8,5 min). Jedyny FAIL: stare oczekiwanie dokładnie 42 MP po czarze; screenshot i kliknięcie przekroczyły granicę regeneracji, więc HUD poprawnie pokazywał 43 MP. Poprawiono trzy podobne sprawdzenia: po pierwszym czarze mana 42–43, dokładny koszt 8 MP nadal pokryty testem domeny. Ponowne `npm run test:e2e -- tests/e2e/client.spec.ts --grep 'menu, assets|simultaneous touch|safe courtyard'` — **5 PASS / 1 SKIPPED, exit 0** (1,5 min), także wcześniej nieudany desktopowy trening i mobilny wielodotyk. Wszystkie 21 wykonywanych scenariuszy mają wynik PASS po poprawce; pełnego przebiegu bez wcześniejszego FAIL nie powtarzano, pozostałe scenariusze przeszły w pełnej regresji. Pominięty wyłącznie desktopowy duplikat wielodotyku.
+- Fizyczny telefon, FPS i ręczny wielodotyk — NIE WYKONANO. Następny krok: tester porównuje scenę i ocenia postać, kontury, teren, budynki, drzewa oraz widoczność potworów; potem dopracowanie wskazanych elementów.
 
 ## Szablon raportu zadania
 ID / status / zmienione pliki / wykonane komendy i wyniki / test manualny / ograniczenia / następny krok.

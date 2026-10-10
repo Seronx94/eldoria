@@ -1,6 +1,6 @@
-# Eldoria 0.1.0 — Niepokój za bramą
+# Eldoria 0.1.1 — kolorowy świat do oceny
 
-Pierwsza przygoda offline: Vareon 48×48, Mroczny Las 64×64, 12 stworzeń, trzej NPC, quest, sklep i zapis. Grafika jest autorskim placeholderem, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
+Pierwsza przygoda offline: Vareon 48×48, Mroczny Las 64×64, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
 ## Uruchomienie na komputerze
 
@@ -20,6 +20,15 @@ npm run dev:lan
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
 
+## Porównanie grafiki
+
+1. W menu pozostaw **Kolorowy pixel art — do oceny**, wybierz **Próba Wędrowca** i zaznacz **Spacer bez potworów**. Podejdź pięć kratek na północ: dom i drzewo będą widoczne obok ścieżki.
+2. Przejdź w czterech kierunkach. Oceń szczegóły postaci, kontury, ostrość terenu podczas ruchu kamery oraz to, czy tekstury nie męczą wzroku.
+3. Wróć do menu, wybierz **Poprzednia grafika — porównanie**, rozpocznij ten sam spacer i podejdź pięć kratek na północ. Porównaj te same obiekty; wybór grafiki jest zapamiętywany.
+4. Wybierz ponownie kolorowy styl, tryb Vareon i odznacz spacer. Zobacz Mirę, Orena i Borina, przejdź do lasu i sprawdź czytelność szczura, żuka i wilka podczas walki. Możesz też wznowić swoją przygodę w wybranym stylu.
+
+Napisz, czy ten kierunek jest wystarczająco bliski oczekiwanemu klimatowi, i wskaż element do poprawy: postać, potwory, teren, drzewa lub domy. Nowe mapy na tym zestawie powstaną po Twojej ocenie.
+
 ## Pięć kroków testu
 
 1. Wybierz **Vareon — Niepokój za bramą**, pozostaw spacer odznaczony i rozpocznij. Stoisz obok **Miry**. Kliknij ją lub użyj **Rozmowa / Przejdź (F)**, a potem **Przyjmij zadanie**. Ruch, atak i czar pod dialogiem mają być zablokowane. Zamknij rozmowę. WASD/strzałki oraz D-pad poruszają postacią; Caps Lock działa.
@@ -38,6 +47,9 @@ Uszkodzenie lub nieobsługiwana wersja pokazują komunikat i pozostawiają dane.
 
 ## Widoki
 
+Nowy styl 0.1.1: [scena wzorcowa — desktop](screenshots/colorful-sample-desktop.png) · [poprzedni styl — ta sama scena](screenshots/classic-sample-desktop.png) · [Vareon — desktop](screenshots/colorful-town-desktop.png) · [Vareon — mobilny](screenshots/colorful-town-mobile.png) · [las — mobilny](screenshots/colorful-forest-mobile.png) · [postać w ruchu — mobilny](screenshots/colorful-moving-mobile.png). Zrzuty z Chromium, nie z fizycznego telefonu.
+
+Poprzedni styl 0.1.0:
 [Vareon — desktop](screenshots/vareon-desktop.png) · [Vareon — mobilny](screenshots/vareon-mobile.png) · [las — desktop](screenshots/forest-desktop.png) · [nagroda Miry — mobilny](screenshots/reward-mobile.png). Zrzuty z testów przeglądarkowych, z grafiką roboczą.
 
 ## Co zgłosić

@@ -4,7 +4,7 @@ async function move(page:Page,key:string,count=1) {
   for(let i=0;i<count;i++) { await page.waitForTimeout(220); await page.keyboard.press(key); }
 }
 async function begin(page:Page) {
-  await page.goto('/'); await page.getByRole('button',{name:/Rozpocznij/}).click();
+  await page.goto('/'); await page.locator('#graphics-style').selectOption('classic'); await page.getByRole('button',{name:/Rozpocznij/}).click();
   await expect(page.locator('#hud')).toHaveAttribute('data-map','vareon');
   await expect(page.locator('#hud')).toHaveAttribute('data-position','24,12');
 }

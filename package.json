@@ -1,6 +1,6 @@
 {
   "name": "eldoria",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "validate:content": "tsx scripts/validate-content.ts",
     "build": "npm run validate:content && vite build --config apps/client/vite.config.ts",
-    "assets:generate": "python3 scripts/generate-assets.py"
+    "assets:generate": "python3 scripts/generate-assets.py",
+    "assets:import-colorful": "node scripts/import-colorful-art.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

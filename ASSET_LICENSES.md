@@ -1,6 +1,6 @@
 # Assety Eldorii
 
-Wszystkie bieżące PNG i mapy to **autorskie placeholdery**, wygenerowane na potrzeby tego repozytorium przez `scripts/generate-assets.py`. Nie pobrano cudzych grafik, muzyki ani fontów. Autor: wkład Codex dla projektu Eldoria. Właściciel projektu może je zmieniać i używać w projekcie, również komercyjnie. Nie są kopią assetów innych gier.
+Poprzedni zestaw PNG i wszystkie mapy to **autorskie placeholdery**, wygenerowane na potrzeby tego repozytorium przez `scripts/generate-assets.py`. Nie pobrano cudzych grafik, muzyki ani fontów. Autor: wkład Codex dla projektu Eldoria. Właściciel projektu może je zmieniać i używać w projekcie, również komercyjnie. Nie są kopią assetów innych gier.
 
 | Plik | Źródło | Przeznaczenie |
 |---|---|---|
@@ -18,3 +18,20 @@ Wszystkie bieżące PNG i mapy to **autorskie placeholdery**, wygenerowane na po
 Źródła: `assets/source/`; eksport: `apps/client/public/assets/`. PNG można edytować niezależnie od generatora; ponowne generowanie nadpisuje te pliki. Audio wyłączone — brak zaakceptowanych nagrań. Brak fontów zewnętrznych: interfejs używa fontów systemowych.
 
 Tester polecił dalszą budowę przygody z obecnym zestawem. Zgoda na użycie roboczego stylu nie oznacza akceptacji finalnej grafiki; assety nadal są placeholderami.
+
+## Kolorowy pixel art — podgląd 0.1.1
+
+Oryginalne atlasy `assets/design/colorful-world-atlas.png` i `colorful-actors-atlas.png` wygenerowano narzędziem OpenAI image_gen na potrzeby Eldorii. Polecenia opisywały zielony świat fantasy, wyraźne kontury, dachówki i autorskie postacie; nie użyto grafik, map, postaci ani logo Kakele lub innych gier. Inspiracja dotyczy ogólnego kierunku wizualnego. To materiały do oceny, a nie zatwierdzona finalna oprawa. Nie zakupiono zasobów.
+
+Wkład wygenerowany dla właściciela projektu, do edycji i wykorzystania w Eldorii, również komercyjnie, zgodnie z warunkami usługi OpenAI. Nie przypisujemy mu cudzej licencji ani nie deklarujemy wyłączności na stylistykę. Atlasy źródłowe oraz współrzędne wycięć w `assets/design/colorful-atlas.json` pozostają w repozytorium.
+
+| Eksport w styles/colorful/ | Format / użycie |
+|---|---|
+| tiles.png | 512×32, cztery warianty każdego z czterech terenów; klatki 32×32 |
+| wanderer.png | 96×192, cztery kierunki × trzy klatki 32×48 |
+| mira.png, oren.png, borin.png | 32×48, odrębne stroje NPC |
+| house.png, tree.png, pine.png, well.png, barrel.png | dom, dwa gatunki drzew, studnia i beczka |
+| rat.png, beetle.png, wolf.png | stworzenia 32×32 |
+| loot.png, flowers.png, rocks.png, sign.png | dodatkowe elementy atlasu; rezerwa do późniejszej aranżacji |
+
+Źródła eksportów: `assets/source/styles/colorful/`; identyczne pliki runtime: `apps/client/public/assets/styles/colorful/`. `npm run assets:import-colorful` wymaga ImageMagick 7 (`magick`) i mechanicznie wycina atlas, normalizuje alfa progiem 50%, dopasowuje nearest-neighbour do natywnych klatek i pakuje PNG bez wygładzania. Nie potrzeba ImageMagick do zwykłego uruchamiania ani budowania gry — eksporty są zapisane w repozytorium. `npm run assets:generate` odtwarza tylko poprzedni zestaw i mapy.

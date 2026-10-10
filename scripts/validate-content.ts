@@ -12,7 +12,7 @@ for (const directory of [source, output]) {
   });
   validateMaps(maps, new Set(readdirSync(directory)));
 }
-for (const name of readdirSync(source).filter(n => n.endsWith('.png'))) {
+for (const name of readdirSync(source, { recursive: true }).filter((n): n is string => typeof n === 'string' && n.endsWith('.png'))) {
   if (!readFileSync(resolve(source, name)).equals(readFileSync(resolve(output, name)))) throw new Error(`Nieaktualny eksport PNG: ${name}`);
 }
 for (const name of names) {

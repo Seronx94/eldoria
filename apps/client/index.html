@@ -12,11 +12,12 @@
         <label for="name">IMIĘ WĘDROWCA</label>
         <div class="start-row"><input id="name" name="name" value="Wędrowiec" minlength="3" maxlength="16" required autocomplete="off"/><button class="primary" type="submit">Rozpocznij <span>→</span></button></div>
         <label for="mode">PRZYGODA</label><select id="mode"><option value="adventure">Vareon — Niepokój za bramą</option><option value="trial">Próba Wędrowca — trening walki</option></select>
+        <label for="graphics-style">GRAFIKA</label><select id="graphics-style"><option value="colorful">Kolorowy pixel art — do oceny</option><option value="classic">Poprzednia grafika — porównanie</option></select>
         <label class="walk-choice"><input type="checkbox" id="walk-mode"/> Spacer bez potworów — ocena grafiki</label>
         <p id="name-error" role="alert"></p>
       </form>
       <div class="save-menu"><button id="resume" hidden>Wznów przygodę</button><button id="recover" hidden>Odzyskaj kopię zapisu</button><button id="export-save">Eksport zapisu</button><label class="import-label">Import zapisu<input id="import-save" type="file" accept="application/json,.json"/></label><p id="save-menu-status" role="status"></p></div>
-      <div class="menu-meta"><span>0.1.0 · PRZYGODA OFFLINE</span><span>GRAFIKA ROBOCZA · BEZ AUDIO</span></div>
+      <div class="menu-meta"><span>0.1.1 · PRZYGODA OFFLINE</span><span>NOWY STYL DO OCENY · BEZ AUDIO</span></div>
       <div class="instructions"><strong>Niepokój za bramą</strong><p>Mira stoi obok miejsca startu. Porozmawiaj (F), przyjmij zadanie, idź na północ do bramy i pokonaj pięć stworzeń w lesie. Zbierz łup, wróć po nagrodę, odwiedź Orena i Borina. Przygoda zapisuje się lokalnie. Trening walki pozostaje dostępny w wyborze przygody.</p><span>WASD / strzałki · T: cel · Spacja: miecz · E: Iskra · Q: mikstura · F: rozmowa/brama · R: łup · I: plecak</span></div>
     </div>
     <div class="scene-note">VAREON · MROCZNY LAS <span>01 / 02</span></div>

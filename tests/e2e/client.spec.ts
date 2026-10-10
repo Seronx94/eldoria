@@ -3,6 +3,7 @@ async function start(page: Page, walk = false) {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Rozpocznij' })).toBeVisible();
   await page.locator('#mode').selectOption('trial');
+  await page.locator('#graphics-style').selectOption('classic');
   if (walk) await page.getByLabel('Spacer bez potworów').check();
   await page.getByRole('button', { name: 'Rozpocznij' }).click();
   await expect(page.locator('#hud')).toBeVisible();
@@ -43,7 +44,11 @@ test('menu, assets, real combat loop and restart', async ({ page }, testInfo) =>
   await page.screenshot({ path: testInfo.outputPath('scene.png') });
   await selectRat(page, 1, -2);
   await page.getByRole('button', { name: /Iskra/ }).click();
-  await expect(page.locator('#hp-label')).toContainText('42 MP');
+  // Screenshot/click timing can cross a 2-second regeneration boundary.
+  // Domain tests verify the exact 8 MP cost; the HUD must show the expenditure.
+  await expect.poll(() => page.locator('#mana').evaluate(el => (el as HTMLProgressElement).value)).toBeLessThan(50);
+  const manaAfterCast = await page.locator('#mana').evaluate(el => (el as HTMLProgressElement).value);
+  expect(manaAfterCast).toBeGreaterThanOrEqual(42); expect(manaAfterCast).toBeLessThanOrEqual(43);
   await page.waitForTimeout(1550);
   await page.getByRole('button', { name: /Iskra/ }).click();
   await expect(page.locator('#objective')).toHaveText('1 / 3');
@@ -116,7 +121,11 @@ test('simultaneous touch movement and cast; pointercancel stops held direction',
   await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [movementTouch] });
   await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [movementTouch, castTouch] });
   await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [movementTouch] });
-  await expect(page.locator('#hp-label')).toContainText('42 MP');
+  // Screenshot/click timing can cross a 2-second regeneration boundary.
+  // Domain tests verify the exact 8 MP cost; the HUD must show the expenditure.
+  await expect.poll(() => page.locator('#mana').evaluate(el => (el as HTMLProgressElement).value)).toBeLessThan(50);
+  const manaAfterCast = await page.locator('#mana').evaluate(el => (el as HTMLProgressElement).value);
+  expect(manaAfterCast).toBeGreaterThanOrEqual(42); expect(manaAfterCast).toBeLessThanOrEqual(43);
   await expect(page.locator('#hud')).toHaveAttribute('data-position', '12,11');
   await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
   const position = await page.locator('#hud').getAttribute('data-position');
@@ -162,5 +171,9 @@ test('safe courtyard keeps directions visible and clicking its nearby gate retur
   await page.getByRole('button', { name: /Cel/ }).click();
   await expect(page.locator('#target-label')).toContainText('Szczur');
   await page.getByRole('button', { name: /Iskra/ }).click();
-  await expect(page.locator('#hp-label')).toContainText('42 MP');
+  // Screenshot/click timing can cross a 2-second regeneration boundary.
+  // Domain tests verify the exact 8 MP cost; the HUD must show the expenditure.
+  await expect.poll(() => page.locator('#mana').evaluate(el => (el as HTMLProgressElement).value)).toBeLessThan(50);
+  const manaAfterCast = await page.locator('#mana').evaluate(el => (el as HTMLProgressElement).value);
+  expect(manaAfterCast).toBeGreaterThanOrEqual(42); expect(manaAfterCast).toBeLessThanOrEqual(43);
 });

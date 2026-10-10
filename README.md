@@ -1,6 +1,6 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.6 — jeden ciągły świat: miasto i las**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.7 — walka bez zaznaczania, pościg i efekty Iskry**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
 
@@ -13,11 +13,17 @@ npm run dev
 
 Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.md) opisuje pięć kroków przygody, sterowanie i zapis. Domyślnie zaczynasz w Vareon obok Miry: rozmowa i quest → brama na północy → pięć zabójstw w lesie → łup → powrót po nagrodę → handel i wznowienie. **Próba Wędrowca** w menu pozostaje treningiem walki zaczynającym się od razu przy potworach. **Spacer bez potworów** pokazuje stare sceny wzorcowe. Trening i spacer nie są zapisywane.
 
+Wersja **0.1.7** pozwala walczyć bez wybierania celu. Przytrzymaj **Miecz** albo **spację**, aby wykonywać kolejne ataki co 0,8 s; puszczenie, obrót, utrata fokusu i otwarcie dialogu zatrzymują atak. Miecz trafia najbliższego widocznego przeciwnika w sąsiedniej kratce. Ręczny wybór pozostaje opcjonalny i ma pierwszeństwo, jeśli cel jest w zasięgu. Bez przeciwnika wykonujesz zwykły zamach, bez obrażeń i nagród.
+
+**Iskra** automatycznie trafia wybrany lub najbliższy widoczny cel w zasięgu czterech kratek. Gdy nie ma celu, leci w kierunku patrzenia do przeszkody lub granicy bezpiecznego miasta. Każde przyjęte użycie kosztuje 8 many, również w powietrze, i ma cooldown 1,5 s. Rzucanie pokazuje krąg pod postacią, unoszące się iskry, pocisk oraz rozbłysk; liczby obrażeń pojawiają się wyłącznie przy trafieniu. Iskra jest obecnie jedynym czarem.
+
+Szczury, żuki i wilki zauważają gracza z sześciu kratek, jeśli nie zasłania go ściana, i podążają za nim bez prowokowania. Pościg nie przekracza strefy miasta; oddalenie potwora ponad dziesięć kratek od spawnu powoduje powrót. Dachy siedmiu miejskich budynków są widoczne z ulicy i z daleka; dopiero wejście odsłania wnętrze danego budynku. Dodano kalenicę, cień połaci i krawędź dachu. Format zapisu pozostaje zgodny z 0.1.6.
+
 Wersja **0.1.6** łączy Vareon i Mroczny Las w jedną mapę **64×112 kratek**. Z wartowni idź na północ i dalej drogą przez bramę; nie używasz F ani przycisku przejścia. Kamera podąża za postacią, potwory i łup pozostają w tym samym świecie. Powrót do miasta odbywa się tą samą drogą na południe. Vareon jest strefą bezpieczną: nie można z niego atakować lasu, potwory nie przekraczają granicy i przerywają pościg. F / **Rozmowa** służy NPC i odkryciom. Trening i stare sceny wzorcowe nadal są oddzielnymi demonstracjami w menu.
 
 Stare poprawne zapisy Vareon/lasu są automatycznie sprawdzane i przenoszone do wspólnych współrzędnych. Zasoby, questy, wyposażenie, łup, stan potworów i pozostałe cooldowny są zachowane; las zachowuje współrzędne, miasto przesuwa się o 8 kratek na wschód i 64 na południe. Nowe zapisy używają mapId `eldoria` i wymagają klienta 0.1.6 lub nowszego. Nie usuwaj zapisu przy aktualizacji; eksport w menu pozwala zachować własną kopię. Źródłem świata jest edytowalny `assets/source/eldoria.tmj`; `node scripts/generate-world.mjs` odtwarza go z zachowanych map lokalnych, a `npm run maps:generate-town` odtwarza miasto i wspólny świat.
 
-W wersji 0.1.2 potwory animują chód podczas pościgu i powrotu. Dalsze stworzenia w lesie spacerują w promieniu dwóch kratek od miejsca odrodzenia co 1,6 s; blisko gracza i wejścia zachowano spokojne cele do nauki walki. Miecz ma zamach i ślad cięcia, Iskra lecący pocisk i rozbłysk, trafienia krótki błysk oraz liczbę obrażeń. Efekty wynikają z potwierdzonych zdarzeń symulacji, respektują zasięg i cooldown oraz nie są odtwarzane ponownie po wznowieniu.
+W wersji 0.1.2 potwory animują chód podczas pościgu i powrotu. Dalsze stworzenia w lesie spacerują w promieniu dwóch kratek od miejsca odrodzenia co 1,6 s; w tej historycznej wersji blisko wejścia pozostawiono spokojne cele; od 0.1.7 wszystkie gatunki wykrywają gracza i ścigają go. Miecz ma zamach i ślad cięcia, Iskra lecący pocisk i rozbłysk, trafienia krótki błysk oraz liczbę obrażeń. Efekty wynikają z potwierdzonych zdarzeń symulacji, respektują zasięg i cooldown oraz nie są odtwarzane ponownie po wznowieniu.
 
 Wersja 0.1.3 dodaje niezależne zadanie Miry **Ślady dawnego szlaku**: przyjmij je, zbadaj (F) stary drogowskaz, opuszczony obóz i kamień pamięci, potem wróć po 75 EXP, 25 złota i 2 mikstury. Wskazówka nad mapą pokazuje kierunek i odległość, gdy nie masz wybranego celu walki. **Plecak → Kronika** przechowuje opisy odkryć. Odkrycia liczą się po przyjęciu zadania, nagroda jest jednorazowa i czeka przy pełnym plecaku. Dotychczasowe zapisy v1 są wczytywane z nowym zadaniem do przyjęcia; zapisy utworzone przez 0.1.3 wymagają klienta 0.1.3 lub nowszego.
 

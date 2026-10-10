@@ -22,7 +22,16 @@ export class CombatEffects {
   play(event: CombatEvent, source: Sprite | undefined, target: Sprite | undefined): void {
     const sx = source?.x ?? event.from.x * 32 + 16, sy = (source?.y ?? event.from.y * 32 + 32) - 18;
     const tx = target?.x ?? event.to.x * 32 + 16, ty = (target?.y ?? event.to.y * 32 + 32) - 16;
-    const angle = Math.atan2(ty-sy,tx-sx);
+    const angle = event.targetId === null ? ({up:-Math.PI/2,down:Math.PI/2,left:Math.PI,right:0})[event.direction] : Math.atan2(ty-sy,tx-sx);
+    if(event.kind === 'spell') this.add(380,(g,age)=>{
+      const p=age/380;
+      // A rising casting circle and orbiting sparks, independent of hitting an enemy.
+      g.lineStyle(2,0xffc56c,1-p).strokeEllipse(sx,sy+16,28+p*14,12+p*6);
+      for(let i=0;i<6;i++) {
+        const a=i*Math.PI/3+p*Math.PI*2;
+        g.fillStyle(i%2 ? 0xff9639 : 0xfff4bf,1-p).fillRect(Math.round(sx+Math.cos(a)*12)-1,Math.round(sy+Math.sin(a)*6-p*18)-1,3,3);
+      }
+    });
     const projectileMs = event.kind === 'spell' ? Math.min(260, 110 + Math.hypot(tx-sx,ty-sy)) : 0;
     this.add(event.kind === 'spell' ? projectileMs + 220 : 280, (g, age) => {
       if (event.kind === 'spell' && age < projectileMs) {
@@ -52,6 +61,7 @@ export class CombatEffects {
         for(let claw=0;claw<3;claw++) g.lineStyle(2,0xffb28e,1-p).lineBetween(Math.round(tx)-7+claw*5,Math.round(ty)-10,Math.round(tx)-12+claw*5,Math.round(ty)+4);
       }
     });
+    if(event.damage === 0) return;
     // The simulation resolves hits immediately; the brief flash reports that confirmed hit.
     if (target?.active) { target.setTintFill(0xffedd0); this.flashes.set(target,this.scene.time.now+100); }
     const text=this.scene.add.text(Math.round(tx),Math.round(ty)-18,`−${event.damage}`,{fontFamily:'monospace',fontSize:'12px',color:event.kind === 'monster' ? '#ffb09e' : '#fff0b1',stroke:'#17251f',strokeThickness:3}).setOrigin(.5);

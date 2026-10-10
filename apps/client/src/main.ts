@@ -56,18 +56,23 @@ let completionDismissed = false;
 let bagSignature = '';
 const pointerDirections = new Map<number, Direction>();
 const heldKeys = new Map<string, Direction>();
+const attackPointers = new Set<number>();
+let attackKey = false;
 const joystick = new VirtualJoystick(element('#joystick'), () => playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open, (id, d) => {
   if (d) pointerDirections.set(id, d); else pointerDirections.delete(id);
   movement();
 });
-function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); joystick.reset(); }
+function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); attackPointers.clear(); attackKey = false; joystick.reset(); }
 function direction(): Direction | undefined { return [...pointerDirections.values()].at(-1) ?? [...heldKeys.values()].at(-1); }
 function movement(): void {
   const d = direction();
   if (!ui.complete.hidden || bagDialog.open || npcDialog.open) return;
   if (d && playing && !document.hidden && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({ type: 'Move', direction: d });
 }
-const movementTimer = window.setInterval(movement, rules.tickMs);
+const movementTimer = window.setInterval(() => {
+  movement();
+  if ((attackKey || attackPointers.size > 0) && playing && !document.hidden && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({type:'Attack'});
+}, rules.tickMs);
 
 class Boot extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -230,6 +235,7 @@ class World extends Phaser.Scene {
     const changedMap = this.mapId !== s.mapId;
     if (newWorld || changedMap || this.colorful !== colorful) this.renderMap(maps.find(m => m.id === s.mapId)!);
     ui.hud.dataset.building = this.town.update(s.player);
+    ui.hud.dataset.roofs = this.town.visibleRoofs.join(',');
     const position = `${s.player.x},${s.player.y}`;
     if (position !== this.playerPosition) {
       const previous=this.playerPosition.split(',').map(Number);
@@ -286,9 +292,10 @@ class World extends Phaser.Scene {
       this.lastCombatId = event.id;
       if (event.mapId !== s.mapId) continue;
       const source = event.sourceId === 'player' ? this.hero : this.creatureSprites.get(event.sourceId);
-      const target = event.targetId === 'player' ? this.hero : this.creatureSprites.get(event.targetId);
+      const target = event.targetId === 'player' ? this.hero : event.targetId ? this.creatureSprites.get(event.targetId) : undefined;
       this.effects.play(event, source, target);
       if (event.sourceId === 'player') { this.actionUntil = this.time.now + 280; this.actionKind = event.kind === 'spell' ? 'spell' : 'melee'; }
+      ui.hud.dataset.combatDamage = String(event.damage); ui.hud.dataset.combatTarget = event.targetId ?? '';
       ui.hud.dataset.combat = event.kind; ui.hud.dataset.combatId = String(event.id);
     }
     this.effects.update(); ui.hud.dataset.effects = String(this.effects.count);
@@ -333,7 +340,7 @@ function updateUI(s: Snapshot): void {
   else if (target) ui.targetLabel.textContent = `${monsters[target.kind].name} · ${target.hp} HP · ${target.x > s.player.x ? '→' : target.x < s.player.x ? '←' : ''}${target.y > s.player.y ? '↓' : target.y < s.player.y ? '↑' : ''} ${distance(target)} kratek`;
   else {
     const count = s.creatures.filter(c => c.hp > 0).length;
-    ui.targetLabel.textContent = count ? `Potwory: ${count} · Dotknij stworzenia lub wybierz Cel (T)` : 'Potwory odradzają się — zaczekaj lub rozpocznij nową próbę';
+    ui.targetLabel.textContent = count ? `Potwory: ${count} · Przytrzymaj Miecz · Cel (T) opcjonalny` : 'Potwory odradzają się — zaczekaj lub rozpocznij nową próbę';
     if(adventure)ui.targetLabel.textContent += ` · ${gateHint}`;
   }
   if (adventure && s.exploration.status !== 'available' && s.exploration.status !== 'claimed') {
@@ -360,7 +367,7 @@ function updateUI(s: Snapshot): void {
 }
 function activate(simulation: Simulation): void {
   chooseGraphics(); worldEpoch++; guidedNpc=undefined;
-  delete ui.hud.dataset.combat; delete ui.hud.dataset.combatId;
+  delete ui.hud.dataset.combat; delete ui.hud.dataset.combatId; delete ui.hud.dataset.combatDamage; delete ui.hud.dataset.combatTarget;
   unsubscribe?.(); gateway?.disconnect(); resetInput();
   completionDismissed = false; ui.complete.hidden = true;
   gateway = new LocalGateway(simulation);
@@ -391,7 +398,12 @@ element('#again').addEventListener('click', () => start(snapshot?.name ?? 'Wędr
 for (const [id, type] of [['attack', 'Attack'], ['cast', 'Cast'], ['potion', 'UseItem'], ['interact', 'Interact'], ['loot', 'Loot']] as const) {
   const button = element(`#${id}`);
   const act = () => { if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) gateway?.send({ type }); };
-  button.addEventListener('pointerdown', event => { event.preventDefault(); act(); });
+  button.addEventListener('pointerdown', event => {
+    event.preventDefault();
+    if(type === 'Attack' && playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) {attackPointers.add(event.pointerId);button.setPointerCapture(event.pointerId);}
+    act();
+  });
+  if(type === 'Attack') for(const name of ['pointerup','pointercancel','lostpointercapture']) button.addEventListener(name,event=>attackPointers.delete((event as PointerEvent).pointerId));
   button.addEventListener('click', event => { if (event.detail === 0) act(); });
 }
 renderActionIcons();
@@ -412,9 +424,9 @@ window.addEventListener('keydown', event => {
   const d = keyDirections[key];
   if (d) { event.preventDefault(); heldKeys.set(key, d); if (!event.repeat) movement(); return; }
   const type = ({ ' ': 'Attack', e: 'Cast', q: 'UseItem', f: 'Interact', r: 'Loot' } as const)[key as ' ' | 'e' | 'q' | 'f' | 'r'];
-  if (type && !event.repeat) { event.preventDefault(); gateway?.send({ type }); }
+  if (type) { event.preventDefault(); if(type === 'Attack') attackKey = true; if(!event.repeat) gateway?.send({ type }); }
 });
-window.addEventListener('keyup', event => { heldKeys.delete(event.key.toLowerCase()); });
+window.addEventListener('keyup', event => { heldKeys.delete(event.key.toLowerCase()); if(event.key === ' ') attackKey = false; });
 window.addEventListener('blur', resetInput);
 window.addEventListener('resize', resetInput);
 document.addEventListener('visibilitychange', () => {

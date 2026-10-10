@@ -13,7 +13,7 @@ export interface Creature extends Point {
 }
 export interface CombatEvent {
   id: number; mapId: string; kind: 'melee' | 'spell' | 'monster';
-  sourceId: string; targetId: string; from: Point; to: Point; damage: number;
+  sourceId: string; targetId: string | null; direction: Direction; from: Point; to: Point; damage: number;
 }
 export interface Snapshot {
   exploration: SaveData['exploration'];
@@ -48,13 +48,13 @@ export class Simulation {
     const map = maps[0];
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
-    this.state = { exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    this.state = { exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Przytrzymaj Miecz i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
     this.spawnCreatures();
   }
   private map(): WorldMap { return this.maps.find(m => m.id === this.state.mapId)!; }
   private notify(message: string): void { this.state.message = message; this.state.eventId++; }
-  private combat(kind: CombatEvent['kind'], sourceId: string, targetId: string, from: Point, to: Point, damage: number): void {
-    this.state.combatEvents.push({ id: ++this.combatSequence, mapId: this.state.mapId, kind, sourceId, targetId, from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, damage });
+  private combat(kind: CombatEvent['kind'], sourceId: string, targetId: string | null, from: Point, to: Point, damage: number): void {
+    this.state.combatEvents.push({ id: ++this.combatSequence, mapId: this.state.mapId, kind, sourceId, targetId, direction: this.state.direction, from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, damage });
     this.state.combatEvents = this.state.combatEvents.slice(-16);
   }
   private walkable(point: Point): boolean {
@@ -181,7 +181,7 @@ export class Simulation {
       if (!arrival) { this.notify('Wejście jest zajęte — spróbuj ponownie.'); return; }
       s.mapId = target.id; s.player = arrival; s.selectedId = null;
       this.spawnCreatures(); this.lastMove = now;
-      this.notify(target.id === 'forest' ? 'Mroczny Las. Wybierz cel; szczur jest blisko na północy.' : target.id === 'vareon' ? 'Vareon. Wróć do Miry, odpocznij u Orena lub odwiedź Borina.' : 'Przejście do drugiej sceny wzorcowej.'); return;
+      this.notify(target.id === 'forest' ? 'Mroczny Las. Przytrzymaj Miecz przy przeciwniku; cel jest opcjonalny.' : target.id === 'vareon' ? 'Vareon. Wróć do Miry, odpocznij u Orena lub odwiedź Borina.' : 'Przejście do drugiej sceny wzorcowej.'); return;
     }
     if (command.type === 'UseItem') {
       if (s.hp >= s.maxHp) { this.notify('Masz pełne zdrowie — mikstura pozostaje w plecaku.'); return; }
@@ -191,17 +191,27 @@ export class Simulation {
       this.notify('Odzyskano zdrowie.'); return;
     }
     if (!combatAllowedAt(this.map(),s.player)) { this.notify('Strefa bezpieczna — tutaj nie ma walki.'); return; }
-    const target = s.creatures.find(c => c.id === s.selectedId && c.hp > 0);
-    if (!target) { this.notify('Dotknij szczura, aby wybrać cel.'); return; }
-    if(!combatAllowedAt(this.map(),target)){this.notify('Cel w strefie bezpiecznej.');return;}
     const casting = command.type === 'Cast';
     if (!casting && !s.equipment.weapon) { this.notify('Załóż miecz w plecaku.'); return; }
-    const range = casting ? rules.spellRange : 1;
-    if (distance(target, s.player) > range) { this.notify('Cel poza zasięgiem. Podejdź bliżej.'); return; }
-    if (casting && !this.lineOfSight(s.player, target)) { this.notify('Ściana zasłania cel.'); return; }
+    const range = casting ? rules.spellRange : rules.meleeRange;
+    const eligible = (c: Creature) => c.hp > 0 && combatAllowedAt(this.map(),c) && distance(c,s.player) <= range && this.lineOfSight(s.player,c);
+    const selected = s.creatures.find(c => c.id === s.selectedId && c.hp > 0);
+    // A reachable manual choice takes priority; otherwise choose the nearest visible enemy.
+    const target = selected && eligible(selected) ? selected : s.creatures.filter(eligible).sort((a,b)=>distance(a,s.player)-distance(b,s.player)||a.id.localeCompare(b.id))[0];
     if (now - (casting ? this.lastSpell : this.lastAttack) < (casting ? rules.spellMs : rules.attackMs)) return;
     if (casting && s.mana < rules.spellCost) { this.notify('Za mało many.'); return; }
     if (casting) { s.mana -= rules.spellCost; this.lastSpell = now; } else this.lastAttack = now;
+    if (!target) {
+      const v = vectors[s.direction], to = {...s.player};
+      for(let i=0;i<range;i++) {
+        const next={x:to.x+v.x,y:to.y+v.y};
+        if(!this.walkable(next)||!combatAllowedAt(this.map(),next))break;
+        Object.assign(to,next);
+      }
+      this.combat(casting ? 'spell' : 'melee','player',null,s.player,to,0);
+      this.notify(casting ? `Iskra w kierunku patrzenia (${rules.spellCost} many).` : 'Zamach mieczem. Podejdź do przeciwnika; cel wybierze się automatycznie.');
+      return;
+    }
     const damage = Math.max(1, (casting ? rules.spellDamage : rules.attackDamage) - monsters[target.kind].defense);
     const dx = target.x-s.player.x, dy = target.y-s.player.y;
     s.direction = Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 'right' : 'left' : dy > 0 ? 'down' : 'up';
@@ -356,8 +366,8 @@ export class Simulation {
         continue;
       }
       if(!combatAllowedAt(this.map(),s.player) && (c.state==='chase'||c.state==='attack'))c.state='return';
-      if (combatAllowedAt(this.map(),s.player) && monsters[c.kind].aggressive && distance(c, s.player) <= 6 && c.state === 'idle') c.state = 'chase';
-      if ((c.state === 'chase' || c.state === 'attack') && distance(c, c.spawn) > 10) c.state = 'return';
+      if (combatAllowedAt(this.map(),s.player) && monsters[c.kind].aggressive && distance(c, s.player) <= rules.sightRadius && this.lineOfSight(c,s.player) && c.state === 'idle') c.state = 'chase';
+      if ((c.state === 'chase' || c.state === 'attack') && distance(c, c.spawn) > rules.leashRadius) c.state = 'return';
       if (c.state === 'return' && distance(c, c.spawn) === 0) { c.hp = monsters[c.kind].hp; c.state = 'idle'; }
       if (c.state === 'chase' || c.state === 'attack') {
         if (distance(c, s.player) <= 1) {
@@ -370,7 +380,7 @@ export class Simulation {
           }
         } else c.state = 'chase';
       }
-      if (['forest','eldoria'].includes(this.map().id) && c.state === 'idle' && distance(c, s.player) > 6) {
+      if (['forest','eldoria'].includes(this.map().id) && c.state === 'idle' && distance(c, s.player) > rules.sightRadius) {
         const key = `${s.mapId}:${c.id}`, due = this.patrolDue.get(key);
         if (due === undefined) this.patrolDue.set(key, now + rules.patrolMs);
         else if (now >= due) {
@@ -380,7 +390,7 @@ export class Simulation {
           for (let i = 0; i < 4; i++) {
             const v = directions[(Math.floor(now / rules.patrolMs) + hash + i) % 4]!;
             const next = { x: c.x + v.x, y: c.y + v.y };
-            if (distance(next, c.spawn) > rules.patrolRadius || distance(next, s.player) <= 6 || !this.walkable(next) || !combatAllowedAt(this.map(),next) || this.occupied(next, c.id) || this.map().portals.some(p => distance(p, next) <= 1)) continue;
+            if (distance(next, c.spawn) > rules.patrolRadius || distance(next, s.player) <= rules.sightRadius || !this.walkable(next) || !combatAllowedAt(this.map(),next) || this.occupied(next, c.id) || this.map().portals.some(p => distance(p, next) <= 1)) continue;
             Object.assign(c, next); c.lastMove = now; break;
           }
         }

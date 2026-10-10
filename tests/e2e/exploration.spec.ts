@@ -6,7 +6,6 @@ async function move(page:Page,key:string,count:number) {
 // Navigate the real controls around trees and patrolling actors; never teleport.
 async function walkTo(page:Page,x:number,y:number) {
   const collision=forest.layers.find(l=>l.name==='Collision')!.data!;
-  const blocked=new Set<string>();
   const read = () => page.locator('#hud').evaluate(el=>({position:el.dataset.position!,map:el.dataset.map}));
   let state = await read();
   for(let budget=0;budget<150;budget++) {
@@ -16,17 +15,21 @@ async function walkTo(page:Page,x:number,y:number) {
     let route:string[]|undefined;
     while(queue.length) {
       const p=queue.shift()!, k=`${p.x},${p.y}`;
-      if(seen.has(k)||blocked.has(k)||p.x<0||p.y<0||p.x>=forest.width||p.y>=forest.height||collision[p.y*64+p.x]) continue;
+      if(seen.has(k)||p.x<0||p.y<0||p.x>=forest.width||p.y>=forest.height||collision[p.y*64+p.x]) continue;
       seen.add(k);
       if(p.x===x&&p.y===y) { route=p.keys; break; }
       for(const [key,dx,dy] of [['w',0,-1],['s',0,1],['a',-1,0],['d',1,0]] as const) queue.push({x:p.x+dx,y:p.y+dy,keys:[...p.keys,key]});
     }
     expect(route?.length).toBeGreaterThan(0);
-    const key=route![0]!; await move(page,key,1); await page.waitForTimeout(60);
+    const key=route![0]!; await page.locator('#attack').click();
+    if(await page.locator('#hp').evaluate(el=>(el as HTMLProgressElement).value)<60)await page.locator('#potion').click();
+    await move(page,key,1); await page.waitForTimeout(60);
     state=await read();
     if(state.position===start.join(',')) {
-      const delta=({w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]} as const)[key as 'w'|'s'|'a'|'d'];
-      blocked.add(`${start[0]!+delta[0]},${start[1]!+delta[1]}`);
+      // An approaching creature is a fight, rather than a permanent map wall.
+      await page.keyboard.down('Space');await page.waitForTimeout(3300);await page.keyboard.up('Space');
+      if(await page.locator('#hp').evaluate(el=>(el as HTMLProgressElement).value)<60)await page.locator('#potion').click();
+      // A temporary creature position must not permanently forbid the destination.
     }
     expect(state.map).toBe('eldoria');
   }
@@ -34,7 +37,7 @@ async function walkTo(page:Page,x:number,y:number) {
 }
 test('old trail: real exploration, chronicle, reward once and saved discoveries',async({page},info)=>{
   // Full journey, two reloads and screenshots; this is a functional test, not an FPS budget.
-  test.setTimeout(180000);
+  test.setTimeout(300000);
   const errors:string[]=[];
   page.on('pageerror',e=>errors.push(e.message)); page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});

@@ -17,8 +17,8 @@
         <p id="name-error" role="alert"></p>
       </form>
       <div class="save-menu"><button id="resume" hidden>Wznów przygodę</button><button id="recover" hidden>Odzyskaj kopię zapisu</button><button id="export-save">Eksport zapisu</button><label class="import-label">Import zapisu<input id="import-save" type="file" accept="application/json,.json"/></label><p id="save-menu-status" role="status"></p></div>
-      <div class="menu-meta"><span>0.1.5 · PRZYGODA OFFLINE</span><span>ZWIEDŹ NOWE VAREON · BEZ AUDIO</span></div>
-      <div class="instructions"><strong>Niepokój za bramą</strong><p>Mira stoi obok miejsca startu. Porozmawiaj (F), przyjmij zadanie, przejdź pieszo przez północną bramę i pokonaj pięć stworzeń w lesie. Zbierz łup, wróć po nagrodę, odwiedź Orena i Borina. Mira zleca też odkrycie trzech miejsc dawnego szlaku. Ich historie przeczytasz w kronice w plecaku. Przygoda zapisuje się lokalnie. Trening walki pozostaje dostępny w wyborze przygody.</p><span>WASD / strzałki · T: cel · Spacja: miecz · E: Iskra · Q: mikstura · F: rozmowa/odkrycie · R: łup · I: plecak</span></div>
+      <div class="menu-meta"><span>0.1.7 · PRZYGODA OFFLINE</span><span>WALKA BEZ CELU · BEZ AUDIO</span></div>
+      <div class="instructions"><strong>Niepokój za bramą</strong><p>Mira stoi obok miejsca startu. Porozmawiaj (F), przyjmij zadanie, przejdź pieszo przez północną bramę i pokonaj pięć stworzeń w lesie. Zbierz łup, wróć po nagrodę, odwiedź Orena i Borina. Mira zleca też odkrycie trzech miejsc dawnego szlaku. Ich historie przeczytasz w kronice w plecaku. Przygoda zapisuje się lokalnie. Trening walki pozostaje dostępny w wyborze przygody.</p><span>WASD / strzałki · T: cel opcjonalny · Spacja: przytrzymaj miecz · E: Iskra · Q: mikstura · F: rozmowa/odkrycie · R: łup · I: plecak</span></div>
     </div>
     <div class="scene-note">VAREON · MROCZNY LAS <span>01 / 02</span></div>
   </main>
@@ -29,7 +29,7 @@
       <div class="trial"><span id="objective-title">NIEPOKÓJ ZA BRAMĄ</span><strong id="objective">0 / 3</strong></div>
       <button id="save-button" class="quiet">Zapisz</button><button id="bag-button" class="quiet">Plecak</button><button id="menu-button" class="quiet">Menu</button>
     </header>
-    <div class="world-label"><span class="spark"></span><span id="target-label">Dotknij potwora, aby wybrać cel</span></div>
+    <div class="world-label"><span class="spark"></span><span id="target-label">Przytrzymaj Miecz — wybór celu jest opcjonalny</span></div>
     <div id="complete" hidden><span>✦</span><strong>Próba ukończona</strong><p>Las zna już Twoje imię.</p><button id="continue">Zbierz pozostały łup</button><button id="again">Nowa próba</button></div>
     <footer class="controls">
       <div id="joystick" role="group" tabindex="0" aria-label="Gałka ruchu — przeciągnij, aby iść"><span class="stick-directions" aria-hidden="true">✦</span><span class="stick-knob" aria-hidden="true"></span></div>

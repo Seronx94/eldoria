@@ -1,4 +1,4 @@
-# Eldoria 0.1.6 — jeden ciągły świat
+# Eldoria 0.1.7 — walka, pościg i dachy
 
 Pierwsza przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
@@ -28,11 +28,20 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
 
+## Cztery kroki testu walki i dachów
+
+1. W przygodzie wyjdź z wartowni na południe: dach powinien zakryć wnętrze, a sąsiednie dachy pozostać widoczne. Wejdź z powrotem: znika tylko dach wartowni, widać Mirę. Powtórz przy świątyni lub sklepie.
+2. Wyjdź północną bramą do lasu, nie zaznaczając potwora. Podejdź na kilka kratek do szczura lub żuka: powinien sam podejść i zaatakować. Przytrzymaj Miecz na telefonie albo spację na komputerze. Kolejne zamachy trafiają pobliskiego przeciwnika; po puszczeniu atak się zatrzymuje. Cel / T pozostaje opcjonalny.
+3. Dotknij Iskry bez zaznaczania: obejrzyj krąg pod postacią, iskry, lecący pocisk i rozbłysk. W pustym miejscu najpierw zmień kierunek patrzenia krokiem: czar poleci w tę stronę, kosztując 8 many. W mieście walka pozostaje zablokowana.
+4. Trzymaj gałkę jednym palcem i Miecz drugim; puść tylko Miecz, potem gałkę. Obróć telefon, otwórz plecak i wróć do gry — akcje nie powinny same trwać. Uciekając do miasta, sprawdź zatrzymanie pościgu. Zapisz, odśwież i wznów; zakończone efekty nie mają się powtarzać.
+
+Podglądy produkcyjne: [dachy z ulicy](screenshots/exterior-roofs-mobile.png), [Iskra w trakcie rzucania](screenshots/iskra-cast-mobile.png). Emulacja mobilna, nie fizyczny telefon.
+
 ## Sprawdź ciągły świat
 
 1. Rozpocznij lub wznów przygodę. Z wartowni idź na północ gałką albo W, przez zwykłą bramę i dalej do lasu. Nie naciskaj F ani żadnego przycisku przejścia. Kamera powinna prowadzić cały spacer bez przeskoku.
 2. Zawróć na południe do Miry. Powtórz wyjście i powrót pięć razy. Nazwa regionu zmienia się na Vareon / Mroczny Las, ale pozycja przesuwa się tylko o jeden krok, a potwory zachowują stan.
-3. W lesie wybierz stworzenie, użyj miecza lub Iskry i zbierz łup. Cofnij się do miasta: walka w strefie bezpiecznej jest zablokowana, a pościg nie przekracza jej granicy.
+3. W lesie użyj miecza lub Iskry bez wybierania stworzenia i zbierz łup. Cofnij się do miasta: walka w strefie bezpiecznej jest zablokowana, a pościg nie przekracza jej granicy.
 4. Porozmawiaj z Mirą, Orenem i Borinem; sprawdź plan miasta oraz zadania. F / Rozmowa służy dialogom i odkryciom. Zapisz w lesie, odśwież stronę i wznów — wracasz na to samo miejsce.
 5. Jeżeli masz stary eksport zapisu, zaimportuj go: zasoby i postęp mają pozostać. Nie usuwaj localStorage. Przetestuj też gałkę z drugim palcem używającym czaru oraz obrót telefonu.
 
@@ -42,7 +51,7 @@ Podgląd produkcyjny: [droga między miastem a lasem](screenshots/continuous-gat
 ## Cztery kroki testu gałki na telefonie
 
 1. Obróć telefon poziomo. Po lewej jest okrągła gałka. Przytrzymaj środek: postać stoi. Przesuń palec w lewo/prawo lub w górę/dół: zaczyna chodzić. Po przekątnej wybierany jest jeden kierunek, bez szybszego ruchu. Gałka podąża za palcem także poza swoim kołem, a po puszczeniu wraca na środek i zatrzymuje ruch.
-2. W Próbie Wędrowca wybierz szczura przyciskiem **Cel**. Trzymając gałkę, dotknij drugim palcem **Iskry** (płomień). Postać powinna się poruszać i rzucić czar, jeśli jest w zasięgu i ma manę. Miecz, mikstura, łup i rozmowa mają osobne ikony oraz podpisy. Iskra pozostaje jedynym czarem.
+2. W Próbie Wędrowca wybór szczura przyciskiem **Cel** jest opcjonalny. Trzymając gałkę, dotknij drugim palcem **Iskry** (płomień). Postać powinna się poruszać i rzucić czar, jeśli jest w zasięgu i ma manę. Miecz, mikstura, łup i rozmowa mają osobne ikony oraz podpisy. Iskra pozostaje jedynym czarem.
 3. Trzymając gałkę, otwórz plecak albo obróć telefon do pionu i z powrotem. Po zamknięciu plecaka lub powrocie do poziomu postać nie powinna sama chodzić — trzeba ponownie dotknąć gałki.
 4. Przejdź bramą i wróć, sprawdź działanie gałki w mieście i lesie oraz czy ikony są wygodne pod prawym kciukiem. Zgłoś model telefonu i ewentualne zacinanie. Na komputerze nadal działają WASD, strzałki i D-pad.
 

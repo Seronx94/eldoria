@@ -21,19 +21,21 @@ test('adventure: accept, five real kills, reward, heal, shop and reload',async({
   await page.keyboard.press('W'); await page.keyboard.press('e');
   await expect(page.locator('#hud')).toHaveAttribute('data-position','32,76'); await expect(page.locator('#hp-label')).toContainText('50 MP');
   await page.getByRole('button',{name:'Przyjmij zadanie'}).click(); await close(page);
-  await move(page,'W',18);
+  await move(page,'W',15);
   await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');
-  await expect(page.locator('#target-label')).toContainText('Potwory: 12');
-  await page.waitForTimeout(600); await page.screenshot({path:info.outputPath('forest.png')});
-  // The rat patrols while the player is in town. One step closer guarantees range ≤4.
-  await move(page,'W');
+  await page.screenshot({path:info.outputPath('forest.png')});
+  // Fight approaching monsters through the real held control; no manual selection is required.
   for(let kill=0;kill<5;kill++) {
-    if(kill>0) await page.waitForTimeout(20200);
-    await page.getByRole('button',{name:/Cel/}).click(); await expect(page.locator('#target-label')).toContainText('Szczur');
-    await page.getByRole('button',{name:/Iskra/}).click(); await page.waitForTimeout(1550); await page.getByRole('button',{name:/Iskra/}).click();
-    await expect(page.locator('#objective')).toHaveText(`${kill+1} / 5`);
+    await page.keyboard.down('Space');
+    await expect(page.locator('#objective')).toHaveText(`${kill+1} / 5`,{timeout:35000});
+    await page.keyboard.up('Space');
     await page.getByRole('button',{name:/Łup/}).click();
+    // Continue toward the spawn after a path-blocking pursuer has been defeated.
+    const y=Number((await page.locator('#hud').getAttribute('data-position'))!.split(',')[1]);
+    if(y>59)await move(page,'W',y-59);
   }
+  const lootGold=Number((await page.locator('#rewards').textContent())!.match(/(\d+) złota/)![1]);
+  expect(lootGold).toBeGreaterThanOrEqual(5);
   await expect(page.locator('#target-label')).toContainText('wróć do Miry');
   await walkInWorld(page,32,76); await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');
   await interact(page); await page.getByRole('button',{name:'Odbierz nagrodę'}).click();
@@ -43,21 +45,21 @@ test('adventure: accept, five real kills, reward, heal, shop and reload',async({
   await walkInTown(page,12,23); await interact(page); await expect(page.locator('#npc-name')).toHaveText('Oren');
   await page.getByRole('button',{name:'Przywróć zdrowie i manę'}).click(); await expect(page.locator('#hp-label')).toHaveText('110 HP · 55 MP'); await close(page);
   await walkInTown(page,36,22); await interact(page); await expect(page.locator('#npc-name')).toHaveText('Borin');
-  await expect(page.locator('#npc-text')).toContainText('Twoje złoto: 25'); await page.getByRole('button',{name:/Kup miksturę/}).click();
-  await expect(page.locator('#npc-text')).toContainText('Twoje złoto: 20'); await close(page);
+  await expect(page.locator('#npc-text')).toContainText(`Twoje złoto: ${lootGold+20}`); await page.getByRole('button',{name:/Kup miksturę/}).click();
+  await expect(page.locator('#npc-text')).toContainText(`Twoje złoto: ${lootGold+15}`); await close(page);
   await page.reload(); await page.getByRole('button',{name:'Wznów przygodę'}).click();
   await expect(page.locator('#hud')).toHaveAttribute('data-position','44,86'); await expect(page.locator('#objective')).toHaveText('✓');
-  await expect(page.locator('#potion-count')).toContainText('6 SZT.'); await expect(page.locator('#rewards')).toContainText('20 złota');
+  await expect(page.locator('#potion-count')).toContainText('6 SZT.'); await expect(page.locator('#rewards')).toContainText(`${lootGold+15} złota`);
   await walkInTown(page,24,12); await interact(page); await expect(page.locator('#npc-text')).toContainText('nagroda odebrana');
   await expect(page.getByRole('button',{name:'Odbierz nagrodę'})).toHaveCount(0); expect(errors).toEqual([]);
 });
 test('five continuous journeys: one world, no gate command, one step per press',async({page},info)=>{
   test.setTimeout(180000); await begin(page);
   for(let i=0;i<5;i++) {
-    for(let y=75;y>=58;y--){await move(page,'W');await expect(page.locator('#hud')).toHaveAttribute('data-position',`32,${y}`);await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');}
+    for(let y=75;y>=63;y--){await move(page,'W');await expect(page.locator('#hud')).toHaveAttribute('data-position',`32,${y}`);await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');}
     await expect(page.locator('#hud')).toHaveAttribute('data-region','forest');await expect(page.locator('#map-name')).toHaveText('MROCZNY LAS');
-    if(i===0){await page.screenshot({path:info.outputPath('continuous-forest.png')});await interact(page);await expect(page.locator('#hud')).toHaveAttribute('data-position','32,58');}
-    for(let y=59;y<=76;y++){await move(page,'S');await expect(page.locator('#hud')).toHaveAttribute('data-position',`32,${y}`);await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');}
+    if(i===0){await page.screenshot({path:info.outputPath('continuous-forest.png')});await interact(page);await expect(page.locator('#hud')).toHaveAttribute('data-position','32,63');}
+    for(let y=64;y<=76;y++){await move(page,'S');await expect(page.locator('#hud')).toHaveAttribute('data-position',`32,${y}`);await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');}
     await expect(page.locator('#hud')).toHaveAttribute('data-region','vareon');await expect(page.locator('#map-name')).toContainText('STREFA BEZPIECZNA');
   }
 });

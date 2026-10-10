@@ -32,8 +32,8 @@ describe('continuous world',()=>{
     rat.y=64;expect(()=>Simulation.restore(maps,data,t.clock)).toThrow();
   });
   it('counts forest kills and discovers the old trail on the unified map; reward remains once',()=>{
-    const t=setup();t.sim.send({type:'Interact'});t.sim.send({type:'AcceptQuest'});t.sim.send({type:'AcceptQuest',questId:'exploration'});t.sim.send({type:'CloseDialog'});t.move('up',18);
-    expect(t.sim.snapshot().player).toEqual({x:32,y:58});t.sim.send({type:'Select',targetId:'rat-1'});t.sim.send({type:'Cast'});t.advance(1500);t.sim.send({type:'Cast'});
+    const t=setup();t.sim.send({type:'Interact'});t.sim.send({type:'AcceptQuest'});t.sim.send({type:'AcceptQuest',questId:'exploration'});t.sim.send({type:'CloseDialog'});t.move('up',15);
+    expect(t.sim.snapshot().player).toEqual({x:32,y:61});t.sim.send({type:'Select',targetId:'rat-1'});t.sim.send({type:'Cast'});t.advance(1500);t.sim.send({type:'Cast'});
     expect(t.sim.snapshot().quest).toEqual({status:'active',kills:1});
     let data=t.sim.exportSave();
     for(const p of [{x:32,y:53},{x:24,y:49},{x:40,y:45}]){data.player=p;const sim=Simulation.restore(maps,data,t.clock);sim.send({type:'Interact'});sim.send({type:'Interact'});data=sim.exportSave();}

@@ -20,15 +20,12 @@ async function start(page: Page, walk = false) {
   } else await expect(page.locator('#target-label')).toContainText('Potwory: 3');
   await page.waitForTimeout(500);
 }
-async function selectRat(page: Page, offsetX: number, offsetY: number) {
-  const viewport = page.viewportSize()!;
-  const small = viewport.height <= 600;
-  const top = small ? 60 : 76, bottom = small ? 104 : 168;
-  const zoom = viewport.width >= 1000 && viewport.height >= 600 ? 2 : 1;
-  // Player is centered by the camera. Use the creature's real rendered position.
-  const x = viewport.width / 2 + offsetX * 32 * zoom;
-  const y = top + (viewport.height - top - bottom) / 2 + (offsetY * 32 - 16) * zoom;
-  await page.locator('canvas').click({ position: { x, y } });
+async function selectRat(page:Page) {
+  // The creature walks toward the player; choose it through the actual target control.
+  for(let i=0;i<3;i++) {
+    await page.locator('#cycle-target').click();
+    if((await page.locator('#target-label').textContent())?.includes('Szczur'))break;
+  }
   await expect(page.locator('#target-label')).toContainText('Szczur');
 }
 test('menu, assets, real combat loop and restart', async ({ page }, testInfo) => {
@@ -42,7 +39,7 @@ test('menu, assets, real combat loop and restart', async ({ page }, testInfo) =>
   await page.screenshot({ path: testInfo.outputPath('menu.png') });
   await start(page);
   await page.screenshot({ path: testInfo.outputPath('scene.png') });
-  await selectRat(page, 1, -2);
+  await selectRat(page);
   await page.getByRole('button', { name: /Iskra/ }).click();
   // Screenshot/click timing can cross a 2-second regeneration boundary.
   // Domain tests verify the exact 8 MP cost; the HUD must show the expenditure.
@@ -118,7 +115,7 @@ test('five return journeys use explicit gates without duplicated controls', asyn
 });
 test('simultaneous touch movement and cast; pointercancel stops held direction', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-landscape', 'Real emulated multitouch uses the mobile project');
-  await start(page); await selectRat(page, 1, -2);
+  await start(page); await selectRat(page);
   const session = await page.context().newCDPSession(page);
   const button = await page.locator('#joystick').boundingBox();
   const cast = await page.getByRole('button', { name: /Iskra/ }).boundingBox();

@@ -51,9 +51,9 @@ describe('grid simulation', () => {
   });
 });
 describe('training combat', () => {
-  it('requires target and adjacency; respects cooldown and pays once per death', () => {
+  it('automatically attacks adjacent enemies; respects cooldown and pays once per death', () => {
     const t = setup(); const sim = t.simulation;
-    sim.send({ type: 'Attack' }); expect(sim.snapshot().creatures[0]?.hp).toBe(30);
+    sim.send({ type: 'Attack' }); expect(sim.snapshot().creatures[0]?.hp).toBe(18);
     sim.send({ type: 'Select', targetId: 'rat' }); sim.send({ type: 'Attack' });
     expect(sim.snapshot().creatures[0]?.hp).toBe(18);
     sim.send({ type: 'Attack' }); expect(sim.snapshot().creatures[0]?.hp).toBe(18);
@@ -70,8 +70,9 @@ describe('training combat', () => {
     t.simulation.send({ type: 'Select', targetId: 'rat' });
     t.simulation.send({ type: 'Attack' }); expect(t.simulation.snapshot().creatures[0]?.hp).toBe(30);
     t.maps[0]!.collision[10 * 28 + 13] = 1;
-    t.simulation.send({ type: 'Cast' }); expect(t.simulation.snapshot().mana).toBe(50);
-    expect(t.simulation.snapshot().message).toContain('Ściana');
+    t.simulation.send({ type: 'Cast' }); expect(t.simulation.snapshot().mana).toBe(42);
+    expect(t.simulation.snapshot().creatures[0]?.hp).toBe(30);
+    expect(t.simulation.snapshot().combatEvents.at(-1)).toMatchObject({kind:'spell',targetId:null,damage:0});
   });
   it('uses mana, spell cooldown and timed regeneration', () => {
     const t = setup(); const sim = t.simulation;
@@ -82,8 +83,8 @@ describe('training combat', () => {
   });
   it('preserves potions at full HP, caps healing and enforces cooldown', () => {
     const t = setup([{ id: 'wolf', kind: 'wolf', x: 14, y: 11 }]); const sim = t.simulation;
-    // A neutral creature does not attack until provoked.
-    const neutral = setup(); neutral.simulation.send({ type: 'UseItem' }); expect(neutral.simulation.snapshot().potions).toBe(3);
+    // Full health must preserve the potion when no enemy is present.
+    const neutral = setup([]); neutral.simulation.send({ type: 'UseItem' }); expect(neutral.simulation.snapshot().potions).toBe(3);
     t.advance(1200); expect(sim.snapshot().hp).toBe(93);
     sim.send({ type: 'UseItem' }); expect(sim.snapshot()).toMatchObject({ hp: 100, potions: 2 });
     t.advance(1200); sim.send({ type: 'UseItem' }); expect(sim.snapshot()).toMatchObject({ hp: 93, potions: 2 });
@@ -180,14 +181,13 @@ describe('monster AI and resource exhaustion', () => {
     expect(sim.snapshot().creatures[0]).toMatchObject({ x: 14, y: 11, hp: 70, state: 'idle' });
     expect(sim.snapshot().exp).toBe(0);
   });
-  it('neutral creatures stay idle and a blocked chase never teleports', () => {
+  it('nearby rats pursue without provocation and a blocked chase never teleports', () => {
     const t = setup([{ id: 'rat', kind: 'rat', x: 13, y: 8 }]);
-    t.advance(3000); expect(t.simulation.snapshot().creatures[0]?.state).toBe('idle');
-    t.simulation.send({ type: 'Select', targetId: 'rat' }); t.simulation.send({ type: 'Cast' });
+    t.advance(3000); expect(t.simulation.snapshot().creatures[0]).toMatchObject({state:'chase',x:13,y:9});
     const map = t.maps[0]!;
-    for (const [x,y] of [[12,8],[14,8],[13,7],[13,9]]) map.collision[y!*28+x!] = 1;
+    for (const [x,y] of [[12,9],[14,9],[13,8],[13,10]]) map.collision[y!*28+x!] = 1;
     t.advance(3000);
-    expect(t.simulation.snapshot().creatures[0]).toMatchObject({ x: 13, y: 8 });
+    expect(t.simulation.snapshot().creatures[0]).toMatchObject({ x: 13, y: 9 });
   });
 });
 

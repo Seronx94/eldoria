@@ -10,24 +10,24 @@ function training(x = 14, kind: 'rat' | 'wolf' = 'rat') {
   return {sim,advance:(ms:number)=>{now+=ms;sim.tick();}};
 }
 describe('confirmed combat presentation events',()=>{
-  it('emits only accepted hits, including a lethal hit, without replaying rejected cooldowns',()=>{
-    const t=training(16); const sim=t.sim;
-    sim.send({type:'Attack'});sim.send({type:'Select',targetId:'target'});sim.send({type:'Attack'});
-    expect(sim.snapshot().combatEvents).toEqual([]);
+  it('emits accepted empty swings and automatic spell hits, without replaying cooldowns',()=>{
+    const t=training(16),sim=t.sim;
+    sim.send({type:'Attack'});sim.send({type:'Attack'});
+    expect(sim.snapshot().combatEvents).toMatchObject([{id:1,kind:'melee',targetId:null,damage:0}]);
     sim.send({type:'Cast'});sim.send({type:'Cast'});
-    expect(sim.snapshot().combatEvents).toEqual([{id:1,mapId:'grove',kind:'spell',sourceId:'player',targetId:'target',from:{x:13,y:11},to:{x:16,y:11},damage:18}]);
+    expect(sim.snapshot().combatEvents.filter(e=>e.kind==='spell')).toMatchObject([{id:2,targetId:'target',damage:18}]);
     t.advance(rules.spellMs);sim.send({type:'Cast'});
-    expect(sim.snapshot().combatEvents.filter(e=>e.kind==='spell').map(e=>e.id)).toEqual([1,3]);
+    expect(sim.snapshot().combatEvents.filter(e=>e.kind==='spell').map(e=>e.id)).toEqual([2,4]);
     expect(sim.snapshot().kills).toBe(1);
-    sim.send({type:'Cast'});expect(sim.snapshot().combatEvents).toHaveLength(3);
+    sim.send({type:'Cast'});expect(sim.snapshot().combatEvents).toHaveLength(4);
   });
   it('reports melee and monster damage once per accepted attack, copying coordinates',()=>{
     const t=training();t.sim.send({type:'Select',targetId:'target'});t.sim.send({type:'Attack'});
     t.advance(50); const first=t.sim.snapshot();
-    expect(first.combatEvents).toMatchObject([{kind:'melee',damage:12,targetId:'target'},{kind:'monster',damage:1,targetId:'player'}]);
+    expect(first.combatEvents).toMatchObject([{kind:'monster',damage:1,targetId:'player'},{kind:'melee',damage:12,targetId:'target'}]);
     t.advance(50);expect(t.sim.snapshot().combatEvents).toHaveLength(2);
-    first.combatEvents[0]!.from.x=999;
-    expect(t.sim.snapshot().combatEvents[0]!.from.x).toBe(13);
+    first.combatEvents[1]!.from.x=999;
+    expect(t.sim.snapshot().combatEvents[1]!.from.x).toBe(13);
   });
   it('does not replay combat events when a saved adventure is restored',()=>{
     let now=0;const maps=[importMap(forest)];const sim=new Simulation(maps,'Tester',{now:()=>now});
@@ -49,6 +49,7 @@ describe('confirmed combat presentation events',()=>{
 describe('forest idle patrol',()=>{
   it('moves distant idle creatures within their spawn area without occupying walls, actors or gates',()=>{
     let now=0;const map=importMap(forest);
+    map.spawns.entry={x:3,y:60};
     const sim=new Simulation([map],'Tester',{now:()=>now});
     const initial=sim.snapshot();const visited=new Set<string>();
     for(let i=0;i<30;i++){
@@ -62,7 +63,7 @@ describe('forest idle patrol',()=>{
         expect(map.portals.some(p=>Math.abs(p.x-c.x)+Math.abs(p.y-c.y)<=1)).toBe(false);
       }
       expect(s.player).toEqual(initial.player);expect(s.hp).toBe(100);
-      expect(s.creatures.find(c=>c.id==='rat-1')).toMatchObject({x:33,y:56,state:'idle'});
+      expect(s.creatures.find(c=>c.id==='rat-1')).toMatchObject({state:'idle'});
     }
     expect(visited.size).toBeGreaterThan(initial.creatures.length);
   });

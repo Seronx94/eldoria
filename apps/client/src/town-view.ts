@@ -14,6 +14,7 @@ export class TownView {
   private interiors=new Map<string,Phaser.GameObjects.Components.Visible[]>();
   private buildings:TownBuilding[]=[];
   private current='';
+  get visibleRoofs():string[] {return [...this.roofs].filter(([,roof])=>roof.visible).map(([id])=>id);}
   constructor(private scene:Phaser.Scene) {}
   clear():void {
     for(const o of this.objects)o.destroy();this.objects=[];this.roofs.clear();this.doors.clear();this.interiors.clear();this.buildings=[];this.current='';
@@ -29,6 +30,13 @@ export class TownView {
       const roof=this.scene.add.container(0,0).setDepth(9998);
       for(let y=b.y;y<b.y+b.height;y++)for(let x=b.x;x<b.x+b.width;x++)roof.add(this.scene.add.image(x*32,y*32,'town-roof').setOrigin(0));
       const outline=this.scene.add.graphics().lineStyle(3,0x493226).strokeRect(b.x*32,b.y*32,b.width*32,b.height*32);roof.add(outline);
+      // Raised ridge, shaded slope and eaves make the exterior read as a roof from the street.
+      const x=b.x*32,y=b.y*32,w=b.width*32,h=b.height*32;
+      const shape=this.scene.add.graphics();
+      shape.fillStyle(0x3c2528,.25).fillRect(x,y+h/2,w,h/2);
+      shape.lineStyle(4,0xf2b075).lineBetween(x+3,y+h/2,x+w-3,y+h/2);
+      shape.lineStyle(3,0x542d2d).lineBetween(x,y+h-2,x+w,y+h-2);
+      roof.add(shape);
       this.roofs.set(b.id,roof);this.objects.push(roof);
       for(const d of b.doors) {
         const door=this.scene.add.image(d.x*32+16,d.y*32+32,'town-door').setOrigin(.5,1).setDepth(d.y*32+34);

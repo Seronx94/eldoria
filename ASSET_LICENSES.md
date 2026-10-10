@@ -61,3 +61,7 @@ Autorskie sześć ikon SVG na siatce 32×32 w `apps/client/src/action-icons.ts`:
 ## Ciągły świat 0.1.6
 
 `assets/source/eldoria.tmj` i identyczny eksport `apps/client/public/assets/eldoria.json` — autorski układ 64×112, łączący własne Vareon i las drogą przez północną bramę. `scripts/generate-world.mjs` odtwarza połączenie ze źródeł lokalnych; Regions opisuje miasto i las oraz ochronę miasta. Wszystkie obrazy pozostają z istniejących własnych atlasów. Nie skopiowano mapy Tibii ani żadnych zewnętrznych materiałów; nowy układ pozostaje do oceny testera.
+
+## Efekty i dachy 0.1.7
+
+Krąg rzucania Iskry, orbitujące iskry, kalenice i cieniowanie połaci są autorskimi rysunkami proceduralnymi w `combat-effects.ts` oraz `town-view.ts`, korzystającymi z istniejących materiałów Eldorii. Nie importowano zewnętrznych assetów ani materiałów Tibii/Kakele. Na tych samych zasadach wkładu Codexa dla projektu; oprawa czeka na ocenę testera.

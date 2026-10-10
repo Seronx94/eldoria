@@ -1,19 +1,22 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.0.2 — grywalna scena wzorcowa offline**, przed akceptacją grafiki M0. Pełna wersja 0.1, NPC, sklep, quest i zapis nie są jeszcze ukończone. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.0 — pierwsza przygoda offline do testów**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
-## Zagraj w bieżący prototyp
+## Zagraj w bieżącą wersję
 
 W katalogu repozytorium, z Node.js 24.19.0:
 
 ```sh
+git pull
 npm ci
 npm run dev
 ```
 
-Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.md) opisuje sterowanie, pięć kroków próby i ograniczenia. Domyślna próba zaczyna się od razu w zagajniku obok potworów: szczur/żuk/wilk → łup i plecak → ukończona próba. Przez bramę można wrócić na bezpieczny dziedziniec. Dostępny również spacer bez potworów do oceny grafiki. Stan tej próby nie jest zapisywany.
+Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.md) opisuje pięć kroków przygody, sterowanie i zapis. Domyślnie zaczynasz w Vareon obok Miry: rozmowa i quest → brama na północy → pięć zabójstw w lesie → łup → powrót po nagrodę → handel i wznowienie. **Próba Wędrowca** w menu pozostaje treningiem walki zaczynającym się od razu przy potworach. **Spacer bez potworów** pokazuje stare sceny wzorcowe. Trening i spacer nie są zapisywane.
 
-Mapy wzorcowe i sprite’y są autorskimi placeholderami; źródła i opis w [ASSET_LICENSES.md](ASSET_LICENSES.md). Zanim powstaną pełne mapy T05, tester ocenia scenę T02. Weryfikacja i kolejka: [TASKS.md](TASKS.md).
+Przygoda zapisuje się w tej przeglądarce przy zmianie mapy, nagrodzie, handlu, powrocie do menu, ukryciu strony i co 30 sekund po zmianie stanu. Dostępne są przycisk Zapisz, wznowienie, eksport/import JSON oraz odzyskanie poprzedniego poprawnego zapisu. Uszkodzenie nie usuwa danych automatycznie; brak miejsca jest pokazany w dzienniku. Rozpoczęcie nowej przygody zastępuje bieżący zapis, zachowując poprzedni w kopii. Zapis jest wyłącznie offline i nie przeniesie się do przyszłej ekonomii online.
+
+Sprite’y i mapy są autorskimi placeholderami; źródła i opis w [ASSET_LICENSES.md](ASSET_LICENSES.md). Tester polecił kontynuować budowę z obecnym stylem; nie uznajemy go za finalną grafikę. Weryfikacja i kolejka: [TASKS.md](TASKS.md).
 
 ## Cel i sposób pracy
 Eldoria to autorska gra RPG 2D z docelowym wspólnym światem online, inspirowana sposobem eksploracji Kakele/Tibii. Nie kopiujemy ich map, nazw zaklęć, grafik ani dźwięków. Codex implementuje i weryfikuje kolejne wersje; właściciel projektu testuje na telefonie i ocenia wygląd oraz rozgrywkę. Nie wymaga się od testera pisania kodu.
@@ -119,7 +122,7 @@ npm run test:e2e
 npm run validate:content
 npm run build
 ```
-Wszystkie powyższe polecenia są już dostępne w prototypie 0.0.2. Testy e2e wymagają Chromium (instrukcja w docs/TESTER.md). dev:lan ma drukować adres do testów w tej samej sieci; nie wystawiać serwera automatycznie do Internetu. Etap online dodaje compose dla PostgreSQL i komendę dev:online. Etap Android dodaje komendy sync/build oraz opis SDK/JDK zgodny z wybraną wersją Capacitor. Bez podpisywania kluczem produkcyjnym ani publikowania w sklepie bez polecenia właściciela.
+Wszystkie powyższe polecenia są już dostępne w wersji 0.1.0. Testy e2e wymagają Chromium (instrukcja w docs/TESTER.md). dev:lan ma drukować adres do testów w tej samej sieci; nie wystawiać serwera automatycznie do Internetu. Etap online dodaje compose dla PostgreSQL i komendę dev:online. Etap Android dodaje komendy sync/build oraz opis SDK/JDK zgodny z wybraną wersją Capacitor. Bez podpisywania kluczem produkcyjnym ani publikowania w sklepie bez polecenia właściciela.
 
 ## Zakres późniejszych wersji
 Cztery autorskie profesje (wojownik, łucznik, mag ognia, opiekun natury), lochy, questy fabularne i bossowie. Po stabilizacji: handel, PvP na oznaczonych terenach, gildie, moderacja. Monetyzacja dopiero po weryfikacji gry i wymogów platformy; preferowane kosmetyki, brak sprzedaży przewagi w pierwszej wersji.

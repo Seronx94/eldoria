@@ -19,6 +19,8 @@ export interface WorldMap {
   spawns: Record<string, Point>;
   portals: (Point & { id: string; targetMapId: string; targetSpawnId: string })[];
   decorations: (Point & { kind: 'tree' | 'house' })[];
+  npcs: (Point & { id: 'mira' | 'oren' | 'borin' })[];
+  monsterSpawns: (Point & { id: string; kind: 'rat' | 'beetle' | 'wolf' })[];
   image: string;
 }
 function properties(values: z.infer<typeof property>[], key: string): string {
@@ -57,12 +59,14 @@ export function importMap(input: unknown): WorldMap {
   if (!Object.hasOwn(spawns, 'entry')) throw new Error(`${id}: brak spawnu entry`);
   const portals = objects('Portals').map(o => ({ ...point(o), id: o.name, targetMapId: properties(o.properties, 'targetMapId'), targetSpawnId: properties(o.properties, 'targetSpawnId') }));
   if (new Set(portals.map(p => p.id)).size !== portals.length || portals.some(p => !p.id)) throw new Error(`${id}: nieprawidłowe ID portali`);
-  // NPC IDs are validated even though the sample scene intentionally has no quest NPCs.
-  for (const o of objects('NPCs')) { point(o); properties(o.properties, 'npcId'); }
+  const npcs = objects('NPCs').map(o => ({ ...point(o), id: z.enum(['mira', 'oren', 'borin']).parse(properties(o.properties, 'npcId')) }));
+  if (new Set(npcs.map(n => n.id)).size !== npcs.length) throw new Error(`${id}: powtórzony npcId`);
+  const monsterSpawns = objects('Spawns').filter(o => o.properties.some(p => p.name === 'monsterId')).map(o => ({ ...point(o), id: o.name, kind: z.enum(['rat', 'beetle', 'wolf']).parse(properties(o.properties, 'monsterId')) }));
+  if (monsterSpawns.length > 12) throw new Error(`${id}: limit 12 potworów`);
   const decorations = objects('Decorations').map(o => ({ ...point(o), kind: z.enum(['tree', 'house']).parse(o.name) }));
   const image = raw.tilesets[0]!.image;
   if (image.startsWith('/') || image.includes('..') || image.includes(':') || !image.endsWith('.png')) throw new Error(`${id}: obraz musi być względnym PNG`);
-  return { id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, image };
+  return { id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, npcs, monsterSpawns, image };
 }
 export function validateMaps(maps: WorldMap[], images: ReadonlySet<string>): void {
   const ids = new Set(maps.map(m => m.id));
@@ -72,9 +76,17 @@ export function validateMaps(maps: WorldMap[], images: ReadonlySet<string>): voi
     for (const spawn of Object.values(map.spawns)) {
       if (map.collision[spawn.y * map.width + spawn.x] !== 0) throw new Error(`${map.id}: spawn w ścianie`);
     }
+    const positions = new Set<string>();
+    for (const actor of [...map.npcs, ...map.monsterSpawns]) {
+      const position = `${actor.x},${actor.y}`;
+      if (positions.has(position) || map.collision[actor.y * map.width + actor.x] !== 0 || actor.x === map.spawns.entry?.x && actor.y === map.spawns.entry.y) throw new Error(`${map.id}: zajęty spawn NPC/potwora`);
+      positions.add(position);
+    }
     for (const portal of map.portals) {
       const target = maps.find(m => m.id === portal.targetMapId);
       if (!target || !Object.hasOwn(target.spawns, portal.targetSpawnId)) throw new Error(`${map.id}: nieprawidłowy portal ${portal.id}`);
+      const arrival = target.spawns[portal.targetSpawnId]!;
+      if ([...target.npcs,...target.monsterSpawns].some(a => a.x === arrival.x && a.y === arrival.y)) throw new Error(`${map.id}: portal do zajętego spawnu`);
       if (map.collision[portal.y * map.width + portal.x] !== 0) throw new Error(`${map.id}: portal w ścianie`);
     }
   }

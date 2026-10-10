@@ -1,12 +1,13 @@
-# Eldoria 0.0.2 — pierwsza próba gry
+# Eldoria 0.1.0 — Niepokój za bramą
 
-To grywalny prototyp offline M0 i niezależnych mechanik T07/T08, **nie pełna wersja 0.1**. Obie mapy 28×22 to sceny wzorcowe. Pełne Vareon 48×48, las 64×64, NPC, sklep, quest i zapis pozostają przed nami. Grafika jest autorskim placeholderem, audio celowo wyłączone. Odświeżenie strony lub rozpoczęcie nowej próby zeruje postęp.
+Pierwsza przygoda offline: Vareon 48×48, Mroczny Las 64×64, 12 stworzeń, trzej NPC, quest, sklep i zapis. Grafika jest autorskim placeholderem, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
 ## Uruchomienie na komputerze
 
 Potrzebny Node.js 24.19.0 (również Node 22.13+; zalecana wersja 24.19) i npm. Z katalogu repozytorium:
 
 ```sh
+git pull
 npm ci
 npm run dev
 ```
@@ -21,21 +22,29 @@ Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Ko
 
 ## Pięć kroków testu
 
-1. Wpisz imię i rozpocznij z odznaczonym „Spacerem bez potworów”. Trafisz od razu do zagajnika: szczur jest powyżej po prawej, żuk dalej na prawo, a wilk na południowym wschodzie. Na górze zobaczysz „Potwory: 3”. WASD/strzałki i D-pad poruszają postacią; wielkie litery i Caps Lock również działają.
-2. Dotknij szczura albo wybierz **Cel** (T). Iskra (E) trafia do 4 kratek, kosztuje 8 many i odnawia się przez 1,5 s. Miecz (Spacja) działa z sąsiedniej kratki co 0,8 s. Powtórz walkę z żukiem; wilka szukaj głębiej na południowym wschodzie. Wskaźnik celu pokazuje kierunek i odległość. Wilk atakuje sam; pozostałe stworzenia dopiero po zaczepieniu.
-3. Gdy HP spadnie, użyj **Mikstury** (Q). Masz trzy, każda leczy do 40 HP, z przerwą 3 s. Pełne HP nie zużywa mikstury. Po pokonaniu stworzenia podejdź do sakiewki i wybierz **Łup** (R), osobno dla każdej sakiewki. EXP jest przyznawane za pokonanie; złoto i materiały dopiero po podniesieniu.
-4. Otwórz **Plecak** (I). Sprawdź złoto, chitynę/skórę, mikstury i wyposażenie. Zdejmij i załóż miecz/tunikę. Ruch pod otwartym oknem ma być zablokowany. Pokonanie każdego z trzech typów kończy próbę. Zamknij komunikat przyciskiem „Zbierz pozostały łup”, jeśli chcesz jeszcze zwiedzać. Śmierć przywraca HP/manę na bezpiecznym dziedzińcu bez utraty EXP/łupu.
-5. Brama na północy prowadzi na bezpieczny dziedziniec. Stań na niej lub obok, a następnie wybierz **Przejdź** (F) albo kliknij bramę. Przycisk podświetla się w zasięgu; samo podejście nie teleportuje. Wskazówka na górze pokazuje kierunek i odległość do bramy na dziedzińcu. W menu można zaznaczyć **Spacer bez potworów**, aby ocenić wygląd bez walki — oznaczenie tego trybu jest widoczne przez całą grę, również w zagajniku. Zrób pięć podróży w obie strony, sprawdź ściany/podstawy drzew, ostrość, obrót telefonu i jednoczesny ruch + atak/czar. Potem rozpocznij nową próbę — postęp powinien się wyzerować, bo zapis z T10 nie jest jeszcze zaimplementowany.
+1. Wybierz **Vareon — Niepokój za bramą**, pozostaw spacer odznaczony i rozpocznij. Stoisz obok **Miry**. Kliknij ją lub użyj **Rozmowa / Przejdź (F)**, a potem **Przyjmij zadanie**. Ruch, atak i czar pod dialogiem mają być zablokowane. Zamknij rozmowę. WASD/strzałki oraz D-pad poruszają postacią; Caps Lock działa.
+2. Idź na północ do świecącej bramy. Podejdź na sąsiednią kratkę i kliknij ją lub naciśnij **F**. W lesie szczur jest blisko na północy po prawej; żuk dalej na prawo. Wybierz **Cel (T)** albo dotknij stworzenia. **Iskra (E)** działa do 4 kratek, kosztuje 8 many i odnawia się przez 1,5 s; **Miecz (Spacja)** działa z sąsiedniej kratki co 0,8 s. Wilki głębiej w lesie atakują same; szczury i żuki dopiero po zaczepieniu. Potwory odradzają się po 20 s. Pokonaj pięć — licznik zadania rośnie tylko po jego przyjęciu.
+3. Podejdź obok każdej sakiewki i wybierz **Łup (R)**. Sprawdź materiały i złoto w **Plecaku (I)**. **Mikstura (Q)** przywraca do 40 HP co 3 s, pełne HP jej nie zużywa. Można zdjąć i założyć miecz/tunikę. Śmierć wraca do Vareon z pełnym HP/maną i zachowanymi zdobyczami. Brama powrotna jest na południe od wejścia do lasu; samo podejście nie teleportuje.
+4. Wróć do Miry i odbierz **50 EXP, 20 złota i 2 mikstury**. Nagroda musi być wypłacona tylko raz. Gdy nie mieści się w plecaku, pozostaje do odebrania. **Oren** dwa pola na zachód od miejsca startu leczy za darmo. **Borin** stoi trzy pola na wschód i dwa na południe: sprzedaje mikstury po 5 złota i kupuje skóry/chitynę po 2. Rozmowa działa wyłącznie obok NPC.
+5. Użyj **Zapisz**, odśwież stronę i wybierz **Wznów przygodę**. Pozycja, poziom, wyposażenie, zasoby i odebrana nagroda powinny pozostać. W menu wyeksportuj zapis do pliku, a następnie zaimportuj go. Jest też **Odzyskaj kopię zapisu** — wraca do poprzedniego checkpointu, więc część ostatniego postępu może cofnąć się. Sprawdź pięć podróży między mapami, obrót telefonu, ostrość kamery oraz jednoczesny ruch i czar.
 
-## Scena do oceny
+## Zapis i tryby
 
-[Potwory po starcie — desktop](screenshots/combat-desktop.png) · [potwory po starcie — telefon](screenshots/combat-mobile.png) · [Widok desktopowy stylu](screenshots/scene-desktop.png) · [widok mobilny](screenshots/scene-mobile.png) · [ukończona próba](screenshots/trial-mobile.png). To zrzuty z końcowych testów, z placeholderami.
+Zapis przygody znajduje się lokalnie w tej przeglądarce, oddzielnie od przyszłego online. Inny telefon, przeglądarka lub adres gry nie współdzieli go — przenieś plik eksportu. Tryb prywatny i usuwanie danych strony mogą usuwać zapis; eksportuj ważny postęp. Przycisk **Rozpocznij** tworzy nową przygodę, a **Wznów przygodę** zachowuje istniejącą.
+
+Uszkodzenie lub nieobsługiwana wersja pokazują komunikat i pozostawiają dane. Wybierz odzyskanie kopii lub import poprawnego pliku. Jeśli pamięć jest pełna lub zablokowana, gra zgłasza błąd zapisu; można wrócić do menu i wyeksportować aktywną przygodę. Import wadliwego pliku nie zmienia bieżącego zapisu. Zegar walki i odrodzenia jest wstrzymany podczas wyłączenia gry; wznowienie nie resetuje cooldownów.
+
+**Próba Wędrowca — trening walki** zaczyna się bezpośrednio przy szczurze i żuku w starym zagajniku i kończy po pokonaniu trzech typów. **Spacer bez potworów** umożliwia oglądanie scen wzorcowych. Te tryby nie zapisują postępu.
+
+## Widoki
+
+[Vareon — desktop](screenshots/vareon-desktop.png) · [Vareon — mobilny](screenshots/vareon-mobile.png) · [las — desktop](screenshots/forest-desktop.png) · [nagroda Miry — mobilny](screenshots/reward-mobile.png). Zrzuty z testów przeglądarkowych, z grafiką roboczą.
 
 ## Co zgłosić
 
-Napisz model telefonu, przeglądarkę, wersję Androida oraz czy przyciski są wygodne i nie zasłaniają celu. Najważniejsza decyzja przed T05: czy kierunek grafiki sceny wzorcowej jest akceptowalny, czy wymaga zmian (postacie, drzewa, dom, kolory, ostrość). Nie trzeba pisać kodu. Błąd opisz krokami, oczekiwanym i rzeczywistym zachowaniem; screenshot pomaga.
+Podaj model telefonu, przeglądarkę, Androida i wersję gry. Sprawdź wygodę przycisków, widoczność potworów, dialogów i komunikatów zapisu. Napisz, czy quest da się ukończyć bez instrukcji i ile trwała przygoda; 10–15 minut jest celem, a nie potwierdzonym pomiarem. Uwagi o postaciach, drzewach, domach i kolorach nadal są potrzebne. Nie trzeba pisać kodu.
 
-Testy mobilnego viewportu i emulowanego wielodotyku nie zastępują fizycznego telefonu. Nie zmierzono jeszcze FPS ani stabilności 15-minutowej sesji na konkretnym Androidzie.
+FPS, ręczny wielodotyk i stabilność 15-minutowej sesji na konkretnym Androidzie pozostają do sprawdzenia na fizycznym urządzeniu.
 
 ## Kontrole dla programisty / Codexa
 

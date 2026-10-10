@@ -11,8 +11,10 @@ Wszystkie bieżące PNG i mapy to **autorskie placeholdery**, wygenerowane na po
 | rat.png | generator, płótno 32×32 | roboczy szczur |
 | beetle.png | generator, płótno 32×32 | roboczy żuk |
 | wolf.png | generator, płótno 32×32 | roboczy wilk |
+| vareon.tmj, forest.tmj | edytowalne JSON Tiled | Vareon 48×48, las 64×64 |
+| NPC Mira/Oren/Borin | wanderer.png z odrębnymi tintami w kliencie | robocze postacie NPC |
 | courtyard.tmj, grove.tmj | edytowalne JSON Tiled | wyłącznie małe mapy wzorcowe |
 
 Źródła: `assets/source/`; eksport: `apps/client/public/assets/`. PNG można edytować niezależnie od generatora; ponowne generowanie nadpisuje te pliki. Audio wyłączone — brak zaakceptowanych nagrań. Brak fontów zewnętrznych: interfejs używa fontów systemowych.
 
-Scena wymaga oceny testera (T02 REVIEW). Akceptacja kodu nie oznacza akceptacji finalnego stylu.
+Tester polecił dalszą budowę przygody z obecnym zestawem. Zgoda na użycie roboczego stylu nie oznacza akceptacji finalnej grafiki; assety nadal są placeholderami.

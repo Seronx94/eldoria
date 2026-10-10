@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import courtyard from '../../../apps/client/public/assets/courtyard.json';
+import vareon from '../../../apps/client/public/assets/vareon.json';
+import forest from '../../../apps/client/public/assets/forest.json';
 import grove from '../../../apps/client/public/assets/grove.json';
 import { importMap, validateMaps } from './maps';
 function copy() { return structuredClone(courtyard); }
@@ -29,5 +31,18 @@ describe('Tiled content boundary', () => {
     expect(() => importMap(external)).toThrow(/względnym/);
     const dimensions = copy(); dimensions.tilewidth = 16;
     expect(() => importMap(dimensions)).toThrow();
+  });
+});
+
+describe('adventure content validation', () => {
+  it('rejects repeated NPC IDs and collisions between actor spawns', () => {
+    const raw=structuredClone(vareon); const layer=raw.layers.find(l=>l.name==='NPCs')!;
+    layer.objects!.push({...layer.objects![0]!}); expect(()=>importMap(raw)).toThrow(/npcId/);
+    const town=importMap(vareon); town.npcs[1]!.x=town.npcs[0]!.x; town.npcs[1]!.y=town.npcs[0]!.y;
+    expect(()=>validateMaps([town,importMap(forest)],new Set(['tiles.png']))).toThrow(/spawn/);
+  });
+  it('rejects a portal aimed at a monster spawn', () => {
+    const town=importMap(vareon); town.portals[0]!.targetSpawnId='rat-1';
+    expect(()=>validateMaps([town,importMap(forest)],new Set(['tiles.png']))).toThrow(/zajętego spawnu/);
   });
 });

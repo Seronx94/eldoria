@@ -128,3 +128,55 @@ for map_id, other, tint in [('courtyard','grove',1),('grove','courtyard',1)]:
     (SOURCE/(map_id+'.tmj')).write_text(text)
     (PUBLIC/(map_id+'.json')).write_text(text)
 print('Generated original placeholder sprites and two editable sample maps.')
+
+# Adventure maps reuse the reviewed provisional palette, with reproducible Tiled sources.
+for map_id, width, height in [('vareon',48,48),('forest',64,64)]:
+    town = map_id == 'vareon'
+    cx = 24 if town else 32
+    entry = (cx,12) if town else (cx,58)
+    gate = (cx,4) if town else (cx,60)
+    buildings = [(12,15),(35,15),(12,29),(35,29),(24,39)] if town else []
+    trees = ([(5,7),(42,7),(6,22),(41,22),(6,36),(41,36)] if town else
+             [(x,y) for y in range(7,57,7) for x in range(5,60,6) if abs(x-cx)>4 and (x+y)%3!=0])
+    npcs = [('mira',25,12),('oren',22,12),('borin',27,14)] if town else []
+    monster_points = [] if town else [
+        ('rat-1','rat',33,56),('rat-2','rat',35,52),('rat-3','rat',30,48),('rat-4','rat',34,44),
+        ('beetle-1','beetle',36,58),('beetle-2','beetle',29,53),('beetle-3','beetle',37,48),('beetle-4','beetle',30,40),
+        ('wolf-1','wolf',40,38),('wolf-2','wolf',25,30),('wolf-3','wolf',40,22),('wolf-4','wolf',30,12)]
+    ground=[]; details=[]; collision=[]; above=[]
+    for y in range(height):
+        for x in range(width):
+            border = x in (0,width-1) or y in (0,height-1)
+            road = abs(x-cx)<=1 or (town and (10<=y<=17 or y in (28,29,38,39)))
+            ground.append(2 if road else 1)
+            details.append(4 if border else 0)
+            collision.append(1 if border else 0)
+            above.append(0)
+    for x,y in buildings:
+        for yy in range(y-1,y+1):
+            for xx in range(x-1,x+2): collision[yy*width+xx]=1
+    # Fountain at the market; the water is impassable, with paths around it.
+    if town:
+        for y in range(19,22):
+            for x in range(23,26):
+                ground[y*width+x]=3; details[y*width+x]=4 if x in (23,25) or y in (19,21) else 0
+                collision[y*width+x]=1
+    reserved={entry,gate,*[(x,y) for _,x,y in npcs],*[(x,y) for _,_,x,y in monster_points]}
+    trees=[(x,y) for x,y in trees if (x,y) not in reserved]
+    for x,y in trees: collision[y*width+x]=1
+    def obj(identifier,name,x,y,props=None):
+        return {'id':identifier,'name':name,'x':x*32,'y':y*32,'point':True,'properties':props or []}
+    layers=[]
+    for i,(name,data) in enumerate([('Ground',ground),('Details',details),('Collision',collision),('Above',above)],1):
+        layers.append({'id':i,'name':name,'type':'tilelayer','width':width,'height':height,'x':0,'y':0,'opacity':1,'visible':name!='Collision','data':data})
+    layers += [
+        {'id':5,'name':'Spawns','type':'objectgroup','objects':[obj(1,'entry',*entry),*[obj(10+i,name,x,y,[prop('monsterId',kind)]) for i,(name,kind,x,y) in enumerate(monster_points)]]},
+        {'id':6,'name':'Portals','type':'objectgroup','objects':[obj(2,'gate',*gate,[prop('targetMapId','forest' if town else 'vareon'),prop('targetSpawnId','entry')])]},
+        {'id':7,'name':'NPCs','type':'objectgroup','objects':[obj(30+i,name,x,y,[prop('npcId',name)]) for i,(name,x,y) in enumerate(npcs)]},
+        {'id':8,'name':'Decorations','type':'objectgroup','objects':[*[obj(40+i,'house',x,y) for i,(x,y) in enumerate(buildings)],*[obj(60+i,'tree',x,y) for i,(x,y) in enumerate(trees)]]}
+    ]
+    doc={'type':'map','version':'1.10','tiledversion':'1.11.2','orientation':'orthogonal','renderorder':'right-down','infinite':False,'width':width,'height':height,'tilewidth':32,'tileheight':32,'properties':[prop('mapId',map_id),prop('combatAllowed','false' if town else 'true')],'layers':layers,'tilesets':[{'firstgid':1,'name':'eldoria-placeholder','tilewidth':32,'tileheight':32,'tilecount':4,'columns':4,'image':'tiles.png','imagewidth':128,'imageheight':32}]}
+    text=json.dumps(doc,ensure_ascii=False,indent=2)+'\n'
+    (SOURCE/(map_id+'.tmj')).write_text(text)
+    (PUBLIC/(map_id+'.json')).write_text(text)
+print('Generated Vareon 48x48 and forest 64x64 with NPC and monster markers.')

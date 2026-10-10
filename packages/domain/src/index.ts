@@ -1,7 +1,9 @@
-import { items, monsters, rules, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { items, monsters, rules, npcs, questRules, shopRules, sampleSpawns, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
 import { commandSchema, nameSchema, type Command, type Direction } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
+import { saveSchema, type SaveData } from './save';
+export { saveSchema, type SaveData } from './save';
 export interface Loot extends Point { id: string; mapId: string; gold: number; items: Stack[] }
 export interface Point { x: number; y: number }
 export interface Creature extends Point {
@@ -10,6 +12,7 @@ export interface Creature extends Point {
   lastAttack: number; lastMove: number; diedAt: number;
 }
 export interface Snapshot {
+  dialog: NpcId | null; quest: { status: 'available' | 'active' | 'ready' | 'claimed'; kills: number };
   name: string; mapId: string; player: Point; direction: Direction;
   hp: number; mana: number; maxHp: number; maxMana: number; level: number; potions: number; exp: number; gold: number;
   kills: number; defeatedKinds: MonsterKind[]; selectedId: string | null; creatures: Creature[];
@@ -33,15 +36,11 @@ export class Simulation {
   private lastPotion = -Infinity;
   private lastMana: number;
   private time: number;
-  constructor(private maps: WorldMap[], name: string, private clock: Clock, private spawns: Spawn[] = [
-    { id: 'rat-1', kind: 'rat', x: 14, y: 9 },
-    { id: 'beetle-1', kind: 'beetle', x: 18, y: 11 },
-    { id: 'wolf-1', kind: 'wolf', x: 22, y: 16 },
-  ], initialInventory: Stack[] = [{ itemId: 'potion', quantity: 3 }]) {
+  constructor(private maps: WorldMap[], name: string, private clock: Clock, private spawns?: Spawn[], initialInventory: Stack[] = [{ itemId: 'potion', quantity: 3 }]) {
     const map = maps[0];
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
-    this.state = { name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    this.state = { dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: map.id === 'vareon' ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa / Przejdź (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
     this.spawnCreatures();
   }
   private map(): WorldMap { return this.maps.find(m => m.id === this.state.mapId)!; }
@@ -51,12 +50,12 @@ export class Simulation {
     return point.x >= 0 && point.y >= 0 && point.x < m.width && point.y < m.height && m.collision[point.y * m.width + point.x] === 0;
   }
   private occupied(point: Point, except?: string): boolean {
-    return this.state.creatures.some(c => c.id !== except && c.hp > 0 && distance(c, point) === 0);
+    return this.map().npcs.some(n => distance(n, point) === 0) || this.state.creatures.some(c => c.id !== except && c.hp > 0 && distance(c, point) === 0);
   }
   private spawnCreatures(): void {
     const cached = this.creatureMaps.get(this.state.mapId);
     if (cached) { this.state.creatures = cached; return; }
-    this.state.creatures = (this.map().combatAllowed ? this.spawns : []).map(s => {
+    this.state.creatures = (this.map().combatAllowed ? this.spawns ?? (this.map().monsterSpawns.length ? this.map().monsterSpawns : sampleSpawns) : []).map(s => {
       if (!this.walkable(s)) throw new Error(`Nieprawidłowy spawn potwora ${s.id}`);
       return { ...s, hp: monsters[s.kind].hp, spawn: { x: s.x, y: s.y }, state: 'idle', lastAttack: -Infinity, lastMove: -Infinity, diedAt: 0 };
     });
@@ -72,6 +71,33 @@ export class Simulation {
   private command(command: Command): void {
     const now = this.time;
     const s = this.state;
+    if (command.type === 'CloseDialog') { s.dialog = null; return; }
+    if (s.dialog && ['Move', 'Attack', 'Cast', 'Select', 'UseItem', 'Loot', 'Interact', 'Equip', 'Unequip'].includes(command.type)) return;
+    if (['Heal', 'AcceptQuest', 'ClaimReward', 'Buy', 'Sell'].includes(command.type)) {
+      const npc = this.map().npcs.find(n => n.id === s.dialog && distance(n, s.player) <= 1);
+      if (!npc) { this.notify('Podejdź do NPC i rozpocznij rozmowę.'); return; }
+      if (command.type === 'Heal' && npc.id === 'oren') {
+        s.hp = s.maxHp; s.mana = s.maxMana; this.notify('Oren przywrócił zdrowie i manę.');
+      } else if (command.type === 'AcceptQuest' && npc.id === 'mira' && s.quest.status === 'available') {
+        s.quest = { status: 'active', kills: 0 }; this.notify('Przyjęto zadanie: Niepokój za bramą. Pokonaj 5 stworzeń w lesie.');
+      } else if (command.type === 'ClaimReward' && npc.id === 'mira' && s.quest.status === 'ready') {
+        const inventory = addItems(s.inventory, [{ itemId: 'potion', quantity: questRules.potions }]);
+        if (!inventory) { this.notify('Pełny plecak — nagroda czeka u Miry. Zwolnij miejsce.'); return; }
+        s.inventory = inventory; s.potions = countItem(inventory, 'potion'); s.gold += questRules.gold;
+        this.gainExp(questRules.exp); s.quest.status = 'claimed'; this.notify('Mira: Dziękuję! Otrzymujesz 50 EXP, 20 złota i 2 mikstury.');
+      } else if (command.type === 'Buy' && npc.id === 'borin') {
+        const price = command.quantity * shopRules.potionPrice;
+        if (s.gold < price) { this.notify('Za mało złota.'); return; }
+        const inventory = addItems(s.inventory, [{ itemId: 'potion', quantity: command.quantity }]);
+        if (!inventory) { this.notify('Pełny plecak — zakup anulowany.'); return; }
+        s.inventory = inventory; s.gold -= price; s.potions = countItem(inventory, 'potion'); this.notify('Kupiono mikstury.');
+      } else if (command.type === 'Sell' && npc.id === 'borin') {
+        const inventory = removeItem(s.inventory, command.itemId, command.quantity);
+        if (!inventory) { this.notify('Nie masz tylu materiałów.'); return; }
+        s.inventory = inventory; s.gold += command.quantity * shopRules.materialPrice; this.notify('Sprzedano materiały.');
+      } else this.notify('Ta opcja nie jest teraz dostępna.');
+      return;
+    }
     if (command.type === 'Select') {
       if (s.creatures.some(c => c.id === command.targetId && c.hp > 0)) s.selectedId = command.targetId;
       return;
@@ -110,14 +136,19 @@ export class Simulation {
       s.player = next; this.lastMove = now; return;
     }
     if (command.type === 'Interact') {
+      const npc = this.map().npcs.find(n => (!command.npcId || n.id === command.npcId) && distance(n, s.player) <= 1);
+      if (npc) { s.dialog = npc.id; this.notify(`${npcs[npc.id].name}: ${npcs[npc.id].role}`); return; }
+      if (command.npcId) { this.notify('Podejdź obok NPC, aby porozmawiać.'); return; }
       const portal = this.map().portals.find(p => distance(p, s.player) <= 1);
       if (!portal) { this.notify('Podejdź do świecącej bramy i wybierz Przejdź.'); return; }
       const target = this.maps.find(m => m.id === portal.targetMapId);
       const spawn = target?.spawns[portal.targetSpawnId];
       if (!target || !spawn) { this.notify('Brama nie ma poprawnego celu.'); return; }
-      s.mapId = target.id; s.player = { ...spawn }; s.selectedId = null;
+      const arrival = this.freeArrival(target, spawn);
+      if (!arrival) { this.notify('Wejście jest zajęte — spróbuj ponownie.'); return; }
+      s.mapId = target.id; s.player = arrival; s.selectedId = null;
       this.spawnCreatures(); this.lastMove = now;
-      this.notify('Przejście do drugiej sceny wzorcowej.'); return;
+      this.notify(target.id === 'forest' ? 'Mroczny Las. Wybierz cel; szczur jest blisko na północy.' : target.id === 'vareon' ? 'Vareon. Wróć do Miry, odpocznij u Orena lub odwiedź Borina.' : 'Przejście do drugiej sceny wzorcowej.'); return;
     }
     if (command.type === 'UseItem') {
       if (s.hp >= s.maxHp) { this.notify('Masz pełne zdrowie — mikstura pozostaje w plecaku.'); return; }
@@ -142,14 +173,77 @@ export class Simulation {
     this.notify(`${casting ? 'Iskra' : 'Miecz'}: ${damage} obrażeń.`);
     if (target.hp === 0) {
       target.state = 'dead'; target.diedAt = now; s.selectedId = null;
-      s.exp += monsters[target.kind].exp; s.kills++;
-      while (s.exp >= 100 * s.level) {
-        s.exp -= 100 * s.level; s.level++; s.maxHp += 10; s.maxMana += 5; s.hp = s.maxHp; s.mana = s.maxMana;
+      this.gainExp(monsters[target.kind].exp); s.kills++;
+      if (s.mapId === 'forest' && s.quest.status === 'active') {
+        s.quest.kills = Math.min(questRules.kills, s.quest.kills + 1);
+        if (s.quest.kills === questRules.kills) s.quest.status = 'ready';
       }
       s.loot.push({ id: `${s.mapId}:${target.id}:${s.eventId}`, mapId: s.mapId, x: target.x, y: target.y, gold: monsters[target.kind].gold, items: target.kind === 'rat' ? [] : [{ itemId: target.kind === 'wolf' ? 'skin' : 'chitin', quantity: 1 }] });
       if (!s.defeatedKinds.includes(target.kind)) s.defeatedKinds.push(target.kind);
-      s.complete = s.defeatedKinds.length === 3;
-      this.notify(s.complete ? 'Próba ukończona! Pokonano 3 stworzenia. Wróć do menu, aby rozpocząć nową próbę.' : `Pokonano ${monsters[target.kind].name.toLowerCase()}. Próba: ${s.defeatedKinds.length}/3.`);
+      s.complete = s.mapId === 'grove' && s.defeatedKinds.length === 3;
+      this.notify(s.complete ? 'Próba ukończona! Pokonano 3 stworzenia. Wróć do menu, aby rozpocząć nową próbę.' : s.mapId === 'forest' ? `Pokonano ${monsters[target.kind].name.toLowerCase()}. ${s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę.' : s.quest.status === 'active' ? `Zadanie: ${s.quest.kills}/5.` : 'Przyjmij zadanie u Miry.'}` : `Pokonano ${monsters[target.kind].name.toLowerCase()}. Próba: ${s.defeatedKinds.length}/3.`);
+    }
+  }
+  private freeArrival(map: WorldMap, spawn: Point): Point | undefined {
+    const actors = this.creatureMaps.get(map.id)?.filter(c => c.hp > 0) ?? map.monsterSpawns;
+    const queue = [{ ...spawn }], seen = new Set<string>();
+    for (let budget = 0; queue.length && budget < 512; budget++) {
+      const p = queue.shift()!, key = `${p.x},${p.y}`;
+      if (seen.has(key) || p.x < 0 || p.y < 0 || p.x >= map.width || p.y >= map.height || map.collision[p.y*map.width+p.x] !== 0) continue;
+      seen.add(key);
+      if (![...map.npcs,...actors].some(a => distance(a,p) === 0)) return p;
+      for (const v of Object.values(vectors)) queue.push({x:p.x+v.x,y:p.y+v.y});
+    }
+    return undefined;
+  }
+  exportSave(): SaveData {
+    const s = this.state, now = this.time;
+    const remaining = (last: number, period: number) => Math.max(0, Math.ceil(period - (now-last)));
+    return saveSchema.parse({
+      version: 1, mode: 'offline', name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
+      level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, inventory: s.inventory, equipment: s.equipment,
+      cooldowns: { move: remaining(this.lastMove,rules.stepMs), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
+      maps: [...this.creatureMaps].map(([mapId, creatures]) => ({ mapId, creatures: creatures.map(c => ({ id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, attackIn:remaining(c.lastAttack,rules.monsterAttackMs), moveIn:remaining(c.lastMove,rules.stepMs*2), respawnIn: c.hp === 0 ? remaining(c.diedAt,rules.respawnMs) : 0 })) })),
+      loot: s.loot, eventId: s.eventId,
+    });
+  }
+  static restore(maps: WorldMap[], input: unknown, clock: Clock): Simulation {
+    const data = saveSchema.parse(input);
+    if (new Set(data.maps.map(m => m.mapId)).size !== data.maps.length || !data.maps.some(m => m.mapId === data.mapId)) throw new Error('Nieprawidłowe mapy zapisu');
+    const sim = new Simulation(maps, data.name, clock);
+    const now = sim.time;
+    const walkable = (mapId: string, p: Point) => {
+      const map = maps.find(m => m.id === mapId);
+      return map && p.x < map.width && p.y < map.height && map.collision[p.y*map.width+p.x] === 0 && !map.npcs.some(n => distance(n,p) === 0);
+    };
+    if (!walkable(data.mapId, data.player)) throw new Error('Pozycja zapisu w ścianie');
+    sim.creatureMaps.clear();
+    for (const saved of data.maps) {
+      const map = maps.find(m => m.id === saved.mapId);
+      if (!map || saved.creatures.length !== map.monsterSpawns.length || new Set(saved.creatures.map(c => c.id)).size !== saved.creatures.length) throw new Error('Nieprawidłowe stworzenia zapisu');
+      const occupied = new Set<string>();
+      const creatures: Creature[] = saved.creatures.map(c => {
+        const spawn = map.monsterSpawns.find(p => p.id === c.id && p.kind === c.kind);
+        const key = `${c.x},${c.y}`;
+        if (!spawn || !walkable(map.id,c) || c.hp > monsters[c.kind].hp || (c.hp === 0) !== (c.state === 'dead') || c.hp > 0 && (occupied.has(key) || map.id === data.mapId && distance(c,data.player) === 0)) throw new Error('Nieprawidłowy stan stworzenia');
+        if (c.hp > 0) occupied.add(key);
+        return { id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, spawn:{x:spawn.x,y:spawn.y}, lastAttack:now+c.attackIn-rules.monsterAttackMs, lastMove:now+c.moveIn-rules.stepMs*2, diedAt:now+c.respawnIn-rules.respawnMs };
+      });
+      sim.creatureMaps.set(map.id,creatures);
+    }
+    if (new Set(data.loot.map(l => l.id)).size !== data.loot.length || data.loot.some(l => !walkable(l.mapId,l))) throw new Error('Nieprawidłowy łup');
+    sim.state = { ...sim.state, name:data.name, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:'Wznowiono przygodę offline.' };
+    sim.lastMove = now+data.cooldowns.move-rules.stepMs;
+    sim.lastAttack = now+data.cooldowns.attack-rules.attackMs;
+    sim.lastSpell = now+data.cooldowns.spell-rules.spellMs;
+    sim.lastPotion = now+data.cooldowns.potion-rules.potionMs;
+    sim.lastMana = now+data.cooldowns.mana-rules.manaRegenMs;
+    return sim;
+  }
+  private gainExp(amount: number): void {
+    const s = this.state; s.exp += amount;
+    while (s.exp >= 100 * s.level) {
+      s.exp -= 100 * s.level; s.level++; s.maxHp += 10; s.maxMana += 5; s.hp = s.maxHp; s.mana = s.maxMana;
     }
   }
   private lineOfSight(a: Point, b: Point): boolean {
@@ -229,15 +323,16 @@ export class Simulation {
   private die(): void {
     const m = this.maps.find(m => !m.combatAllowed) ?? this.maps[0]!;
     this.state.mapId = m.id; this.state.player = { ...m.spawns.entry! };
-    this.state.hp = this.state.maxHp; this.state.mana = this.state.maxMana; this.state.selectedId = null;
+    this.state.hp = this.state.maxHp; this.state.mana = this.state.maxMana; this.state.selectedId = null; this.state.dialog = null;
     this.spawnCreatures(); this.lastMove = this.time;
-    this.notify('Omdlenie. Wracasz na dziedziniec z pełnym zdrowiem i maną, bez utraty zdobyczy.');
+    this.notify(`Omdlenie. Wracasz do ${m.id === 'vareon' ? 'Vareon' : 'bezpiecznego dziedzińca'} z pełnym zdrowiem i maną, bez utraty zdobyczy.`);
   }
 }
 export class LocalGateway implements GameGateway {
   private listeners = new Set<(snapshot: Snapshot) => void>();
   private timer: ReturnType<typeof setInterval> | undefined;
   constructor(private simulation: Simulation) {}
+  exportSave(): SaveData { return this.simulation.exportSave(); }
   connect(): void {
     if (this.timer) return;
     this.timer = setInterval(() => { this.simulation.tick(); this.emit(); }, rules.tickMs);

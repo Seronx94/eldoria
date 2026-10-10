@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 async function start(page: Page, walk = false) {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Rozpocznij' })).toBeVisible();
+  await page.locator('#mode').selectOption('trial');
   if (walk) await page.getByLabel('Spacer bez potworów').check();
   await page.getByRole('button', { name: 'Rozpocznij' }).click();
   await expect(page.locator('#hud')).toBeVisible();

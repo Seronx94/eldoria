@@ -1,6 +1,6 @@
 # Eldoria — kolejka implementacji
 
-Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Wersja 0.0.1 jest prototypem, nie ukończoną wersją 0.1.
+Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżąca wersja 0.1.0 jest przygodą offline do testów; nie jest wydaniem online ani APK.
 
 ## Zasady kolejki
 Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVIEW można budować domenę, lecz nie rozbudowywać finalnej mapy przed akceptacją stylu. Każdy wpis po pracy uzupełnij o dowód: polecenia/wyniki, pliki, screenshot lub scenariusz manualny. Opisane niżej testy są wymaganiem, nie raportem ich wykonania.
@@ -8,16 +8,16 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 | ID | Etap | Status | Zadanie | Zależności |
 |---|---|---|---|---|
 | T01 | M0 | DONE | Szkielet repozytorium | — |
-| T02 | M0 | REVIEW | Zestaw assetów i scena wzorcowa | T01 |
+| T02 | M0 | DONE | Zestaw assetów i scena wzorcowa | T01 |
 | T03 | M0 | DONE | Gateway, ruch i mobilny HUD | T01 |
 | T04 | M1 | DONE | Pipeline Tiled i walidacja | T01 |
-| T05 | M1 | BLOCKED | Vareon, las i portale | T02 zaakceptowane, T03, T04 |
-| T06 | M1 | BLOCKED | NPC i dialogi | T05 |
+| T05 | M1 | DONE | Vareon, las i portale | T02 zaakceptowane, T03, T04 |
+| T06 | M1 | DONE | NPC i dialogi | T05 |
 | T07 | M2 | DONE | Potwory, AI i walka | T03, T04 |
 | T08 | M2 | DONE | Ekwipunek, loot i mikstury | T07 |
-| T09 | M2 | BLOCKED | Sklep i quest | T06, T08 |
-| T10 | M2 | BLOCKED | Zapis i odtworzenie | T09 |
-| T11 | M2 | BLOCKED | Wydanie 0.1 i poprawki mobilne | T05–T10 |
+| T09 | M2 | DONE | Sklep i quest | T06, T08 |
+| T10 | M2 | DONE | Zapis i odtworzenie | T09 |
+| T11 | M2 | REVIEW | Wydanie 0.1 i poprawki mobilne | T05–T10 |
 | T12 | M3 | TODO | Serwer i protokół | T11 |
 | T13 | M3 | TODO | Konta i PostgreSQL | T12 |
 | T14 | M3 | TODO | Gospodarka i trwałość | T13 |
@@ -37,9 +37,9 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 **Kryteria docelowe:**
 Monorepo npm workspaces, Vite/Phaser 3, TypeScript strict, Vitest, lint i lockfile. Uruchamia się menu z wersją. Udostępnione komendy z README, .env.example i ignorowanie sekretów. Dowód: czysta instalacja, typecheck, test i build; Playwright otwiera menu.
 
-### T02 — REVIEW
+### T02 — DONE (zestaw roboczy do dalszej budowy)
 
-**Wynik sesji:** Autorskie placeholdery: kafelki 32×32, postać 4 kierunki × 3 klatki 32×48, dom, drzewa i trzy stworzenia. Źródła PNG/Tiled + odtwarzalny generator, ASSET_LICENSES.md. Zrzuty desktop/mobilny: docs/screenshots/. Oceniono ostrość i kamerę; brak audio. Wymagana ocena stylistyki przez testera przed pełnymi mapami T05.
+**Wynik sesji:** Autorskie placeholdery: kafelki 32×32, postać 4 kierunki × 3 klatki 32×48, dom, drzewa i trzy stworzenia. Źródła PNG/Tiled + odtwarzalny generator, ASSET_LICENSES.md. Zrzuty desktop/mobilny: docs/screenshots/. Oceniono ostrość i kamerę; brak audio. Po raporcie 0.0.2 z oznaczeniem grafiki roboczej tester polecił „dobra idź dalej”. Odnotowano zgodę na kontynuację z obecnym zestawem; nie oznacza ona zatwierdzenia finalnej grafiki ani pomiaru na fizycznym telefonie.
 
 **Kryteria docelowe:**
 Katalog licencji i jeden zestaw graficzny. Scena z domem, drzewem, ścieżką, postacią 4-kierunkową i UI; test nearest filtering oraz kamery. Screenshot na desktopie i viewport mobilny, jasno wymienione placeholdery. Oddaj do REVIEW; odnotuj akceptację lub uwagi testera. Brak licencji blokuje wykorzystanie assetu.
@@ -58,16 +58,16 @@ Domena siatkowa, zegar symulacji, GameGateway/LocalGateway, joystick i klawiatur
 **Kryteria docelowe:**
 Źródła Tiled, eksport JSON, importer i walidator map/ID/portali/spawnów. Wadliwa mapa zwraca czytelny błąd; poprawna ma zgodne kolizje. Test błędnego portalu, brakującego PNG i spawnu w ścianie.
 
-### T05 — BLOCKED
+### T05 — DONE
 
-**Wynik sesji:** Oczekuje akceptacji T02. Zgodnie z AGENTS.md: „Do akceptacji stylistyki przez testera nie rozwijaj całego świata na niesprawdzonym zestawie”. Nie wykonano finalnych Vareon 48×48 ani lasu 64×64. Małe mapy wzorcowe umożliwiają już test portali, kamery i sterowania.
+**Wynik sesji:** Po poleceniu dalszej budowy dodano Vareon 48×48 i Mroczny Las 64×64 w obecnym roboczym stylu: rynek/fontanna, budynki, punkty NPC, drzewa, spawny i jawne portale. Źródła Tiled i eksporty zgodne. Sortowanie po stopach, kolizje podstaw, nearest filtering i całkowity zoom zachowane. Zajęte wejście przez żywego potwora otrzymuje najbliższą wolną kratkę, bez nakładania gracza i potwora. Testy domeny obejmują osiągalność sąsiedztwa NPC/bram oraz pięć podróży. E2e pięciu podróży i pełnej przygody zaliczone na desktopie i mobilnym Chromium.
 
 **Kryteria docelowe:**
 Vareon 48×48 i las 64×64, sortowanie stóp, korony/dachy, przejścia. 5 podróży w obie strony bez zdublowanych inputów/listenerów; spawn wolny, gracz nie zapętla teleportu. Safe-area i viewport w poziomie.
 
-### T06 — BLOCKED
+### T06 — DONE
 
-**Wynik sesji:** Oczekuje T05. W scenie wzorcowej nie ma jeszcze Miry, Orena ani Borina; okno plecaka nie jest implementacją dialogów NPC.
+**Wynik sesji:** Mira, Oren i Borin w Vareon, dane dialogów w packages/content. Interakcja tylko obok NPC; NPC zajmuje kratkę. Modalny dialog blokuje ruch, wybór celu, atak, czar i plecak; Escape lub przycisk kończy rozmowę. Oren przywraca pełne HP/manę bez opłaty. Testy domeny dystansu, blokady i leczenia przechodzą; e2e pełnej przygody zaliczone na desktopie i mobilnym Chromium.
 
 **Kryteria docelowe:**
 Mira, Oren, Borin; rozmowa z sąsiedztwa, zamknięcie okna, leczenie i dane dialogów. Przycisk pod dialogiem nie wykonuje równocześnie ataku. Test interakcji z odległości i zablokowania ruchu w menu.
@@ -86,23 +86,23 @@ Szczur/żuk/wilk, AI idle/chase/attack/return/dead, cooldowny, wybór celu, Iskr
 **Kryteria docelowe:**
 20 pól, stosy, wyposażenie, loot w sąsiedztwie, mikstury. Test pełnego plecaka, granicy stosu, użycia przy pełnym HP i braku mikstur. Mikstura przy pełnym HP nie jest zużywana. Podwójne kliknięcie nie duplikuje łupu.
 
-### T09 — BLOCKED
+### T09 — DONE
 
-**Wynik sesji:** Oczekuje T06. Próba trzech typów potworów jest osobną pętlą treningową, nie questem Miry. Sklep i wypłata questa nie są zaimplementowane.
+**Wynik sesji:** Quest Miry „Niepokój za bramą”: pięć zabójstw w lesie po przyjęciu, 50 EXP/20 złota/2 mikstury, wypłata raz. Pełny plecak pozostawia nagrodę ready bez częściowej wypłaty. Borin sprzedaje mikstury po 5 złota, kupuje skóry/chitynę po 2. Ilości i komendy walidowane; gospodarka w domenie, atomowe zmiany. Próba trzech typów pozostaje oddzielnym treningiem. Testy granic, powtórnych wypłat/sprzedaży, braku złota i pełnego plecaka przechodzą; e2e pełnej przygody zaliczone na desktopie i mobilnym Chromium.
 
 **Kryteria docelowe:**
 Quest i sklep według README. Quest liczy zabójstwa tylko po przyjęciu, nagroda najwyżej raz; pełny plecak zostawia odbiór pending bez wypłacania części wielokrotnie. Zakup atomowy, brak ujemnego złota. Test powtórnej wypłaty, braku złota i pełnego plecaka.
 
-### T10 — BLOCKED
+### T10 — DONE
 
-**Wynik sesji:** Oczekuje T09. Stan gry nie jest jeszcze utrwalany; odświeżenie i nowa próba resetują postęp. Nie ma importu/eksportu, backupu ani obsługi quota — nie testowano ich jako gotowych.
+**Wynik sesji:** Wersjonowany schemat offline v1, kontrola map/pozycji/statystyk/NPC/potworów, LocalGateway export/restore. Zapis zasobów, ekwipunku, questu, łupu i stanów stworzeń; pozostały czas cooldownów/respawnu przenoszony względem nowego zegara, bez darmowego odnowienia. Adapter localStorage: poprzedni poprawny checkpoint, brak automatycznego nadpisania uszkodzonego zapisu, jawne odzyskanie/import (oryginał uszkodzony zachowany osobno), eksport JSON i błędy quota. Autosave przy mapie/nagrodzie/handlu/menu/ukryciu oraz co 30 s po zmianie stanu; ręczny zapis. Trening/spacer nie nadpisują przygody. Testy uszkodzenia, wersji, śmierci, powtórnego odczytu, cooldownu i quota przechodzą; e2e pełnej przygody zaliczone na desktopie i mobilnym Chromium.
 
 **Kryteria docelowe:**
 Wersjonowany zapis, walidacja, backup poprzedniego poprawnego zapisu i błąd quota. Odtworzenie poziomu, inventory, questa i pozycji; nie zapisuj aktywnego cooldownu jako możliwości natychmiastowego oszustwa w przyszłym online. Test uszkodzenia, nieobsługiwanej wersji, powrotu po śmierci i wielokrotnego odczytu.
 
-### T11 — BLOCKED
+### T11 — REVIEW
 
-**Wynik sesji:** Oczekuje T05–T10. Dostępna pierwsza grywalna scena 0.0.1 i docs/TESTER.md, lecz pełne wydanie 0.1 oraz test telefonu nie są ukończone.
+**Wynik sesji:** Przygotowano przygodę offline 0.1.0 oraz pięć kroków w docs/TESTER.md. Wszystkie dostępne kontrole oraz pełna przygoda, zapis i regresje treningu zaliczone na desktopie i mobilnym Chromium. Test telefonu, model urządzenia, czas przygody i wygoda sterowania wymagają raportu testera; nie deklarujemy ich jako wykonanych.
 
 **Kryteria docelowe:**
 Pełny smoke test 0.1, UI dotykowe, audio ustawienia, aktualna instrukcja dla testera. Typecheck/lint/test/e2e/content/build. Tester dostaje 5 kroków: rozmowa, las, walka, nagroda, restart. Zanotuj model telefonu oraz ograniczenia. Brak testu telefonu oznacz jako niewykonany, a nie zaliczony.
@@ -173,6 +173,19 @@ Aktualne wymogi Android/Google Play, prywatność, usuwanie konta, podpisywanie,
 - Nowy scenariusz regresji: start przy potworach → dziedziniec → blokada ruchu bez utraty wskazówki → brak teleportu z daleka → kliknięcie pobliskiej bramy → wybór szczura i rzucenie Iskry. Testuje też wielkie litery klawiatury. Dotychczasowa pełna próba walki, łupu i restartu nadal przechodzi na obu viewportach.
 - Test fizycznego telefonu i audio — NIE WYKONANO. Grafika nadal robocza; T02 pozostaje REVIEW, dalsze pełne mapy czekają na akceptację stylistyki według AGENTS.md. Pozostałe statusy zadań bez zmian.
 - Następny test właściciela: uruchomić 0.0.2 bez zaznaczonego spaceru, pokonać szczura/żuka/wilka, zebrać łup i sprawdzić powrót przez bramę. Instrukcja w docs/TESTER.md.
+
+## Kontynuacja — 10 października 2026, wersja 0.1.0
+
+- Polecenie testera: „dobra idź dalej” po wydaniu 0.0.2. Kontynuowano kolejkę offline z obecnym roboczym zestawem, bez nazywania go finalną grafiką.
+- Implementacja: T05 (Vareon/las), T06 (NPC/dialogi), T09 (quest/handel), T10 (zapis). T11 przygotowuje przygodę do oceny na urządzeniu testera. Nie uruchamiano etapu online ani Androida.
+- Kontrole: `npm run typecheck` — PASS; `npm run lint` — PASS; `npm test` — **46 PASS w 5 plikach**; `npm run validate:content` / `npm run build` — PASS, 4 mapy (2 przygody + 2 wzorcowe), zgodne edytowalne źródła/eksporty/PNG. JS ok. 1,326 MB / 358 KB gzip, dist ok. 1,7 MB; pozostaje ostrzeżenie Vite o dużym chunku Phaser.
+- Nowe testy domeny: osiągalność bram/NPC, rozmiary map i limit 12 stworzeń, dialog/dystans, blokada ruchu/ataków, leczenie, pięć podróży i zajęty spawn wejściowy; zabójstwa przed/po przyjęciu questa, pojedyncza nagroda i pełny plecak; brak złota, błędne ilości, zakup/sprzedaż i duplikaty; round-trip zapisu, martwe/rany/łup, śmierć, pozostały cooldown/respawn, uszkodzenie/wersja/statystyki/kolizje, checkpoint/backup i quota.
+- Test produkcyjnego dist przez Vite preview — PASS: menu, assety bez błędów konsoli/HTTP, imię `<b>Hero</b>` jako tekst, dialog i przyjęcie questa, brama, Iskra, zapis/odświeżenie/wznowienie oraz zachowane rany potwora.
+- Końcowy `npm run test:e2e` — **19 PASS, 1 SKIPPED, 20 przypadków, ok. 8 min**. Desktop i mobilny Chromium: komplet przygody (5 realnych zabójstw → Mira → nagroda → Oren → Borin → reload), pięć podróży, uszkodzenie/backup/import oraz quota/eksport aktywnej gry; ponadto wszystkie dotychczasowe regresje treningu, klawiatury/blur/obrotu, emulowanego wielodotyku/pointercancel, stylu i bramy. Pominięty wyłącznie desktopowy duplikat wielodotyku; właściwy mobilny test zaliczony. Brak błędów konsoli/HTTP w scenariuszach pełnej przygody i produkcyjnego smoke testu.
+- W trakcie weryfikacji poprawiono nazwę przycisku w teście, zachowanie stałej wskazówki powrotu po łupie i bezpieczeństwo wejścia zajętego przez potwora. Końcowe wyniki powyżej pochodzą z pełnego, zakończonego przebiegu.
+- Źródła/pliki: assets/source/{vareon,forest}.tmj i eksporty, packages/content/adventure.ts i importer map, packages/protocol komendy, packages/domain symulacja/save.ts/testy, apps/client dialog/menu/storage.ts/testy, testy e2e i konfiguracja Vitest, dokumentacja i nowe screenshoty.
+- Fizyczny telefon/Android, ręczny wielodotyk, FPS, 15-minutowa stabilność, czas przygody i audio — NIE WYKONANO. Brak multiplayer, kont i APK. T11 czeka na ocenę właściciela, zgodnie z kryteriami; nie zaliczamy tych brakujących testów automatem.
+- Następne konkretne działanie: tester przechodzi pięć kroków docs/TESTER.md na swoim telefonie i zgłasza urządzenie, czas przygody oraz uwagi. Poprawki mają pierwszeństwo przed T12.
 
 ## Szablon raportu zadania
 ID / status / zmienione pliki / wykonane komendy i wyniki / test manualny / ograniczenia / następny krok.

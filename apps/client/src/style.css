@@ -743,3 +743,17 @@ h2 {
   text-align: center;
   line-height: 1.4;
 }
+
+select { display:block; min-height:48px; width:100%; color:#ece6cf; background:#122922; border:1px solid #9aa98d66; border-radius:8px; padding:8px; margin:12px 0; font:14px system-ui,sans-serif; }
+.save-menu { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.save-menu button { padding:0 12px; font-size:12px; }
+.import-label { min-height:48px; display:flex; align-items:center; padding:8px 12px; border:1px solid #aab69b48; border-radius:8px; margin:0; font:12px Georgia,serif; letter-spacing:0; cursor:pointer; }
+.import-label input { position:absolute; width:1px; height:1px; opacity:0; }
+.import-label:focus-within { outline:3px solid var(--gold); }
+#save-menu-status { width:100%; margin:2px 0; font:12px system-ui,sans-serif; color:var(--muted); }
+#npc-text { white-space:pre-line; line-height:1.6; }
+#npc-message { font:12px system-ui,sans-serif; color:var(--gold); }
+#npc-actions { display:flex; flex-wrap:wrap; gap:8px; }
+#npc-actions button { padding:8px 14px; }
+button:disabled { opacity:.5; cursor:default; }
+@media(max-height:600px) { .topbar { gap:8px; } .brand>span { letter-spacing:1px; } .actions #interact { font-size:10px; } #save-status { display:block; max-width:150px; font-size:8px; } }

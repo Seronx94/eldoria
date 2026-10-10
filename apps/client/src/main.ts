@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import { importMap, validateMaps, rules, monsters, items, type WorldMap } from '@eldoria/content';
+import { importMap, validateMaps, rules, monsters, items, npcs, questRules, type WorldMap } from '@eldoria/content';
 import { nameSchema, type Direction } from '@eldoria/protocol';
-import { Simulation, LocalGateway, type Snapshot } from '@eldoria/domain';
+import { Simulation, LocalGateway, type Snapshot, type SaveData } from '@eldoria/domain';
+import { OfflineStorage } from './storage';
 import './style.css';
 
 function element<T extends HTMLElement>(selector: string): T {
@@ -23,6 +24,13 @@ let snapshot: Snapshot | undefined;
 let unsubscribe: (() => void) | undefined;
 let playing = false;
 let walkingOnly = false;
+let adventure = false;
+let lastSavedSignature = '';
+let lastSaveTime = 0;
+let lastSavedMap = '';
+let lastSavedEconomy = '';
+const npcDialog = element<HTMLDialogElement>('#npc-dialog');
+const storage = new OfflineStorage({ getItem: key => localStorage.getItem(key), setItem: (key,value) => localStorage.setItem(key,value) }, input => Simulation.restore(maps.filter(m => ['vareon','forest'].includes(m.id)), input, { now: () => performance.now() }).exportSave());
 const bagDialog = element<HTMLDialogElement>('#bag');
 let completionDismissed = false;
 let bagSignature = '';
@@ -32,7 +40,7 @@ function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); }
 function direction(): Direction | undefined { return [...pointerDirections.values()].at(-1) ?? [...heldKeys.values()].at(-1); }
 function movement(): void {
   const d = direction();
-  if (!ui.complete.hidden || bagDialog.open) return;
+  if (!ui.complete.hidden || bagDialog.open || npcDialog.open) return;
   if (d && playing && !document.hidden && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({ type: 'Move', direction: d });
 }
 const movementTimer = window.setInterval(movement, rules.tickMs);
@@ -48,12 +56,12 @@ class Preload extends Phaser.Scene {
     this.load.spritesheet('tiles', `${base}tiles.png`, { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('wanderer', `${base}wanderer.png`, { frameWidth: 32, frameHeight: 48 });
     for (const key of ['tree', 'house', 'rat', 'beetle', 'wolf']) this.load.image(key, `${base}${key}.png`);
-    for (const key of ['courtyard', 'grove']) this.load.json(key, `${base}${key}.json`);
+    for (const key of ['courtyard', 'grove', 'vareon', 'forest']) this.load.json(key, `${base}${key}.json`);
     this.load.on('loaderror', () => { ui.loading.textContent = 'Nie udało się załadować świata. Odśwież stronę i sprawdź połączenie.'; });
   }
   create(): void {
     try {
-      maps = ['courtyard', 'grove'].map(id => importMap(this.cache.json.get(id)));
+      maps = ['courtyard', 'grove', 'vareon', 'forest'].map(id => importMap(this.cache.json.get(id)));
       validateMaps(maps, new Set(['tiles.png']));
       for (const key of ['tiles', 'wanderer', 'tree', 'house', 'rat', 'beetle', 'wolf']) {
         if (!this.textures.exists(key)) throw new Error(`Brak grafiki ${key}`);
@@ -68,7 +76,7 @@ class Preload extends Phaser.Scene {
 }
 class Menu extends Phaser.Scene {
   constructor() { super('Menu'); }
-  create(): void { ui.loading.hidden = true; ui.menu.hidden = false; }
+  create(): void { ui.loading.hidden = true; ui.menu.hidden = false; refreshSaveMenu(); }
 }
 class World extends Phaser.Scene {
   private hero!: Phaser.GameObjects.Sprite;
@@ -108,9 +116,16 @@ class World extends Phaser.Scene {
       }
     }
     for (const d of map.decorations) this.objects.push(this.add.image(d.x * 32 + 16, d.y * 32 + 32, d.kind).setOrigin(.5, 1).setDepth(d.y * 32 + 33));
+    for (const n of map.npcs) {
+      const talk = () => { if (playing && !bagDialog.open && !npcDialog.open) gateway?.send({ type:'Interact', npcId:n.id }); };
+      const sprite = this.add.sprite(n.x*32+16,n.y*32+32,'wanderer',0).setOrigin(.5,1).setDepth(n.y*32+32).setTint(({mira:0xe2b779,oren:0x9cd6bc,borin:0xd3a4a2})[n.id]).setInteractive({useHandCursor:true});
+      sprite.on('pointerdown',talk); this.objects.push(sprite);
+      const label = this.add.text(n.x*32+16,n.y*32-20,npcs[n.id].name,{fontFamily:'monospace',fontSize:'11px',color:'#efe2ac',backgroundColor:'#213b32'}).setOrigin(.5).setDepth(n.y*32+34).setInteractive({useHandCursor:true});
+      label.on('pointerdown',talk); this.objects.push(label);
+    }
     for (const p of map.portals) {
       const enter = () => {
-        if (playing && ui.complete.hidden && !bagDialog.open) gateway?.send({ type: 'Interact' });
+        if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) gateway?.send({ type: 'Interact' });
       };
       const glow = this.add.graphics().setDepth(-10);
       glow.setInteractive(new Phaser.Geom.Ellipse(p.x * 32 + 16, p.y * 32 + 16, 48, 48), Phaser.Geom.Ellipse.Contains);
@@ -119,7 +134,7 @@ class World extends Phaser.Scene {
       glow.lineStyle(2, 0xd1c785, .9).strokeEllipse(p.x * 32 + 16, p.y * 32 + 16, 27, 18);
       glow.fillStyle(0xa7c7a0, .5).fillEllipse(p.x * 32 + 16, p.y * 32 + 16, 17, 10);
       this.objects.push(glow);
-      const label = this.add.text(p.x * 32 + 16, p.y * 32 - 14, p.targetMapId === 'grove' ? 'DO ZAGAJNIKA' : 'NA DZIEDZINIEC', { fontFamily: 'monospace', fontSize: '10px', color: '#efe2ac', backgroundColor: '#213b32' }).setOrigin(.5).setInteractive({ useHandCursor: true });
+      const label = this.add.text(p.x * 32 + 16, p.y * 32 - 14, ({grove:'DO ZAGAJNIKA',courtyard:'NA DZIEDZINIEC',forest:'DO LASU',vareon:'DO VAREON'})[p.targetMapId] ?? 'BRAMA', { fontFamily: 'monospace', fontSize: '10px', color: '#efe2ac', backgroundColor: '#213b32' }).setOrigin(.5).setInteractive({ useHandCursor: true });
       label.on('pointerdown', enter);
       this.objects.push(label);
     }
@@ -156,7 +171,7 @@ class World extends Phaser.Scene {
       let sprite = this.creatureSprites.get(creature.id);
       if (!sprite) {
         sprite = this.add.sprite(creature.x * 32 + 16, creature.y * 32 + 32, creature.kind).setOrigin(.5, 1).setInteractive({ useHandCursor: true });
-        sprite.on('pointerdown', () => { if (playing && ui.complete.hidden && !bagDialog.open) gateway?.send({ type: 'Select', targetId: creature.id }); });
+        sprite.on('pointerdown', () => { if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) gateway?.send({ type: 'Select', targetId: creature.id }); });
         this.creatureSprites.set(creature.id, sprite); this.objects.push(sprite);
       }
       sprite.setVisible(creature.hp > 0);
@@ -182,10 +197,11 @@ function updateUI(s: Snapshot): void {
   ui.hp.max = s.maxHp; ui.mana.max = s.maxMana; ui.hp.value = s.hp; ui.mana.value = s.mana;
   ui.hpLabel.textContent = `${s.hp} HP · ${s.mana} MP`;
   ui.playerName.textContent = `${s.name} · poz. ${s.level}`;
-  ui.mapName.textContent = s.mapId === 'courtyard' ? 'DZIEDZINIEC WZORCOWY' : 'ZAGAJNIK WZORCOWY';
-  ui.objective.textContent = `${s.defeatedKinds.length} / 3`;
+  ui.mapName.textContent = ({courtyard:'DZIEDZINIEC WZORCOWY',grove:'ZAGAJNIK WZORCOWY',vareon:'VAREON',forest:'MROCZNY LAS'})[s.mapId] ?? s.mapId;
+  ui.objective.textContent = adventure ? s.quest.status === 'available' ? 'Mira →' : s.quest.status === 'claimed' ? '✓' : `${s.quest.kills} / 5` : `${s.defeatedKinds.length} / 3`;
+  element('#objective-title').textContent = adventure ? 'NIEPOKÓJ ZA BRAMĄ' : 'PRÓBA WĘDROWCA';
   ui.message.textContent = s.message;
-  ui.rewards.textContent = `${s.exp} EXP · ${s.gold} złota (próba)`;
+  ui.rewards.textContent = `${s.exp} EXP · ${s.gold} złota`;
   ui.potionCount.textContent = `Q · ${s.potions} SZT.`;
   const target = s.creatures.find(c => c.id === s.selectedId && c.hp > 0);
   const map = maps.find(m => m.id === s.mapId)!;
@@ -193,10 +209,13 @@ function updateUI(s: Snapshot): void {
   const portal = [...map.portals].sort((a, b) => distance(a) - distance(b))[0];
   const gateHint = portal ? `Brama ${portal.x > s.player.x ? '→' : portal.x < s.player.x ? '←' : ''}${portal.y > s.player.y ? '↓' : portal.y < s.player.y ? '↑' : ''} · ${distance(portal)} kratek · Przejdź (F)` : '';
   const interact = element<HTMLButtonElement>('#interact');
-  interact.classList.toggle('ready', !!portal && distance(portal) <= 1);
+  const nearbyNpc = map.npcs.find(n => distance(n) <= 1);
+  interact.classList.toggle('ready', !!nearbyNpc || !!portal && distance(portal) <= 1);
   interact.title = portal && distance(portal) <= 1 ? 'Brama w zasięgu — kliknij Przejdź lub bramę' : 'Podejdź obok bramy; można też kliknąć ją na mapie';
-  if (walkingOnly) ui.targetLabel.textContent = `Spacer bez potworów · ${gateHint}`;
+  if (adventure && !map.combatAllowed) ui.targetLabel.textContent = `${s.quest.status === 'available' ? 'Porozmawiaj z Mirą obok (F)' : s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę (F)' : s.quest.status === 'claimed' ? 'Zadanie ukończone · Oren leczy, Borin handluje' : 'Pokonaj 5 stworzeń w lesie'} · ${gateHint}`;
+  else if (walkingOnly) ui.targetLabel.textContent = `Spacer bez potworów · ${gateHint}`;
   else if (!map.combatAllowed) ui.targetLabel.textContent = `Bezpieczny dziedziniec · Potwory za bramą · ${gateHint}`;
+  else if (adventure && s.quest.status === 'ready') ui.targetLabel.textContent = `Zadanie gotowe — wróć do Miry · ${gateHint}`;
   else if (target) ui.targetLabel.textContent = `${monsters[target.kind].name} · ${target.hp} HP · ${target.x > s.player.x ? '→' : target.x < s.player.x ? '←' : ''}${target.y > s.player.y ? '↓' : target.y < s.player.y ? '↑' : ''} ${distance(target)} kratek`;
   else {
     const count = s.creatures.filter(c => c.hp > 0).length;
@@ -205,17 +224,27 @@ function updateUI(s: Snapshot): void {
   ui.complete.hidden = !s.complete || completionDismissed;
   if (!ui.complete.hidden) resetInput();
   if (bagDialog.open) renderBag(s);
+  renderNpc(s);
+  if (playing && adventure) autosave(s);
   // Accessible state for UI tests; never used to decide simulation outcomes.
   ui.hud.dataset.position = `${s.player.x},${s.player.y}`;
   ui.hud.dataset.map = s.mapId;
 }
-function start(name: string): void {
+function activate(simulation: Simulation): void {
   unsubscribe?.(); gateway?.disconnect(); resetInput();
-  walkingOnly = element<HTMLInputElement>('#walk-mode').checked;
-  const startingMaps = walkingOnly ? maps : [...maps.filter(m => m.combatAllowed), ...maps.filter(m => !m.combatAllowed)];
-  gateway = new LocalGateway(new Simulation(startingMaps, name, { now: () => performance.now() }, walkingOnly ? [] : undefined));
+  completionDismissed = false; ui.complete.hidden = true;
+  gateway = new LocalGateway(simulation);
+  playing = true; ui.menu.hidden = true; ui.hud.hidden = false;
+  element('#save-status').textContent = adventure ? 'Przygoda offline · zapis lokalny' : 'Próba i spacer nie są zapisywane';
+  lastSavedSignature = ''; lastSaveTime = performance.now(); lastSavedMap = ''; lastSavedEconomy = '';
   unsubscribe = gateway.subscribe(updateUI); gateway.connect();
-  completionDismissed = false; ui.complete.hidden = true; playing = true; ui.menu.hidden = true; ui.hud.hidden = false;
+}
+function start(name: string): void {
+  walkingOnly = element<HTMLInputElement>('#walk-mode').checked;
+  adventure = !walkingOnly && element<HTMLSelectElement>('#mode').value === 'adventure';
+  const samples = maps.filter(m => ['courtyard','grove'].includes(m.id));
+  const startingMaps = adventure ? maps.filter(m => ['vareon','forest'].includes(m.id)) : walkingOnly ? samples : [...samples].reverse();
+  activate(new Simulation(startingMaps, name, { now: () => performance.now() }, walkingOnly ? [] : undefined));
 }
 element<HTMLFormElement>('#start-form').addEventListener('submit', event => {
   event.preventDefault(); const result = nameSchema.safeParse(ui.name.value);
@@ -223,21 +252,22 @@ element<HTMLFormElement>('#start-form').addEventListener('submit', event => {
   ui.nameError.textContent = ''; ui.name.blur(); start(result.data);
 });
 element('#menu-button').addEventListener('click', () => {
+  if (adventure) saveNow();
   playing = false; resetInput(); gateway?.disconnect(); unsubscribe?.();
-  ui.hud.hidden = true; ui.menu.hidden = false;
+  ui.hud.hidden = true; ui.menu.hidden = false; refreshSaveMenu();
 });
 element('#continue').addEventListener('click', () => { completionDismissed = true; ui.complete.hidden = true; });
 element('#again').addEventListener('click', () => start(snapshot?.name ?? 'Wędrowiec'));
 for (const [id, type] of [['attack', 'Attack'], ['cast', 'Cast'], ['potion', 'UseItem'], ['interact', 'Interact'], ['loot', 'Loot']] as const) {
   const button = element(`#${id}`);
-  const act = () => { if (playing && ui.complete.hidden && !bagDialog.open) gateway?.send({ type }); };
+  const act = () => { if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) gateway?.send({ type }); };
   button.addEventListener('pointerdown', event => { event.preventDefault(); act(); });
   button.addEventListener('click', event => { if (event.detail === 0) act(); });
 }
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-direction]')) {
   button.addEventListener('pointerdown', event => {
     event.preventDefault(); const d = button.dataset.direction as Direction;
-    if (playing && ui.complete.hidden && !bagDialog.open) { pointerDirections.set(event.pointerId, d); button.setPointerCapture(event.pointerId); movement(); }
+    if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) { pointerDirections.set(event.pointerId, d); button.setPointerCapture(event.pointerId); movement(); }
   });
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(name, event => pointerDirections.delete((event as PointerEvent).pointerId));
 }
@@ -245,9 +275,9 @@ const keyDirections: Record<string, Direction> = { arrowup: 'up', arrowdown: 'do
 window.addEventListener('keydown', event => {
   if (!playing || event.target instanceof HTMLInputElement) return;
   const key = event.key.toLowerCase();
-  if (key === 't' && !event.repeat && !bagDialog.open) { event.preventDefault(); cycleTarget(); return; }
+  if (key === 't' && !event.repeat && !bagDialog.open && !npcDialog.open) { event.preventDefault(); cycleTarget(); return; }
   if (key === 'i' && !event.repeat) { event.preventDefault(); toggleBag(); return; }
-  if (!ui.complete.hidden || bagDialog.open) return;
+  if (!ui.complete.hidden || bagDialog.open || npcDialog.open) return;
   const d = keyDirections[key];
   if (d) { event.preventDefault(); heldKeys.set(key, d); if (!event.repeat) movement(); return; }
   const type = ({ ' ': 'Attack', e: 'Cast', q: 'UseItem', f: 'Interact', r: 'Loot' } as const)[key as ' ' | 'e' | 'q' | 'f' | 'r'];
@@ -258,10 +288,10 @@ window.addEventListener('blur', resetInput);
 window.addEventListener('resize', resetInput);
 document.addEventListener('visibilitychange', () => {
   resetInput();
-  if (document.hidden) gateway?.disconnect();
+  if (document.hidden) { if (adventure) saveNow(); gateway?.disconnect(); }
   else if (playing && gateway) { unsubscribe = gateway.subscribe(updateUI); gateway.connect(); }
 });
-window.addEventListener('pagehide', () => { clearInterval(movementTimer); gateway?.disconnect(); game.destroy(true); });
+window.addEventListener('pagehide', () => { if (adventure) saveNow(); clearInterval(movementTimer); gateway?.disconnect(); game.destroy(true); });
 
 function renderBag(s: Snapshot): void {
   const signature = JSON.stringify([s.inventory, s.equipment, s.gold, s.exp]);
@@ -294,14 +324,14 @@ function renderBag(s: Snapshot): void {
 function toggleBag(): void {
   resetInput();
   if (bagDialog.open) bagDialog.close();
-  else if (snapshot && playing) { renderBag(snapshot); bagDialog.showModal(); }
+  else if (snapshot && playing && !npcDialog.open) { renderBag(snapshot); bagDialog.showModal(); }
 }
 element('#bag-button').addEventListener('click', toggleBag);
 element('#close-bag').addEventListener('click', () => bagDialog.close());
 bagDialog.addEventListener('close', resetInput);
 
 function cycleTarget(): void {
-  if (!playing || !snapshot || bagDialog.open || !ui.complete.hidden) return;
+  if (!playing || !snapshot || bagDialog.open || npcDialog.open || !ui.complete.hidden) return;
   const living = snapshot.creatures.filter(c => c.hp > 0);
   const index = living.findIndex(c => c.id === snapshot?.selectedId);
   const target = living[(index + 1) % living.length];
@@ -309,3 +339,97 @@ function cycleTarget(): void {
 }
 element('#cycle-target').addEventListener('pointerdown', event => { event.preventDefault(); cycleTarget(); });
 element('#cycle-target').addEventListener('click', event => { if (event.detail === 0) cycleTarget(); });
+
+let npcSignature = '';
+function renderNpc(s: Snapshot): void {
+  if (!s.dialog) { if (npcDialog.open) npcDialog.close(); npcSignature = ''; return; }
+  const signature = JSON.stringify([s.dialog,s.quest,s.gold,s.inventory,s.message]);
+  if (signature === npcSignature) return;
+  npcSignature = signature;
+  resetInput();
+  const npc = npcs[s.dialog];
+  element('#npc-name').textContent = npc.name;
+  element('#npc-role').textContent = npc.role;
+  element('#npc-text').textContent = npc.text;
+  element('#npc-message').textContent = s.message;
+  const actions = element('#npc-actions'); actions.replaceChildren();
+  const action = (label: string, command: Parameters<LocalGateway['send']>[0], disabled = false) => {
+    const button = document.createElement('button'); button.textContent = label; button.disabled = disabled;
+    button.addEventListener('click', () => gateway?.send(command)); actions.append(button);
+  };
+  if (s.dialog === 'mira') {
+    const status = s.quest.status;
+    element('#npc-text').textContent += `\n${questRules.title}: ${status === 'claimed' ? 'ukończone — nagroda odebrana' : `${s.quest.kills}/5`}`;
+    if (status === 'available') action('Przyjmij zadanie',{type:'AcceptQuest'});
+    else if (status === 'ready') action('Odbierz nagrodę',{type:'ClaimReward'});
+    else if (status === 'active') element('#npc-text').textContent += '\nWróć po pokonaniu pięciu stworzeń.';
+  }
+  if (s.dialog === 'oren') action('Przywróć zdrowie i manę',{type:'Heal'});
+  if (s.dialog === 'borin') {
+    element('#npc-text').textContent += `\nTwoje złoto: ${s.gold}`;
+    action('Kup miksturę — 5 złota',{type:'Buy',quantity:1},s.gold<5);
+    for (const itemId of ['skin','chitin'] as const) {
+      const count = s.inventory.filter(i => i.itemId === itemId).reduce((sum,i) => sum+i.quantity,0);
+      action(`Sprzedaj: ${items[itemId].name} — 2 złota`,{type:'Sell',itemId,quantity:1},count===0);
+    }
+  }
+  if (!npcDialog.open) npcDialog.showModal();
+}
+element('#close-npc').addEventListener('click', () => gateway?.send({type:'CloseDialog'}));
+npcDialog.addEventListener('cancel', event => { event.preventDefault(); gateway?.send({type:'CloseDialog'}); });
+npcDialog.addEventListener('close', resetInput);
+
+function saveNow(explicitRecovery = false): void {
+  if (!gateway || !adventure) return;
+  lastSaveTime = performance.now();
+  if (snapshot) { lastSavedMap = snapshot.mapId; lastSavedEconomy = JSON.stringify([snapshot.gold,snapshot.quest.status]); }
+  try {
+    const data = gateway.exportSave();
+    const error = storage.write(data,explicitRecovery);
+    element('#save-status').textContent = error ?? 'Przygoda zapisana lokalnie';
+    if (!error) { lastSaveTime = performance.now(); lastSavedSignature = persistentSignature(data); lastSavedMap = data.mapId; lastSavedEconomy = JSON.stringify([data.gold,data.quest.status]); }
+  } catch { element('#save-status').textContent = 'Nie udało się zapisać. Wyeksportuj zapis lub zgłoś błąd.'; }
+}
+function persistentSignature(data: SaveData): string {
+  return JSON.stringify([data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
+}
+function autosave(s: Snapshot): void {
+  const economy = JSON.stringify([s.gold,s.quest.status]);
+  if (s.mapId !== lastSavedMap || economy !== lastSavedEconomy || performance.now()-lastSaveTime >= 30000) {
+    const data = gateway?.exportSave();
+    if (data && persistentSignature(data) !== lastSavedSignature) saveNow();
+    else lastSaveTime = performance.now();
+  }
+}
+function refreshSaveMenu(): void {
+  const status = storage.load();
+  element('#resume').hidden = !status.data;
+  element('#recover').hidden = !status.backup;
+  element('#save-menu-status').textContent = status.error ?? (status.data ? `Zapis: ${status.data.name} · poziom ${status.data.level} · ${status.data.mapId === 'vareon' ? 'Vareon' : 'Mroczny Las'}` : 'Brak zapisu przygody.');
+}
+function resumeSave(data: SaveData, recovery = false): void {
+  adventure = true; walkingOnly = false;
+  activate(Simulation.restore(maps.filter(m => ['vareon','forest'].includes(m.id)),data,{now:() => performance.now()}));
+  saveNow(recovery);
+}
+element('#resume').addEventListener('click', () => { const data = storage.load().data; if (data) resumeSave(data); });
+element('#recover').addEventListener('click', () => { const data = storage.load().backup; if (data) resumeSave(data,true); });
+element('#save-button').addEventListener('click', () => { if (adventure) saveNow(); else element('#save-status').textContent = 'Próba i spacer nie są zapisywane.'; });
+element('#export-save').addEventListener('click', () => {
+  try {
+    const data = adventure && gateway ? gateway.exportSave() : storage.load().data ?? storage.load().backup;
+    if (!data) { element('#save-menu-status').textContent = 'Brak poprawnego zapisu do eksportu.'; return; }
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+    const link = document.createElement('a'); link.href = url; link.download = 'eldoria-offline.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
+  } catch { element('#save-menu-status').textContent = 'Nie udało się wyeksportować zapisu.'; }
+});
+element<HTMLInputElement>('#import-save').addEventListener('change', async event => {
+  const input = event.target as HTMLInputElement, file = input.files?.[0];
+  if (!file) return;
+  try {
+    if (file.size > 1000000) throw new Error('Za duży plik');
+    const simulation = Simulation.restore(maps.filter(m => ['vareon','forest'].includes(m.id)),JSON.parse(await file.text()),{now:() => performance.now()});
+    adventure = true; walkingOnly = false; activate(simulation); saveNow(true);
+  } catch { element('#save-menu-status').textContent = 'Import odrzucony: niepoprawny lub nieobsługiwany zapis. Bieżące dane zachowano.'; }
+  input.value = '';
+});

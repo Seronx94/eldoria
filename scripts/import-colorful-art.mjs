@@ -41,6 +41,12 @@ for(let row=0;row<4;row++){
 }
 magick([...frames,'-append',resolve(source,'wanderer.png')]); copyFileSync(resolve(source,'wanderer.png'),resolve(output,'wanderer.png'));
 for(let i=0;i<3;i++) sprite(actors,manifest.actors[i][3],['mira','oren','borin'][i],32,48);
+const monsterAtlas=resolve(root,'assets/design/colorful-monsters-atlas.png');
+for(const [kind,rects] of Object.entries(manifest.monsterWalk)){
+ const cells=rects.map((rect,index)=>sprite(monsterAtlas,rect,`${kind}-walk-${index}`,32,32,true,false));
+ magick([...cells,'+append',resolve(source,`${kind}-walk.png`)]);
+ copyFileSync(resolve(source,`${kind}-walk.png`),resolve(output,`${kind}-walk.png`));
+}
 // Individual intermediate character frames are useful for source inspection but are not runtime exports.
 writeFileSync(resolve(source,'README.md'),'# Kolorowy zestaw do oceny\n\nŹródło: assets/design/colorful-*-atlas.png; współrzędne: assets/design/colorful-atlas.json.\nImport: npm run assets:import-colorful (ImageMagick 7). Cropping i nearest-neighbour; bez wygładzania.\nAutorskie grafiki wygenerowane narzędziem image_gen; prawa i ograniczenia w ASSET_LICENSES.md.\n');
 console.log('Imported colorful pixel sprites and 16 native 32x32 terrain variants.');

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { importMap, validateMaps, rules, monsters, items, npcs, questRules, type WorldMap } from '@eldoria/content';
 import { nameSchema, type Direction } from '@eldoria/protocol';
 import { Simulation, LocalGateway, type Snapshot, type SaveData } from '@eldoria/domain';
+import { CombatEffects } from './combat-effects';
 import { OfflineStorage } from './storage';
 import './style.css';
 
@@ -26,6 +27,7 @@ let playing = false;
 let walkingOnly = false;
 let adventure = false;
 let colorful = false;
+let worldEpoch = 0;
 const colorfulKeys = ['tree','house','pine','well','rat','beetle','wolf','loot','flowers','rocks','barrel','sign','mira','oren','borin'];
 const graphicsChoice = element<HTMLSelectElement>('#graphics-style');
 try { graphicsChoice.value = localStorage.getItem('eldoria.graphics') === 'classic' ? 'classic' : 'colorful'; } catch { /* The preview works even when preferences cannot be stored. */ }
@@ -68,7 +70,8 @@ class Preload extends Phaser.Scene {
     for (const key of ['tree', 'house', 'rat', 'beetle', 'wolf']) this.load.image(key, `${base}${key}.png`);
     this.load.spritesheet('colorful-tiles',`${base}styles/colorful/tiles.png`,{frameWidth:32,frameHeight:32});
     this.load.spritesheet('colorful-wanderer',`${base}styles/colorful/wanderer.png`,{frameWidth:32,frameHeight:48});
-    for (const key of colorfulKeys) this.load.image(`colorful-${key}`,`${base}styles/colorful/${key}.png`);
+    for (const kind of ['rat','beetle','wolf']) this.load.spritesheet(`colorful-${kind}`,`${base}styles/colorful/${kind}-walk.png`,{frameWidth:32,frameHeight:32});
+    for (const key of colorfulKeys.filter(k => !['rat','beetle','wolf'].includes(k))) this.load.image(`colorful-${key}`,`${base}styles/colorful/${key}.png`);
     for (const key of ['courtyard', 'grove', 'vareon', 'forest']) this.load.json(key, `${base}${key}.json`);
     this.load.on('loaderror', () => { ui.loading.textContent = 'Nie udało się załadować świata. Odśwież stronę i sprawdź połączenie.'; });
   }
@@ -83,6 +86,7 @@ class Preload extends Phaser.Scene {
       for (const [index, d] of ['down', 'left', 'right', 'up'].entries()) {
         for (const prefix of ['', 'colorful-']) this.anims.create({ key: `${prefix}walk-${d}`, frames: this.anims.generateFrameNumbers(`${prefix}wanderer`, { start: index * 3, end: index * 3 + 2 }), frameRate: 10, repeat: -1 });
       }
+      for (const kind of ['rat','beetle','wolf']) for (const [facing,start] of [['front',0],['side',3]] as const) this.anims.create({key:`colorful-${kind}-${facing}`,frames:this.anims.generateFrameNumbers(`colorful-${kind}`,{start,end:start+2}),frameRate:9,repeat:-1});
       this.scene.start('World'); this.scene.start('Menu');
     } catch (error) { ui.loading.textContent = `Błąd zawartości: ${error instanceof Error ? error.message : 'nieznany'}`; }
   }
@@ -95,6 +99,12 @@ class World extends Phaser.Scene {
   private hero!: Phaser.GameObjects.Sprite;
   private objects: Phaser.GameObjects.GameObject[] = [];
   private creatureSprites = new Map<string, Phaser.GameObjects.Sprite>();
+  private creatureViews = new Map<string, { position: string; until: number; side: boolean; tween?: Phaser.Tweens.Tween }>();
+  private effects!: CombatEffects;
+  private epoch = -1;
+  private lastCombatId = 0;
+  private actionUntil = 0;
+  private actionKind: 'melee' | 'spell' = 'melee';
   private bars!: Phaser.GameObjects.Graphics;
   private mapId = '';
   private colorful = false;
@@ -103,6 +113,7 @@ class World extends Phaser.Scene {
   private movingTween?: Phaser.Tweens.Tween;
   constructor() { super('World'); }
   create(): void {
+    this.effects = new CombatEffects(this);
     this.bars = this.add.graphics().setDepth(10000);
     this.hero = this.add.sprite(13 * 32 + 16, 11 * 32 + 32, 'wanderer', 0).setOrigin(.5, 1);
     this.hero.setDepth(this.hero.y);
@@ -110,7 +121,7 @@ class World extends Phaser.Scene {
     this.cameras.main.startFollow(this.hero, true, .12, .12);
     this.resize();
     this.scale.on('resize', this.resize, this);
-    this.events.once('shutdown', () => this.scale.off('resize', this.resize, this));
+    this.events.once('shutdown', () => { this.scale.off('resize', this.resize, this); this.effects.clear(); });
   }
   private resize(): void {
     const w = this.scale.width, h = this.scale.height;
@@ -120,6 +131,10 @@ class World extends Phaser.Scene {
   }
   private renderMap(map: WorldMap): void {
     this.mapId = map.id; this.colorful = colorful;
+    this.effects.clear();
+    this.movingTween?.stop(); this.movingUntil = 0; this.actionUntil = 0;
+    for (const view of this.creatureViews.values()) view.tween?.stop();
+    this.creatureViews.clear();
     this.hero.anims.stop(); this.hero.setTexture(art('wanderer'),0);
     for (const object of this.objects) object.destroy();
     this.objects = []; this.creatureSprites.clear(); this.bars.clear();
@@ -176,8 +191,11 @@ class World extends Phaser.Scene {
     const s = snapshot;
     if (!s) return;
     this.resize();
+    const newWorld = this.epoch !== worldEpoch;
+    if (newWorld) { this.epoch = worldEpoch; this.lastCombatId = 0; }
+    if (!playing) { this.effects.clear(); ui.hud.dataset.effects = '0'; return; }
     const changedMap = this.mapId !== s.mapId;
-    if (changedMap || this.colorful !== colorful) this.renderMap(maps.find(m => m.id === s.mapId)!);
+    if (newWorld || changedMap || this.colorful !== colorful) this.renderMap(maps.find(m => m.id === s.mapId)!);
     const position = `${s.player.x},${s.player.y}`;
     if (position !== this.playerPosition) {
       const first = this.playerPosition === '';
@@ -191,7 +209,9 @@ class World extends Phaser.Scene {
       }
     }
     this.hero.setDepth(this.hero.y);
-    if (this.time.now < this.movingUntil) this.hero.play(`${colorful ? 'colorful-' : ''}walk-${s.direction}`, true);
+    if (this.time.now < this.actionUntil) {
+      this.hero.anims.stop(); this.hero.setFrame(['down','left','right','up'].indexOf(s.direction)*3 + (this.actionKind === 'melee' ? 2 : 1));
+    } else if (this.time.now < this.movingUntil) this.hero.play(`${colorful ? 'colorful-' : ''}walk-${s.direction}`, true);
     else { this.hero.anims.stop(); this.hero.setFrame(['down', 'left', 'right', 'up'].indexOf(s.direction) * 3); }
     this.bars.clear();
     for (const loot of s.loot.filter(l => l.mapId === s.mapId)) {
@@ -205,16 +225,38 @@ class World extends Phaser.Scene {
         sprite.on('pointerdown', () => { if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open) gateway?.send({ type: 'Select', targetId: creature.id }); });
         this.creatureSprites.set(creature.id, sprite); this.objects.push(sprite);
       }
+      const revived = !sprite.visible && creature.hp > 0;
       sprite.setVisible(creature.hp > 0);
-      if (creature.hp === 0) continue;
-      sprite.x += (creature.x * 32 + 16 - sprite.x) * .25;
-      sprite.y += (creature.y * 32 + 32 - sprite.y) * .25;
+      let view = this.creatureViews.get(creature.id);
+      const creaturePosition = `${creature.x},${creature.y}`;
+      if (!view) { view = {position:creaturePosition,until:0,side:false}; this.creatureViews.set(creature.id,view); }
+      if (creature.hp === 0) { view.tween?.stop(); sprite.anims.stop(); view.until = 0; continue; }
+      if (revived) { view.tween?.stop(); sprite.setPosition(creature.x*32+16,creature.y*32+32); view.position = creaturePosition; view.until = 0; }
+      if (view.position !== creaturePosition) {
+        const [oldX] = view.position.split(',').map(Number);
+        view.side = creature.x !== oldX; sprite.setFlipX(view.side && creature.x < oldX!);
+        view.position = creaturePosition; view.until = this.time.now + rules.stepMs*2;
+        view.tween?.stop(); view.tween = this.tweens.add({targets:sprite,x:creature.x*32+16,y:creature.y*32+32,duration:rules.stepMs*2,ease:'Linear'});
+      }
+      if (colorful && this.time.now < view.until) sprite.play(`colorful-${creature.kind}-${view.side ? 'side' : 'front'}`,true);
+      else { sprite.anims.stop(); sprite.setFrame(colorful && view.side ? 3 : 0); }
       sprite.setDepth(sprite.y);
       const selected = creature.id === s.selectedId;
       if (selected) this.bars.lineStyle(1, 0xefd18a).strokeEllipse(sprite.x, sprite.y - 3, 28, 13);
       this.bars.fillStyle(0x263c35).fillRect(sprite.x - 12, sprite.y - 30, 24, 3);
       this.bars.fillStyle(selected ? 0xdac083 : 0x9ba582).fillRect(sprite.x - 12, sprite.y - 30, 24 * creature.hp / monsters[creature.kind].hp, 3);
     }
+    for (const event of s.combatEvents) {
+      if (event.id <= this.lastCombatId) continue;
+      this.lastCombatId = event.id;
+      if (event.mapId !== s.mapId) continue;
+      const source = event.sourceId === 'player' ? this.hero : this.creatureSprites.get(event.sourceId);
+      const target = event.targetId === 'player' ? this.hero : this.creatureSprites.get(event.targetId);
+      this.effects.play(event, source, target);
+      if (event.sourceId === 'player') { this.actionUntil = this.time.now + 280; this.actionKind = event.kind === 'spell' ? 'spell' : 'melee'; }
+      ui.hud.dataset.combat = event.kind; ui.hud.dataset.combatId = String(event.id);
+    }
+    this.effects.update(); ui.hud.dataset.effects = String(this.effects.count);
   }
 }
 const game = new Phaser.Game({
@@ -263,7 +305,8 @@ function updateUI(s: Snapshot): void {
   ui.hud.dataset.graphics = colorful ? 'colorful' : 'classic';
 }
 function activate(simulation: Simulation): void {
-  chooseGraphics();
+  chooseGraphics(); worldEpoch++;
+  delete ui.hud.dataset.combat; delete ui.hud.dataset.combatId;
   unsubscribe?.(); gateway?.disconnect(); resetInput();
   completionDismissed = false; ui.complete.hidden = true;
   gateway = new LocalGateway(simulation);

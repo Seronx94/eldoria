@@ -1,4 +1,4 @@
-# Eldoria 0.1.1 — kolorowy świat do oceny
+# Eldoria 0.1.2 — ruch potworów i animowana walka
 
 Pierwsza przygoda offline: Vareon 48×48, Mroczny Las 64×64, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
@@ -19,6 +19,14 @@ npm run dev:lan
 ```
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
+
+## Trzy kroki testu animacji
+
+1. Wybierz **Kolorowy pixel art**, **Próba Wędrowca**, bez spaceru. Wybierz szczura przyciskiem **Cel** i użyj **Miecza** z daleka: powinien pojawić się komunikat o zasięgu, bez zamachu i trafienia.
+2. Rzuć **Iskrę**. Sprawdź lot pomarańczowego pocisku, rozbłysk i liczbę obrażeń. Szczur zacznie podchodzić z animacją nóg. Kiedy stanie obok, dobij go **Mieczem**: postać zwraca się do celu, pokazuje zamach i ślad cięcia. Przy otrzymaniu obrażeń widać krótki błysk i czerwony wynik. Szybkie ponowne kliknięcie podczas cooldownu nie powinno tworzyć kolejnego trafienia.
+3. Sprawdź żuka i wilka, następnie przygodę w lesie. Dalsze stworzenia spacerują blisko swoich spawnów; przy wejściu cele pozostają spokojne do nauki. Po walce efekty znikają; po menu, zmianie mapy i wznowieniu zapisu nie wracają stare trafienia. Oceń na telefonie czytelność i płynność przy jednoczesnym ruchu i czarze.
+
+[Nagranie animowanej walki — Chromium desktop](videos/animated-combat-desktop.webm). To nagranie scenariusza walki w Chromium, nie z fizycznego telefonu. Potwory mają dwa ujęcia (przód/bok) i odbicie lewego boku; osobne ujęcie tyłu oraz dedykowane klatki uderzenia bohatera pozostają do dopracowania.
 
 ## Porównanie grafiki
 

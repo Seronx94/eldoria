@@ -4,6 +4,7 @@ export const rules = {
   attackDamage: 12, attackMs: 800,
   spellDamage: 18, spellMs: 1500, spellCost: 8, spellRange: 4,
   potionHeal: 40, potionMs: 3000, monsterAttackMs: 1200,
+  patrolMs: 1600, patrolRadius: 2,
   respawnMs: 20000, manaRegenMs: 2000,
 } as const;
 export const monsters = {

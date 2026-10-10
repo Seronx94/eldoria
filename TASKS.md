@@ -1,6 +1,6 @@
 # Eldoria — kolejka implementacji
 
-Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżąca wersja 0.1.1 jest przygodą offline z kolorową grafiką do oceny; nie jest wydaniem online ani APK.
+Statusy: TODO, IN_PROGRESS, BLOCKED, REVIEW (ocena testera), DONE (implementacja sprawdzona). Bieżące statusy i dowody wykonania poniżej. Specyfikacja kryteriów nie zastępuje wyników kontroli. Bieżąca wersja 0.1.2 jest przygodą offline z animowaną walką; nie jest wydaniem online ani APK.
 
 ## Zasady kolejki
 Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVIEW można budować domenę, lecz nie rozbudowywać finalnej mapy przed akceptacją stylu. Każdy wpis po pracy uzupełnij o dowód: polecenia/wyniki, pliki, screenshot lub scenariusz manualny. Opisane niżej testy są wymaganiem, nie raportem ich wykonania.
@@ -8,7 +8,7 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 | ID | Etap | Status | Zadanie | Zależności |
 |---|---|---|---|---|
 | T01 | M0 | DONE | Szkielet repozytorium | — |
-| T02 | M0 | REVIEW | Zestaw assetów i scena wzorcowa | T01 |
+| T02 | M0 | DONE | Zestaw assetów i scena wzorcowa | T01 |
 | T03 | M0 | DONE | Gateway, ruch i mobilny HUD | T01 |
 | T04 | M1 | DONE | Pipeline Tiled i walidacja | T01 |
 | T05 | M1 | DONE | Vareon, las i portale | T02 zaakceptowane, T03, T04 |
@@ -37,11 +37,13 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 **Kryteria docelowe:**
 Monorepo npm workspaces, Vite/Phaser 3, TypeScript strict, Vitest, lint i lockfile. Uruchamia się menu z wersją. Udostępnione komendy z README, .env.example i ignorowanie sekretów. Dowód: czysta instalacja, typecheck, test i build; Playwright otwiera menu.
 
-### T02 — REVIEW (nowy zestaw kolorowy; poprzedni roboczy ukończony)
+### T02 — DONE (kolorowy zestaw zaakceptowany do dalszej budowy)
 
 **Wynik sesji:** Autorskie placeholdery: kafelki 32×32, postać 4 kierunki × 3 klatki 32×48, dom, drzewa i trzy stworzenia. Źródła PNG/Tiled + odtwarzalny generator, ASSET_LICENSES.md. Zrzuty desktop/mobilny: docs/screenshots/. Oceniono ostrość i kamerę; brak audio. Po raporcie 0.0.2 z oznaczeniem grafiki roboczej tester polecił „dobra idź dalej”. Odnotowano zgodę na kontynuację z obecnym zestawem; nie oznacza ona zatwierdzenia finalnej grafiki ani pomiaru na fizycznym telefonie.
 
 **Aktualizacja 0.1.1:** Tester wybrał kolorowy pixel art, zielony świat, wyraźne kontury i szczegółowe postacie. Nowa próbka jest przełączalna w menu, obejmuje istniejące sceny i czeka na ocenę stylistyki. Wcześniejsza zgoda na budowę przygody pozostaje odnotowana; ukończone T05–T10 zachowują dowody. Nie rozszerzamy teraz map ani reguł gry.
+
+**Ocena testera po 0.1.1:** „Wygląda to dobrze” i prośba o ruch potworów oraz animacje miecza/czarów. Odnotowano akceptację kierunku kolorowego do dalszej budowy, bez deklaracji finalnej oprawy ani testu fizycznego telefonu.
 
 **Kryteria docelowe:**
 Katalog licencji i jeden zestaw graficzny. Scena z domem, drzewem, ścieżką, postacią 4-kierunkową i UI; test nearest filtering oraz kamery. Screenshot na desktopie i viewport mobilny, jasno wymienione placeholdery. Oddaj do REVIEW; odnotuj akceptację lub uwagi testera. Brak licencji blokuje wykorzystanie assetu.
@@ -201,6 +203,20 @@ Aktualne wymogi Android/Google Play, prywatność, usuwanie konta, podpisywanie,
 - Screenshoty w docs/screenshots/: colorful-sample-desktop, classic-sample-desktop (ta sama scena), colorful-town-desktop/mobile, colorful-forest-mobile oraz colorful-moving-mobile. Oceniono scenę wzorcową i czytelność aktorów w docelowej skali. README i docs/TESTER.md opisują porównanie oraz uruchomienie.
 - Pełny `npm run test:e2e`: 22 przypadki, 20 PASS / 1 SKIPPED / 1 FAIL (8,5 min). Jedyny FAIL: stare oczekiwanie dokładnie 42 MP po czarze; screenshot i kliknięcie przekroczyły granicę regeneracji, więc HUD poprawnie pokazywał 43 MP. Poprawiono trzy podobne sprawdzenia: po pierwszym czarze mana 42–43, dokładny koszt 8 MP nadal pokryty testem domeny. Ponowne `npm run test:e2e -- tests/e2e/client.spec.ts --grep 'menu, assets|simultaneous touch|safe courtyard'` — **5 PASS / 1 SKIPPED, exit 0** (1,5 min), także wcześniej nieudany desktopowy trening i mobilny wielodotyk. Wszystkie 21 wykonywanych scenariuszy mają wynik PASS po poprawce; pełnego przebiegu bez wcześniejszego FAIL nie powtarzano, pozostałe scenariusze przeszły w pełnej regresji. Pominięty wyłącznie desktopowy duplikat wielodotyku.
 - Fizyczny telefon, FPS i ręczny wielodotyk — NIE WYKONANO. Następny krok: tester porównuje scenę i ocenia postać, kontury, teren, budynki, drzewa oraz widoczność potworów; potem dopracowanie wskazanych elementów.
+
+## Animacje — 10 października 2026, wersja 0.1.2
+
+- Polecenie testera: pozytywna ocena wyglądu i prośba o chodzące potwory, animacje miecza oraz czarów. T02 DONE dla bieżącego roboczego stylu; T11 nadal REVIEW na fizycznym urządzeniu.
+- Atlas image_gen z własnymi referencjami i edytowalnym manifestem; trzy nowe spritesheety stworzeń (6 klatek 32×32). Ruch pościgu/powrotu interpolowany liniowo przez 400 ms, animacja nóg z przodu/boku i odbicie poziome na lewo. Wygląd klasyczny nadal działa z płynnym przesuwaniem i efektami, klatki nóg dotyczą zestawu kolorowego.
+- Neutralne/dalsze stworzenia w lesie patrolują co 1600 ms w promieniu 2 kratek od spawnu. Spokojne cele blisko gracza nie spacerują; mapy treningowe nie zmieniają pozycji idle. Patrol sprawdza kolizje, zajęte kratki i sąsiedztwo bram, nie zmienia neutralności stworzeń. Patrol wznowiony po wczytaniu ustala nowy harmonogram; jego timer nie jest zapisywany.
+- Symulacja emituje potwierdzone zdarzenia miecza, Iskry i ataku potwora z ID, mapą, stronami trafienia, pozycjami i obrażeniami. Bufor maksymalnie 16, kopiowane współrzędne, brak zdarzenia po odrzuconej akcji. Zapis v1 pozostaje zgodny i nie zawiera zdarzeń do ponownego odtworzenia.
+- Klient: zwrot do celu/krótka poza, animowany miecz i ślad cięcia, pomarańczowy pocisk Iskry i rozbłysk, ślady ataku potwora, krótki tint i wynik obrażeń. Limit 32 przejściowych elementów efektów, usuwanie po zakończeniu, przy mapie/menu/restarcie, bez dodatkowych listenerów/timerów. Całkowity zoom i nearest zachowane.
+- `npm run assets:import-colorful` — PASS; przywrócono identyczne wizualnie wcześniejsze PNG po porównaniu pikseli, aby nie commitować zmian samych metadanych dat. Źródła i prawa w ASSET_LICENSES.md. `npm run typecheck`, `npm run lint`, `npm test` — **51 PASS / 6 plików**, `npm run build` z validate:content — PASS, 4 mapy i wszystkie PNG. JS ok. 1,333 MB / 360 KB gzip; ostrzeżenie o rozmiarze chunka Phaser pozostaje.
+- Nowe testy domeny: odrzucone komendy/cooldown bez fałszywego trafienia, zdarzenie także po zabójstwie, atak stworzenia i prawidłowe obrażenia, interleaving ID, niemutowalne współrzędne, limit bufora, zapis bez odtwarzania efektów, patrol zgodny z kolizjami i bez zajętych kratek/bram.
+- Wstępny `npm run test:e2e -- tests/e2e/animation.spec.ts` — 2 PASS (desktop i mobilny poziomy): odrzucenie miecza z daleka, Iskra, podejście szczura, dobicie mieczem, wygaszenie efektów i restart bez powtórki. Bez błędów HTTP/konsoli; screenshoty oglądano. Pełny `npm run test:e2e`: **21 PASS / 1 SKIPPED / 2 FAIL**, 24 przypadki, 9,1 min. Oba FAIL dotyczyły wyłącznie startu opcjonalnego nagrywania w nowym teście: brak bundlowanego FFmpeg Playwrighta; jego instalacja w katalogu /tmp zakończyła się HTTP 403 (domeny CDN zabronione), bez obejścia ograniczenia. Oddzielono nagrywanie od regresji; scenariusz i wszystkie asercje animacji pozostały. Końcowe `npm run typecheck`, `npm run lint` — PASS; `npm run test:e2e -- tests/e2e/animation.spec.ts` — **2 PASS, exit 0**, 16,2 s. Wszystkie 23 wykonywane scenariusze mają wynik PASS po naprawie fixture; pełnego przebiegu nie powtarzano, pozostałe przeszły w pełnej regresji. SKIPPED to wyłącznie desktopowy duplikat wielodotyku.
+- Media: docs/screenshots/animated-spark-desktop.png i animated-sword-mobile.png z końcowego testu; docs/videos/animated-combat-desktop.webm (3,566 s, 556 KB), 72 rzeczywiste klatki z Chromium przez CDP, zakodowane lokalnym systemowym FFmpeg, sprawdzone ffprobe i pełnym dekodowaniem. Nagranie pokazuje Iskrę, chód, otrzymane trafienie i miecz; bez zewnętrznego pobierania.
+- Produkcyjny `Vite preview` — PASS: menu 0.1.2, nowe sprite’y i efekty bez błędów HTTP/konsoli, Iskra → pościg → miecz/zabójstwo → wygaszenie → nowa próba w klasycznym stylu bez odtwarzania trafień. Dist ok. 2 MB.
+- Ograniczenia: animacja stworzeń przód/bok bez osobnej klatki tyłu; poza bohatera używa istniejących klatek wraz z animowanym mieczem, nie nowego pełnego zestawu uderzenia. Brak audio. Test fizycznego telefonu/FPS/15 minut — NIE WYKONANO. Następny krok: tester przechodzi trzy kroki animacji w docs/TESTER.md i zgłasza czytelność/płynność.
 
 ## Szablon raportu zadania
 ID / status / zmienione pliki / wykonane komendy i wyniki / test manualny / ograniczenia / następny krok.

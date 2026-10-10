@@ -35,3 +35,9 @@ Wkład wygenerowany dla właściciela projektu, do edycji i wykorzystania w Eldo
 | loot.png, flowers.png, rocks.png, sign.png | dodatkowe elementy atlasu; rezerwa do późniejszej aranżacji |
 
 Źródła eksportów: `assets/source/styles/colorful/`; identyczne pliki runtime: `apps/client/public/assets/styles/colorful/`. `npm run assets:import-colorful` wymaga ImageMagick 7 (`magick`) i mechanicznie wycina atlas, normalizuje alfa progiem 50%, dopasowuje nearest-neighbour do natywnych klatek i pakuje PNG bez wygładzania. Nie potrzeba ImageMagick do zwykłego uruchamiania ani budowania gry — eksporty są zapisane w repozytorium. `npm run assets:generate` odtwarza tylko poprzedni zestaw i mapy.
+
+## Animacje 0.1.2
+
+`assets/design/colorful-monsters-atlas.png` — oryginalny atlas chodzących szczurów, żuków i wilków, wygenerowany przez image_gen z trzema wcześniejszymi autorskimi sprite’ami Eldorii jako referencjami. To samo pochodzenie i warunki użycia co powyżej; bez zewnętrznych grafik. Współrzędne w `monsterWalk` w colorful-atlas.json. Importer wycina i pakuje `rat-walk.png`, `beetle-walk.png`, `wolf-walk.png` w obu katalogach source/runtime: 192×32, sześć klatek 32×32 (trzy ujęcia chodu z przodu i trzy z boku). Lewy bok to odbicie prawego; oddzielne ujęcie tyłu pozostaje do dopracowania. Starsze pojedyncze PNG zachowano jako materiały źródłowe.
+
+Miecz, ślad cięcia, pocisk/rozbłysk Iskry i ślady ataku potwora są autorskimi efektami rysowanymi przez Phaser w `apps/client/src/combat-effects.ts`; nie potrzebują zewnętrznych tekstur ani licencji. Krótka poza ataku bohatera korzysta z istniejących klatek postaci wraz z animowanym mieczem; nie jest osobnym nowym spritesheetem uderzenia. Efekty są roboczą animacją do testów. Audio pozostaje wyłączone.

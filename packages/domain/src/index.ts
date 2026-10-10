@@ -11,7 +11,12 @@ export interface Creature extends Point {
   state: 'idle' | 'chase' | 'attack' | 'return' | 'dead';
   lastAttack: number; lastMove: number; diedAt: number;
 }
+export interface CombatEvent {
+  id: number; mapId: string; kind: 'melee' | 'spell' | 'monster';
+  sourceId: string; targetId: string; from: Point; to: Point; damage: number;
+}
 export interface Snapshot {
+  combatEvents: CombatEvent[];
   dialog: NpcId | null; quest: { status: 'available' | 'active' | 'ready' | 'claimed'; kills: number };
   name: string; mapId: string; player: Point; direction: Direction;
   hp: number; mana: number; maxHp: number; maxMana: number; level: number; potions: number; exp: number; gold: number;
@@ -29,6 +34,8 @@ const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y
 const distance = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 export class Simulation {
   private state: Snapshot;
+  private combatSequence = 0;
+  private patrolDue = new Map<string, number>();
   private creatureMaps = new Map<string, Creature[]>();
   private lastMove = -Infinity;
   private lastAttack = -Infinity;
@@ -40,11 +47,15 @@ export class Simulation {
     const map = maps[0];
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
-    this.state = { dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: map.id === 'vareon' ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa / Przejdź (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    this.state = { combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: map.id === 'vareon' ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa / Przejdź (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Wybierz cel i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
     this.spawnCreatures();
   }
   private map(): WorldMap { return this.maps.find(m => m.id === this.state.mapId)!; }
   private notify(message: string): void { this.state.message = message; this.state.eventId++; }
+  private combat(kind: CombatEvent['kind'], sourceId: string, targetId: string, from: Point, to: Point, damage: number): void {
+    this.state.combatEvents.push({ id: ++this.combatSequence, mapId: this.state.mapId, kind, sourceId, targetId, from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, damage });
+    this.state.combatEvents = this.state.combatEvents.slice(-16);
+  }
   private walkable(point: Point): boolean {
     const m = this.map();
     return point.x >= 0 && point.y >= 0 && point.x < m.width && point.y < m.height && m.collision[point.y * m.width + point.x] === 0;
@@ -169,7 +180,10 @@ export class Simulation {
     if (casting && s.mana < rules.spellCost) { this.notify('Za mało many.'); return; }
     if (casting) { s.mana -= rules.spellCost; this.lastSpell = now; } else this.lastAttack = now;
     const damage = Math.max(1, (casting ? rules.spellDamage : rules.attackDamage) - monsters[target.kind].defense);
+    const dx = target.x-s.player.x, dy = target.y-s.player.y;
+    s.direction = Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 'right' : 'left' : dy > 0 ? 'down' : 'up';
     target.hp = Math.max(0, target.hp - damage); target.state = 'chase';
+    this.combat(casting ? 'spell' : 'melee', 'player', target.id, s.player, target, damage);
     this.notify(`${casting ? 'Iskra' : 'Miecz'}: ${damage} obrażeń.`);
     if (target.hp === 0) {
       target.state = 'dead'; target.diedAt = now; s.selectedId = null;
@@ -308,10 +322,27 @@ export class Simulation {
         if (distance(c, s.player) <= 1) {
           c.state = 'attack';
           if (now - c.lastAttack >= rules.monsterAttackMs) {
-            s.hp = Math.max(0, s.hp - Math.max(1, monsters[c.kind].damage - (s.equipment.armor ? rules.playerDefense : 2))); c.lastAttack = now;
+            const damage = Math.max(1, monsters[c.kind].damage - (s.equipment.armor ? rules.playerDefense : 2));
+            s.hp = Math.max(0, s.hp - damage); c.lastAttack = now;
+            this.combat('monster', c.id, 'player', c, s.player, damage);
             if (s.hp === 0) { this.die(); return; }
           }
         } else c.state = 'chase';
+      }
+      if (this.map().id === 'forest' && c.state === 'idle' && distance(c, s.player) > 6) {
+        const key = `${s.mapId}:${c.id}`, due = this.patrolDue.get(key);
+        if (due === undefined) this.patrolDue.set(key, now + rules.patrolMs);
+        else if (now >= due) {
+          this.patrolDue.set(key, now + rules.patrolMs);
+          const hash = [...c.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+          const directions = Object.values(vectors);
+          for (let i = 0; i < 4; i++) {
+            const v = directions[(Math.floor(now / rules.patrolMs) + hash + i) % 4]!;
+            const next = { x: c.x + v.x, y: c.y + v.y };
+            if (distance(next, c.spawn) > rules.patrolRadius || distance(next, s.player) <= 6 || !this.walkable(next) || this.occupied(next, c.id) || this.map().portals.some(p => distance(p, next) <= 1)) continue;
+            Object.assign(c, next); c.lastMove = now; break;
+          }
+        }
       }
       if ((c.state === 'chase' || c.state === 'return') && now - c.lastMove >= rules.stepMs * 2) {
         const next = this.nextStep(c, c.state === 'return' ? c.spawn : s.player);

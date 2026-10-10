@@ -1,6 +1,6 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.1 — przygoda offline z kolorową grafiką do oceny**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.2 — przygoda offline z animowaną walką**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
 
@@ -14,11 +14,13 @@ npm run dev
 
 Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.md) opisuje pięć kroków przygody, sterowanie i zapis. Domyślnie zaczynasz w Vareon obok Miry: rozmowa i quest → brama na północy → pięć zabójstw w lesie → łup → powrót po nagrodę → handel i wznowienie. **Próba Wędrowca** w menu pozostaje treningiem walki zaczynającym się od razu przy potworach. **Spacer bez potworów** pokazuje stare sceny wzorcowe. Trening i spacer nie są zapisywane.
 
+W wersji 0.1.2 potwory animują chód podczas pościgu i powrotu. Dalsze stworzenia w lesie spacerują w promieniu dwóch kratek od miejsca odrodzenia co 1,6 s; blisko gracza i wejścia zachowano spokojne cele do nauki walki. Miecz ma zamach i ślad cięcia, Iskra lecący pocisk i rozbłysk, trafienia krótki błysk oraz liczbę obrażeń. Efekty wynikają z potwierdzonych zdarzeń symulacji, respektują zasięg i cooldown oraz nie są odtwarzane ponownie po wznowieniu.
+
 Przygoda zapisuje się w tej przeglądarce przy zmianie mapy, nagrodzie, handlu, powrocie do menu, ukryciu strony i co 30 sekund po zmianie stanu. Dostępne są przycisk Zapisz, wznowienie, eksport/import JSON oraz odzyskanie poprzedniego poprawnego zapisu. Uszkodzenie nie usuwa danych automatycznie; brak miejsca jest pokazany w dzienniku. Rozpoczęcie nowej przygody zastępuje bieżący zapis, zachowując poprzedni w kopii. Zapis jest wyłącznie offline i nie przeniesie się do przyszłej ekonomii online.
 
 W menu wybierz **Kolorowy pixel art — do oceny** (domyślny) lub **Poprzednia grafika — porównanie**. Nowy zestaw ma zielony teren, dachówki, drzewa liściaste i iglaste, odrębne stroje NPC oraz postać z animacją czterech kierunków. Do porównania wybierz trening i **Spacer bez potworów**. Zmiana grafiki działa również przy wznowieniu zapisu.
 
-Sprite’y i mapy są autorskimi materiałami roboczymi; źródła i opis w [ASSET_LICENSES.md](ASSET_LICENSES.md). Tester wybrał kolorowy pixel art z wyraźnymi konturami. Zestaw 0.1.1 czeka na ocenę wyglądu w grze; nie uznajemy go za finalną grafikę. Weryfikacja i kolejka: [TASKS.md](TASKS.md).
+Sprite’y i mapy są autorskimi materiałami roboczymi; źródła i opis w [ASSET_LICENSES.md](ASSET_LICENSES.md). Tester wybrał kolorowy pixel art z wyraźnymi konturami. Tester ocenił wygląd 0.1.1 pozytywnie i polecił dodanie animacji. Bieżący zestaw służy dalszej budowie; nowe animacje 0.1.2 czekają na ocenę podczas gry. Weryfikacja i kolejka: [TASKS.md](TASKS.md).
 
 ## Cel i sposób pracy
 Eldoria to autorska gra RPG 2D z docelowym wspólnym światem online, inspirowana sposobem eksploracji Kakele/Tibii. Nie kopiujemy ich map, nazw zaklęć, grafik ani dźwięków. Codex implementuje i weryfikuje kolejne wersje; właściciel projektu testuje na telefonie i ocenia wygląd oraz rozgrywkę. Nie wymaga się od testera pisania kodu.
@@ -124,7 +126,7 @@ npm run test:e2e
 npm run validate:content
 npm run build
 ```
-Wszystkie powyższe polecenia są już dostępne w wersji 0.1.1. Testy e2e wymagają Chromium (instrukcja w docs/TESTER.md). dev:lan ma drukować adres do testów w tej samej sieci; nie wystawiać serwera automatycznie do Internetu. Etap online dodaje compose dla PostgreSQL i komendę dev:online. Etap Android dodaje komendy sync/build oraz opis SDK/JDK zgodny z wybraną wersją Capacitor. Bez podpisywania kluczem produkcyjnym ani publikowania w sklepie bez polecenia właściciela.
+Wszystkie powyższe polecenia są już dostępne w wersji 0.1.2. Testy e2e wymagają Chromium (instrukcja w docs/TESTER.md). dev:lan ma drukować adres do testów w tej samej sieci; nie wystawiać serwera automatycznie do Internetu. Etap online dodaje compose dla PostgreSQL i komendę dev:online. Etap Android dodaje komendy sync/build oraz opis SDK/JDK zgodny z wybraną wersją Capacitor. Bez podpisywania kluczem produkcyjnym ani publikowania w sklepie bez polecenia właściciela.
 
 ## Zakres późniejszych wersji
 Cztery autorskie profesje (wojownik, łucznik, mag ognia, opiekun natury), lochy, questy fabularne i bossowie. Po stabilizacji: handel, PvP na oznaczonych terenach, gildie, moderacja. Monetyzacja dopiero po weryfikacji gry i wymogów platformy; preferowane kosmetyki, brak sprzedaży przewagi w pierwszej wersji.

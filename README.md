@@ -1,6 +1,6 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.4 — przebudowane Vareon z dostępnymi wnętrzami i usługami**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.5 — mobilna gałka ruchu i ikony akcji**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; nie jest to jeszcze wersja online ani APK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
 
@@ -17,6 +17,8 @@ Telefon w tej samej sieci: `npm run dev:lan`. [Instrukcja testera](docs/TESTER.m
 W wersji 0.1.2 potwory animują chód podczas pościgu i powrotu. Dalsze stworzenia w lesie spacerują w promieniu dwóch kratek od miejsca odrodzenia co 1,6 s; blisko gracza i wejścia zachowano spokojne cele do nauki walki. Miecz ma zamach i ślad cięcia, Iskra lecący pocisk i rozbłysk, trafienia krótki błysk oraz liczbę obrażeń. Efekty wynikają z potwierdzonych zdarzeń symulacji, respektują zasięg i cooldown oraz nie są odtwarzane ponownie po wznowieniu.
 
 Wersja 0.1.3 dodaje niezależne zadanie Miry **Ślady dawnego szlaku**: przyjmij je, zbadaj (F) stary drogowskaz, opuszczony obóz i kamień pamięci, potem wróć po 75 EXP, 25 złota i 2 mikstury. Wskazówka nad mapą pokazuje kierunek i odległość, gdy nie masz wybranego celu walki. **Plecak → Kronika** przechowuje opisy odkryć. Odkrycia liczą się po przyjęciu zadania, nagroda jest jednorazowa i czeka przy pełnym plecaku. Dotychczasowe zapisy v1 są wczytywane z nowym zadaniem do przyjęcia; zapisy utworzone przez 0.1.3 wymagają klienta 0.1.3 lub nowszego.
+
+Wersja 0.1.5 dodaje na telefonie gałkę po lewej stronie oraz autorskie ikony akcji po prawej: cel, miecz, Iskra, mikstura, łup i rozmowa/przejście. Przeciągnij gałkę w kierunku ruchu; postać nadal chodzi po jednej kratce, bez przyspieszenia po przekątnej. Puszczenie palca centruje gałkę i zatrzymuje ruch. Drugi palec może używać akcji. Obrót ekranu, utrata fokusu i otwarcie dialogu zerują sterowanie. Na komputerze pozostają strzałki i WASD. Nie dodano nowych czarów ani zmian zapisu — Iskra jest obecnie jedynym czarem.
 
 Wersja 0.1.4 przebudowuje Vareon w autorskie miasto klasycznego RPG: brukowany rynek z fontanną i straganami, mury, wartownia, świątynia, sklep, gospoda, warsztat i dwa domy. Mira stoi w wartowni przy północnej bramie; Oren w Świątyni Świtu na zachód od rynku; Borin w sklepie na wschód. Wejdź południowymi drzwiami, aby odsłonić dach i zobaczyć wnętrze. Wartownia ma również północne przejście do bramy. **Plecak → Plan Vareon** pokazuje budynki, pozycję i wybór wskazówki do NPC; gracz idzie sam. Gospoda, warsztat i domy są dostępne do zwiedzania, bez nowych usług NPC. Miasto wykorzystuje oryginalne materiały Eldorii; nie jest kopią Thais.
 
@@ -132,7 +134,7 @@ npm run test:e2e
 npm run validate:content
 npm run build
 ```
-Wszystkie powyższe polecenia są dostępne w wersji 0.1.4. Testy e2e wymagają Chromium (instrukcja w docs/TESTER.md). dev:lan ma drukować adres do testów w tej samej sieci; nie wystawiać serwera automatycznie do Internetu. Etap online dodaje compose dla PostgreSQL i komendę dev:online. Etap Android dodaje komendy sync/build oraz opis SDK/JDK zgodny z wybraną wersją Capacitor. Bez podpisywania kluczem produkcyjnym ani publikowania w sklepie bez polecenia właściciela.
+Wszystkie powyższe polecenia są dostępne w wersji 0.1.5. Testy e2e wymagają Chromium (instrukcja w docs/TESTER.md). dev:lan ma drukować adres do testów w tej samej sieci; nie wystawiać serwera automatycznie do Internetu. Etap online dodaje compose dla PostgreSQL i komendę dev:online. Etap Android dodaje komendy sync/build oraz opis SDK/JDK zgodny z wybraną wersją Capacitor. Bez podpisywania kluczem produkcyjnym ani publikowania w sklepie bez polecenia właściciela.
 
 ## Zakres późniejszych wersji
 Cztery autorskie profesje (wojownik, łucznik, mag ognia, opiekun natury), lochy, questy fabularne i bossowie. Po stabilizacji: handel, PvP na oznaczonych terenach, gildie, moderacja. Monetyzacja dopiero po weryfikacji gry i wymogów platformy; preferowane kosmetyki, brak sprzedaży przewagi w pierwszej wersji.

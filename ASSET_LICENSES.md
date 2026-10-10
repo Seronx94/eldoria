@@ -53,3 +53,7 @@ Trzy oznaczenia miejsc odkryć są autorską prostą grafiką proceduralną w `a
 Manifest wycięć i natywnych rozmiarów: `assets/design/town-atlas.json`. `npm run assets:import-town` wymaga ImageMagick 7; mechaniczne wycięcia, próg alfa 50%, nearest-neighbour i usunięcie metadanych. Eksporty `assets/source/town/*.png` oraz identyczne `apps/client/public/assets/town/*.png` są zapisane w repozytorium; uruchomienie i build nie wymagają ImageMagick. Kafelki 32×32, meble i dekoracje w natywnych wielokrotnościach pikseli, skalowanie świata całkowite.
 
 Układ Vareon, nazwy budynków i plan SVG napisano dla Eldorii. Edytowalne źródło Tiled: `assets/source/vareon.tmj`, odtwarzalne polecenie `npm run maps:generate-town`. Warstwy CityGround/CityWalls mają osadzone kolekcje tilesetów; Buildings opisuje bryły i wejścia, TownProps — meble i ich footprint. Generator podstawowych assetów również odtwarza nowy układ miasta; nie generuje atlasu image_gen.
+
+## Ikony akcji 0.1.5
+
+Autorskie sześć ikon SVG na siatce 32×32 w `apps/client/src/action-icons.ts`: cel, miecz, płomień Iskry, flakon mikstury, sakiewka łupu i przejście. Narysowane z prostych ścieżek dla Eldorii; bez zewnętrznych assetów, zakupów lub kopiowania ikon Kakele/Tibii. Renderowane bez filtrowania tekstur, z shape-rendering crispEdges; podpisy przycisków pozostają dostępne. Gałka jest oryginalną grafiką CSS w style.css. Materiały robocze do oceny testera, na tych samych zasadach wkładu Codexa dla projektu jak powyżej.

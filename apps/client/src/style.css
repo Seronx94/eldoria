@@ -766,3 +766,16 @@ button:disabled { opacity:.5; cursor:default; }
 #city-guide-content svg { display:block; width:min(260px,70vw); max-height:45vh; margin:12px auto; image-rendering:pixelated; }
 .city-guide-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .city-guide-actions button { min-height:48px; padding:8px 14px; }
+
+#joystick { display:none; position:relative; width:128px; height:128px; flex:none; border:2px solid #bcaa7080; border-radius:50%; background:radial-gradient(circle,#34544ae8 0 42%,#182e28eb 44% 63%,#517060d9 65% 68%,#172e29ed 70%); box-shadow:inset 0 2px 12px #071b1aaa,0 2px 8px #071b1a66; touch-action:none; user-select:none; pointer-events:auto; }
+.stick-directions { position:absolute; inset:0; display:grid; place-items:center; color:#cdbd8970; font-size:90px; pointer-events:none; }
+.stick-knob { position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px; border:2px solid #d9c891; border-radius:50%; background:radial-gradient(circle at 35% 30%,#a7b998,#617e69 55%,#355747 58%); box-shadow:0 4px 8px #071915aa,inset 0 0 0 4px #263d3966; transform:translate(var(--stick-x,0px),var(--stick-y,0px)); pointer-events:none; }
+#joystick.held { border-color:#f3d18d; }
+#joystick:focus-visible { outline:2px solid #f3d18d; outline-offset:3px; }
+.actions .action-icon { display:grid; place-items:center; width:40px; height:40px; border:1px solid #c7b26b60; border-radius:5px; background:#10251f; box-shadow:inset 0 0 8px #0005; }
+.action-icon svg { width:32px; height:32px; shape-rendering:crispEdges; pointer-events:none; }
+.actions #cast { border-color:#d8864c; background:linear-gradient(#503e2fe8,#263c31f0); }
+.actions #attack { border-color:#85a3a0; }
+.actions #potion { border-color:#b47876; }
+@media(pointer:coarse),(max-height:600px) { .dpad { display:none; } #joystick { display:block; } }
+@media(max-height:600px) { #joystick { width:96px; height:96px; } .actions .action-icon { width:34px; height:34px; } .action-icon svg { width:30px; height:30px; } }

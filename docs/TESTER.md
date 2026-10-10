@@ -1,4 +1,4 @@
-# Eldoria 0.1.4 — nowe Vareon
+# Eldoria 0.1.5 — gałka i ikony akcji
 
 Pierwsza przygoda offline: Vareon 48×48, Mroczny Las 64×64, 12 stworzeń, trzej NPC, quest, sklep i zapis. Nowy kolorowy pixel art jest autorskim zestawem do oceny, audio wyłączone. Brak multiplayer i APK. Kontrole przeglądarkowe nie zastępują Twojego testu na fizycznym telefonie.
 
@@ -27,6 +27,15 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 ```
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
+
+## Cztery kroki testu gałki na telefonie
+
+1. Obróć telefon poziomo. Po lewej jest okrągła gałka. Przytrzymaj środek: postać stoi. Przesuń palec w lewo/prawo lub w górę/dół: zaczyna chodzić. Po przekątnej wybierany jest jeden kierunek, bez szybszego ruchu. Gałka podąża za palcem także poza swoim kołem, a po puszczeniu wraca na środek i zatrzymuje ruch.
+2. W Próbie Wędrowca wybierz szczura przyciskiem **Cel**. Trzymając gałkę, dotknij drugim palcem **Iskry** (płomień). Postać powinna się poruszać i rzucić czar, jeśli jest w zasięgu i ma manę. Miecz, mikstura, łup i rozmowa mają osobne ikony oraz podpisy. Iskra pozostaje jedynym czarem.
+3. Trzymając gałkę, otwórz plecak albo obróć telefon do pionu i z powrotem. Po zamknięciu plecaka lub powrocie do poziomu postać nie powinna sama chodzić — trzeba ponownie dotknąć gałki.
+4. Przejdź bramą i wróć, sprawdź działanie gałki w mieście i lesie oraz czy ikony są wygodne pod prawym kciukiem. Zgłoś model telefonu i ewentualne zacinanie. Na komputerze nadal działają WASD, strzałki i D-pad.
+
+Podgląd: [gałka i pasek akcji — mobilny Chromium](screenshots/joystick-mobile.png). Testy emulacji nie zastępują kontroli na Twoim telefonie.
 
 ## Pięć kroków zwiedzania miasta
 

@@ -52,7 +52,8 @@ test('menu, assets, real combat loop and restart', async ({ page }, testInfo) =>
   await page.waitForTimeout(1550);
   await page.getByRole('button', { name: /Iskra/ }).click();
   await expect(page.locator('#objective')).toHaveText('1 / 3');
-  await page.getByRole('button', { name: 'Idź w prawo' }).click();
+  if(await page.locator('#joystick').isVisible())await page.locator('#joystick').tap({position:{x:82,y:48}});
+  else await page.getByRole('button', { name: 'Idź w prawo' }).click();
   await expect(page.locator('#hud')).toHaveAttribute('data-position', '14,11');
   await page.getByRole('button', { name: /Cel/ }).click();
   await expect(page.locator('#target-label')).toContainText('Żuk');
@@ -119,20 +120,23 @@ test('simultaneous touch movement and cast; pointercancel stops held direction',
   test.skip(testInfo.project.name !== 'mobile-landscape', 'Real emulated multitouch uses the mobile project');
   await start(page); await selectRat(page, 1, -2);
   const session = await page.context().newCDPSession(page);
-  const button = await page.getByRole('button', { name: 'Idź w lewo' }).boundingBox();
+  const button = await page.locator('#joystick').boundingBox();
   const cast = await page.getByRole('button', { name: /Iskra/ }).boundingBox();
   if (!button || !cast) throw new Error('Missing touch controls');
-  const movementTouch = { x: button.x + button.width / 2, y: button.y + button.height / 2, id: 1 };
+  const movementTouch = { x: button.x + button.width * .15, y: button.y + button.height / 2, id: 1 };
   const castTouch = { x: cast.x + cast.width / 2, y: cast.y + cast.height / 2, id: 2 };
   await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [movementTouch] });
   await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [movementTouch, castTouch] });
-  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [movementTouch] });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [castTouch] });
+  await expect(page.locator('#joystick')).toHaveClass(/held/);
   // Screenshot/click timing can cross a 2-second regeneration boundary.
   // Domain tests verify the exact 8 MP cost; the HUD must show the expenditure.
   await expect.poll(() => page.locator('#mana').evaluate(el => (el as HTMLProgressElement).value)).toBeLessThan(50);
   const manaAfterCast = await page.locator('#mana').evaluate(el => (el as HTMLProgressElement).value);
   expect(manaAfterCast).toBeGreaterThanOrEqual(42); expect(manaAfterCast).toBeLessThanOrEqual(43);
-  await expect(page.locator('#hud')).toHaveAttribute('data-position', '12,11');
+  // Movement continues after the action finger is released.
+  await expect.poll(async()=>Number((await page.locator('#hud').getAttribute('data-position'))!.split(',')[0])).toBeLessThan(12);
+  expect((await page.locator('#hud').getAttribute('data-position'))!.split(',')[1]).toBe('11');
   await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
   const position = await page.locator('#hud').getAttribute('data-position');
   await page.waitForTimeout(500); await expect(page.locator('#hud')).toHaveAttribute('data-position', position!);

@@ -6,6 +6,8 @@ import { CityGuide } from './city-guide';
 import { TownView, townAssetKeys } from './town-view';
 import { CombatEffects } from './combat-effects';
 import { OfflineStorage } from './storage';
+import {VirtualJoystick} from './virtual-joystick';
+import {renderActionIcons} from './action-icons';
 import './style.css';
 
 function element<T extends HTMLElement>(selector: string): T {
@@ -52,7 +54,11 @@ let completionDismissed = false;
 let bagSignature = '';
 const pointerDirections = new Map<number, Direction>();
 const heldKeys = new Map<string, Direction>();
-function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); }
+const joystick = new VirtualJoystick(element('#joystick'), () => playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open, (id, d) => {
+  if (d) pointerDirections.set(id, d); else pointerDirections.delete(id);
+  movement();
+});
+function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); joystick.reset(); }
 function direction(): Direction | undefined { return [...pointerDirections.values()].at(-1) ?? [...heldKeys.values()].at(-1); }
 function movement(): void {
   const d = direction();
@@ -380,6 +386,7 @@ for (const [id, type] of [['attack', 'Attack'], ['cast', 'Cast'], ['potion', 'Us
   button.addEventListener('pointerdown', event => { event.preventDefault(); act(); });
   button.addEventListener('click', event => { if (event.detail === 0) act(); });
 }
+renderActionIcons();
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-direction]')) {
   button.addEventListener('pointerdown', event => {
     event.preventDefault(); const d = button.dataset.direction as Direction;
@@ -453,8 +460,11 @@ function toggleBag(): void {
   if (bagDialog.open) bagDialog.close();
   else if (snapshot && playing && !npcDialog.open) { renderBag(snapshot); bagDialog.showModal(); }
 }
-element('#bag-button').addEventListener('click', toggleBag);
-element('#close-bag').addEventListener('click', () => bagDialog.close());
+for(const [id,action]of [['bag-button',toggleBag],['close-bag',()=>bagDialog.close()]] as const){
+  const button=element(`#${id}`);
+  button.addEventListener('pointerdown',event=>{event.preventDefault();action();});
+  button.addEventListener('click',event=>{if(event.detail===0)action();});
+}
 bagDialog.addEventListener('close', resetInput);
 
 function cycleTarget(): void {

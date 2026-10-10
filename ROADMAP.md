@@ -19,7 +19,7 @@ T01–T03. Wzorzec obejmuje środowisko, postać i UI z tego samego stylu. Jeśl
 T04–T06 oraz T05a: przebudowa Vareon w 0.1.4 na polecenie testera — rynek, siedem wnętrz, NPC w budynkach usług i plan miasta. Nowa aranżacja czeka na ocenę. Logiczną siatkę i portale stosujemy od początku, aby online nie wymagało zmiany sposobu ruchu. Brak pustej demonstracji: spacer po mieście, dialog i wyjście do lasu mają działać z telefonu.
 
 ## M2
-T07–T11, z dodatkowym T09a wybranym przez testera: eksploracyjne „Ślady dawnego szlaku” i kronika odkryć w 0.1.3. Wersja 0.1 ma dawać około 10–15 minut sensownej gry. Tester ocenia: ostrość, wygodę sterowania, wybór celu, czytelność obrażeń i tempo walki. Nie blokujemy wydania brakiem muzyki, jeśli została jawnie wyłączona.
+T07–T11; aktualizacja T11 w 0.1.5 dodaje gałkę mobilną i ikony akcji na polecenie testera. Z dodatkowym T09a wybranym przez testera: eksploracyjne „Ślady dawnego szlaku” i kronika odkryć w 0.1.3. Wersja 0.1 ma dawać około 10–15 minut sensownej gry. Tester ocenia: ostrość, wygodę sterowania, wybór celu, czytelność obrażeń i tempo walki. Nie blokujemy wydania brakiem muzyki, jeśli została jawnie wyłączona.
 
 ## M3
 T12–T16. Najpierw jeden serwer i dwie osoby, potem poprawność ekonomii, rozłączeń i regionów. Offline pozostaje osobnym trybem z osobnym zapisem. Brak importu walut offline. Wyniki load testu zapisują sprzęt, liczbę symulowanych graczy, aktywnych potworów, czas i latency; syntetyczne połączenia bez akcji nie dowodzą pojemności MMORPG.

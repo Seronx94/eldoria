@@ -9,11 +9,16 @@ export const spellSchema=z.enum(['blade-wave','spin','guard','power-shot','volle
 export type SpellId=z.infer<typeof spellSchema>;
 export const actionSchema=z.enum(['attack','potion',...spellSchema.options]);
 export type ActionId=z.infer<typeof actionSchema>;
+const outfitColor=z.string().regex(/^#[0-9a-f]{6}$/i).toLowerCase().nullable();
+export const appearanceSchema=z.object({hair:outfitColor,body:outfitColor,legs:outfitColor,feet:outfitColor}).strict();
+export type Appearance=z.infer<typeof appearanceSchema>;
+export function defaultAppearance():Appearance {return {hair:null,body:null,legs:null,feet:null};}
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Move'), direction: directionSchema }).strict(),
   z.object({ type: z.literal('Select'), targetId: z.string().min(1).max(80) }).strict(),
   z.object({ type: z.literal('Attack') }).strict(),
   z.object({ type: z.literal('Cast'),spellId:spellSchema.optional() }).strict(),
+  z.object({type:z.literal('SetAppearance'),appearance:appearanceSchema}).strict(),
   z.object({ type:z.literal('SetActionSlot'),slot:z.number().int().min(0).max(3),actionId:actionSchema }).strict(),
   z.object({ type: z.literal('UseItem') }).strict(),
   z.object({ type: z.literal('Interact'), npcId: z.enum(['mira', 'oren', 'borin']).optional() }).strict(),

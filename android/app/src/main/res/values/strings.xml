@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Eldoria</string>
+    <string name="title_activity_main">Eldoria</string>
+    <string name="package_name">com.seronx94.eldoria</string>
+    <string name="custom_url_scheme">com.seronx94.eldoria</string>
+</resources>

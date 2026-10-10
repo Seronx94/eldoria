@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { rules,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns } from '@eldoria/content';
-import { directionSchema, nameSchema,professionSchema,weaponSchema,actionSchema } from '@eldoria/protocol';
+import { directionSchema, nameSchema,appearanceSchema,defaultAppearance,professionSchema,weaponSchema,actionSchema } from '@eldoria/protocol';
 import { inventorySchema } from './inventory';
 const integer = (max: number) => z.number().int().min(0).max(max);
 const point = z.object({ x: integer(255), y: integer(255) }).strict();
@@ -16,7 +16,7 @@ export const explorationSchema = z.object({
 }).strict().refine(q => new Set(q.found).size === q.found.length && (q.status === 'available' ? q.found.length === 0 : q.status === 'active' ? q.found.length < 3 : q.found.length === 3), 'Nieprawidłowy postęp eksploracji');
 export const saveSchema = z.object({
   version: z.literal(1), cityRevision: z.number().int().min(1).max(2).default(1), mode: z.literal('offline'), name: nameSchema,
-  profession:professionSchema.default('knight'),actionSlots:z.tuple([actionSchema,actionSchema,actionSchema,actionSchema]).optional(),
+  appearance:appearanceSchema.default(defaultAppearance),profession:professionSchema.default('knight'),actionSlots:z.tuple([actionSchema,actionSchema,actionSchema,actionSchema]).optional(),
   spellCooldowns:spellCooldownSchema.optional(),guardIn:integer(professionRules.guardMs).default(0),
   mapId: z.enum(['vareon', 'forest', 'eldoria']), player: point, direction: directionSchema,
   level: z.number().int().min(1).max(100), hp: z.number().int().min(1).max(1090), mana: integer(545),

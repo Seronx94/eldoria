@@ -75,3 +75,11 @@ Bieżące rat-walk.png, beetle-walk.png i wolf-walk.png mają **288×32, dziewi�
 ## Profesje 0.1.9
 
 Nowe ikony broni i dziewięciu umiejętności są autorskimi SVG w apps/client/src/action-icons.ts; animacje proceduralne Phaser znajdują się w combat-effects.ts. Powstały dla Eldorii przez Codexa, bez materiałów innych gier; przeznaczone do użycia i modyfikacji w projekcie. Dotychczasowe sprite’y PNG zachowują źródła i zasady opisane powyżej. Profesje na razie współdzielą strój bohatera; osobnych sprite'ów profesji nie deklarujemy.
+
+## Stroje profesji 0.1.10
+
+`assets/design/profession-atlas.png` (1254×1254) to autorski atlas Archera i Maga wygenerowany przez OpenAI image_gen dla Eldorii z dotychczasowym własnym bohaterem jako referencją stylistyczną. Sześć kolumn (Archer 0–2, Mag 3–5), cztery rzędy (przód, lewo, prawo, tył). Brak materiałów Tibii/Kakele ani zakupów. Zasady użycia jak wcześniejsze atlasy image_gen: wkład dla właściciela projektu, do edycji i użycia w Eldorii zgodnie z warunkami OpenAI. Grafika do oceny testera.
+
+`npm run assets:import-professions` mechanicznie wycina komórki, normalizuje alfa, przycina puste marginesy i dopasowuje nearest-neighbour do 32×44, wyrównując stopy do dołu klatki 32×48. Wymaga ImageMagick 7 wyłącznie przy odtwarzaniu assetów. Arkusze `assets/source/styles/professions/{archer,mage}.png` oraz identyczne eksporty runtime mają 96×192 (12 klatek). Knight korzysta z niezmienionego źródła wanderer.png. Kolorowanie i podgląd to własny kod outfit-colors.ts/hero-appearance.ts; oryginalne pliki PNG pozostają niezmienione.
+
+Projekt Androida wygenerowano oficjalnym szablonem `@capacitor/cli` 8.5.3 (Ionic, licencja MIT). Natywna ikona i ekran startowy są roboczymi zasobami tego szablonu, do zastąpienia przed wydaniem; nie są nową autorską grafiką Eldorii. Źródło: https://github.com/ionic-team/capacitor, plik LICENSE. Biblioteki npm zachowują własne licencje w pakietach.

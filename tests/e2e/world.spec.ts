@@ -21,7 +21,7 @@ test('continuous colorful world: walk through the gate, camera, safe border and 
     await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');
   }
   await page.locator('#save-button').click();await page.reload();await page.locator('#resume').click();await expect(page.locator('#hud')).toHaveAttribute('data-position','32,64');
-  expect(await page.locator('canvas').evaluate(c=>getComputedStyle(c).imageRendering)).toBe('pixelated');expect(errors).toEqual([]);
+  expect(await page.locator('#game canvas').evaluate(c=>getComputedStyle(c).imageRendering)).toBe('pixelated');expect(errors).toEqual([]);
 });
 
 test('world respawn: return to safe gatehouse, retain progress and resume NPC interaction',async({page},info)=>{

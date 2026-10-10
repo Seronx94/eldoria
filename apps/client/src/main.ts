@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { combatAllowedAt, regionAt, landmarksOnMap, importMap, validateMaps, rules, monsters, items, npcs, questRules, explorationRules, landmarks,professions,spells, type WorldMap, type NpcId } from '@eldoria/content';
-import { nameSchema,professionSchema, type Direction,type ActionId } from '@eldoria/protocol';
+import { nameSchema,professionSchema,defaultAppearance, type Direction,type ActionId } from '@eldoria/protocol';
 import { Simulation, LocalGateway, type Snapshot, type SaveData } from '@eldoria/domain';
 import {createTileLayer} from './tile-layer';
 import { CityGuide } from './city-guide';
@@ -11,6 +11,9 @@ import {VirtualJoystick} from './virtual-joystick';
 import {renderActionIcons} from './action-icons';
 import {creatureFacing,creatureFrames} from './creature-facing';
 import {ActionBar,actionName} from './action-bar';
+import {HeroAppearance} from './hero-appearance';
+import {exportSave} from './export-save';
+import {outfitParts,outfitLabels,originalColors} from './outfit-colors';
 import './style.css';
 
 function element<T extends HTMLElement>(selector: string): T {
@@ -91,6 +94,7 @@ class Preload extends Phaser.Scene {
     for (const key of ['tree', 'house', 'rat', 'beetle', 'wolf']) this.load.image(key, `${base}${key}.png`);
     this.load.spritesheet('colorful-tiles',`${base}styles/colorful/tiles.png`,{frameWidth:32,frameHeight:32});
     this.load.spritesheet('colorful-wanderer',`${base}styles/colorful/wanderer.png`,{frameWidth:32,frameHeight:48});
+    for(const profession of ['archer','mage'])this.load.spritesheet(`colorful-${profession}`,`${base}styles/professions/${profession}.png`,{frameWidth:32,frameHeight:48});
     for (const kind of ['rat','beetle','wolf']) this.load.spritesheet(`colorful-${kind}`,`${base}styles/colorful/${kind}-walk.png`,{frameWidth:32,frameHeight:32});
     for (const key of colorfulKeys.filter(k => !['rat','beetle','wolf'].includes(k))) this.load.image(`colorful-${key}`,`${base}styles/colorful/${key}.png`);
     for (const key of townAssetKeys) this.load.image(`town-${key}`,`${base}town/${key}.png`);
@@ -104,12 +108,9 @@ class Preload extends Phaser.Scene {
       cityGuide=new CityGuide(maps.find(m=>m.id==='eldoria')!,element('#city-guide-content'),id=>{
         guidedNpc=id;bagDialog.close();resetInput();if(snapshot)updateUI(snapshot);
       });
-      for (const key of ['tiles', 'wanderer', 'tree', 'house', 'rat', 'beetle', 'wolf', 'colorful-tiles','colorful-wanderer',...colorfulKeys.map(k=>`colorful-${k}`),...townAssetKeys.map(k=>`town-${k}`)]) {
+      for (const key of ['tiles', 'wanderer', 'tree', 'house', 'rat', 'beetle', 'wolf', 'colorful-tiles','colorful-wanderer','colorful-archer','colorful-mage',...colorfulKeys.map(k=>`colorful-${k}`),...townAssetKeys.map(k=>`town-${k}`)]) {
         if (!this.textures.exists(key)) throw new Error(`Brak grafiki ${key}`);
         this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
-      }
-      for (const [index, d] of ['down', 'left', 'right', 'up'].entries()) {
-        for (const prefix of ['', 'colorful-']) this.anims.create({ key: `${prefix}walk-${d}`, frames: this.anims.generateFrameNumbers(`${prefix}wanderer`, { start: index * 3, end: index * 3 + 2 }), frameRate: 10, repeat: -1 });
       }
       for (const kind of ['rat','beetle','wolf']) for (const [facing,start] of [['down',0],['right',3],['left',3],['up',6]] as const) this.anims.create({key:`colorful-${kind}-${facing}`,frames:this.anims.generateFrameNumbers(`colorful-${kind}`,{start,end:start+2}),frameRate:9,repeat:-1});
       this.scene.start('World'); this.scene.start('Menu');
@@ -122,6 +123,7 @@ class Menu extends Phaser.Scene {
 }
 class World extends Phaser.Scene {
   private hero!: Phaser.GameObjects.Sprite;
+  private appearance!:HeroAppearance;
   private objects: Phaser.GameObjects.GameObject[] = [];
   private creatureSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private creatureViews = new Map<string, { position: string; until: number; facing: Direction; tween?: Phaser.Tweens.Tween }>();
@@ -139,9 +141,10 @@ class World extends Phaser.Scene {
   private movingTween?: Phaser.Tweens.Tween;
   constructor() { super('World'); }
   create(): void {
+    this.appearance=new HeroAppearance(this);
     this.effects = new CombatEffects(this); this.town = new TownView(this);
     this.bars = this.add.graphics().setDepth(10000);
-    this.hero = this.add.sprite(13 * 32 + 16, 11 * 32 + 32, 'wanderer', 0).setOrigin(.5, 1);
+    this.hero = this.add.sprite(13 * 32 + 16, 11 * 32 + 32, 'outfit', 0).setOrigin(.5, 1);
     this.hero.setDepth(this.hero.y);
     this.renderMap(maps[0]!);
     this.cameras.main.startFollow(this.hero, true, .12, .12);
@@ -161,7 +164,7 @@ class World extends Phaser.Scene {
     this.movingTween?.stop(); this.movingUntil = 0; this.actionUntil = 0;
     for (const view of this.creatureViews.values()) view.tween?.stop();
     this.creatureViews.clear();
-    this.hero.anims.stop(); this.hero.setTexture(art('wanderer'),0);
+    this.hero.anims.stop(); this.hero.setTexture('outfit',0);
     for (const object of this.objects) object.destroy();
     this.objects = []; this.creatureSprites.clear(); this.bars.clear();
     for(const [data,depth]of [[map.ground,-100],[map.details,-90],[map.above,9999]] as const) {
@@ -236,6 +239,7 @@ class World extends Phaser.Scene {
     const newWorld = this.epoch !== worldEpoch;
     if (newWorld) { this.epoch = worldEpoch; this.lastCombatId = 0; }
     if (!playing) { this.effects.clear(); ui.hud.dataset.effects = '0'; return; }
+    this.appearance.update(s,colorful);
     const changedMap = this.mapId !== s.mapId;
     if (newWorld || changedMap || this.colorful !== colorful) this.renderMap(maps.find(m => m.id === s.mapId)!);
     ui.hud.dataset.building = this.town.update(s.player);
@@ -254,10 +258,12 @@ class World extends Phaser.Scene {
       }
     }
     this.hero.setDepth(this.hero.y);
+    ui.hud.dataset.heroProfession=s.profession;ui.hud.dataset.heroTexture=this.hero.texture.key;
     if (this.time.now < this.actionUntil) {
       this.hero.anims.stop(); this.hero.setFrame(['down','left','right','up'].indexOf(s.direction)*3 + (this.actionKind === 'melee' ? 2 : 1));
-    } else if (this.time.now < this.movingUntil) this.hero.play(`${colorful ? 'colorful-' : ''}walk-${s.direction}`, true);
+    } else if (this.time.now < this.movingUntil) this.hero.play(`hero-walk-${s.direction}`, true);
     else { this.hero.anims.stop(); this.hero.setFrame(['down', 'left', 'right', 'up'].indexOf(s.direction) * 3); }
+    ui.hud.dataset.heroFrame=String(this.hero.frame.name);
     this.bars.clear();
     if(s.guardMs>0)this.bars.lineStyle(2,0x98c7ef,.6+Math.sin(this.time.now/180)*.2).strokeEllipse(this.hero.x,this.hero.y-10,34,28);
     for (const loot of s.loot.filter(l => l.mapId === s.mapId)) {
@@ -480,8 +486,20 @@ function renderLoadout(s:Snapshot):void {
   }
   for(let index=0;index<4;index++)element<HTMLSelectElement>(`#action-choice-${index+1}`).value=s.actionSlots[index]!;
 }
+function renderAppearance(s:Snapshot):void {
+  element('#appearance-profession').textContent=professions[s.profession].name;
+  for(const part of outfitParts){
+    const input=element<HTMLInputElement>(`#outfit-${part}`);
+    if(document.activeElement!==input)input.value=s.appearance[part]??originalColors[s.profession][part];
+  }
+}
+for(const part of outfitParts){
+  const input=element<HTMLInputElement>(`#outfit-${part}`);input.setAttribute('aria-label',outfitLabels[part]);
+  input.addEventListener('change',()=>{if(snapshot)gateway?.send({type:'SetAppearance',appearance:{...snapshot.appearance,[part]:input.value}});});
+}
+element('#reset-outfit').addEventListener('click',()=>gateway?.send({type:'SetAppearance',appearance:defaultAppearance()}));
 function renderBag(s: Snapshot): void {
-  renderLoadout(s);
+  renderLoadout(s);renderAppearance(s);
   element('#city-guide').hidden=!adventure;cityGuide?.update(s.mapId,s.player);
   const signature = JSON.stringify([s.inventory, s.equipment, s.gold, s.exp, s.exploration]);
   if (signature === bagSignature) return;
@@ -591,19 +609,19 @@ npcDialog.addEventListener('close', resetInput);
 function saveNow(explicitRecovery = false): void {
   if (!gateway || !adventure) return;
   lastSaveTime = performance.now();
-  if (snapshot) { lastSavedMap = saveLocation(snapshot.mapId,snapshot.player); lastSavedEconomy = JSON.stringify([snapshot.gold,snapshot.quest.status,snapshot.exploration,snapshot.profession,snapshot.actionSlots]); }
+  if (snapshot) { lastSavedMap = saveLocation(snapshot.mapId,snapshot.player); lastSavedEconomy = JSON.stringify([snapshot.gold,snapshot.quest.status,snapshot.exploration,snapshot.profession,snapshot.actionSlots,snapshot.appearance]); }
   try {
     const data = gateway.exportSave();
     const error = storage.write(data,explicitRecovery);
     element('#save-status').textContent = error ?? 'Przygoda zapisana lokalnie';
-    if (!error) { lastSaveTime = performance.now(); lastSavedSignature = persistentSignature(data); lastSavedMap = saveLocation(data.mapId,data.player); lastSavedEconomy = JSON.stringify([data.gold,data.quest.status,data.exploration,data.profession,data.actionSlots]); }
+    if (!error) { lastSaveTime = performance.now(); lastSavedSignature = persistentSignature(data); lastSavedMap = saveLocation(data.mapId,data.player); lastSavedEconomy = JSON.stringify([data.gold,data.quest.status,data.exploration,data.profession,data.actionSlots,data.appearance]); }
   } catch { element('#save-status').textContent = 'Nie udało się zapisać. Wyeksportuj zapis lub zgłoś błąd.'; }
 }
 function persistentSignature(data: SaveData): string {
-  return JSON.stringify([data.cityRevision,data.profession,data.actionSlots,data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
+  return JSON.stringify([data.cityRevision,data.appearance,data.profession,data.actionSlots,data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
 }
 function autosave(s: Snapshot): void {
-  const economy = JSON.stringify([s.gold,s.quest.status,s.exploration,s.profession,s.actionSlots]);
+  const economy = JSON.stringify([s.gold,s.quest.status,s.exploration,s.profession,s.actionSlots,s.appearance]);
   if (saveLocation(s.mapId,s.player) !== lastSavedMap || economy !== lastSavedEconomy || performance.now()-lastSaveTime >= 30000) {
     const data = gateway?.exportSave();
     if (data && persistentSignature(data) !== lastSavedSignature) saveNow();
@@ -624,12 +642,11 @@ function resumeSave(data: SaveData, recovery = false): void {
 element('#resume').addEventListener('click', () => { const data = storage.load().data; if (data) resumeSave(data); });
 element('#recover').addEventListener('click', () => { const data = storage.load().backup; if (data) resumeSave(data,true); });
 element('#save-button').addEventListener('click', () => { if (adventure) saveNow(); else element('#save-status').textContent = 'Próba i spacer nie są zapisywane.'; });
-element('#export-save').addEventListener('click', () => {
+element('#export-save').addEventListener('click', async () => {
   try {
     const data = adventure && gateway ? gateway.exportSave() : storage.load().data ?? storage.load().backup;
     if (!data) { element('#save-menu-status').textContent = 'Brak poprawnego zapisu do eksportu.'; return; }
-    const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
-    const link = document.createElement('a'); link.href = url; link.download = 'eldoria-offline.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
+    await exportSave(data);
   } catch { element('#save-menu-status').textContent = 'Nie udało się wyeksportować zapisu.'; }
 });
 element<HTMLInputElement>('#import-save').addEventListener('change', async event => {

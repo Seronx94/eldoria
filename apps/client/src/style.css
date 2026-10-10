@@ -817,3 +817,11 @@ button:disabled { opacity:.5; cursor:default; }
 .stats>div { display:grid; justify-content:stretch; margin-bottom:0; line-height:1.2; }
 #player-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #hp-label { white-space:nowrap; }
+
+#appearance { margin:12px 0; border:1px solid #829a7044; border-radius:6px; padding:8px; }
+#appearance summary { min-height:48px; padding:12px; cursor:pointer; }
+#appearance p { font:12px/1.5 system-ui,sans-serif; }
+#outfit-preview { display:block; width:256px; height:96px; max-width:100%; image-rendering:pixelated; margin:8px auto; }
+.outfit-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0; }
+.outfit-fields label { display:flex; justify-content:space-between; align-items:center; gap:6px; font:12px system-ui,sans-serif; }
+.outfit-fields input { width:64px; height:48px; min-width:48px; cursor:pointer; border:1px solid #829a70; background:var(--panel); padding:3px; }

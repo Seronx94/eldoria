@@ -28,7 +28,7 @@ test('colorful art: native sprites, walking, NPC, portal, real combat and revers
   await page.keyboard.down('d'); await page.waitForTimeout(100); await page.screenshot({path:info.outputPath('colorful-moving.png')}); await page.keyboard.up('d');
   const [movedX,movedY]=(await page.locator('#hud').getAttribute('data-position'))!.split(',').map(Number);
   expect(movedX).toBeGreaterThan(13); expect(movedY).toBe(6);
-  expect(await page.locator('canvas').evaluate(c=>getComputedStyle(c).imageRendering)).toBe('pixelated');
+  expect(await page.locator('#game canvas').evaluate(c=>getComputedStyle(c).imageRendering)).toBe('pixelated');
   for(const button of await page.locator('#hud button').all()){
     if(!await button.isVisible())continue;
     const box=await button.boundingBox(); expect(box?.width).toBeGreaterThanOrEqual(48);expect(box?.height).toBeGreaterThanOrEqual(48);

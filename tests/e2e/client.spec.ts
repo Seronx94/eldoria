@@ -153,7 +153,7 @@ test('style review screenshots and touch control sizes', async ({ page }, testIn
   for (let i = 0; i < 5; i++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(220); }
   await page.waitForTimeout(700);
   await page.screenshot({ path: testInfo.outputPath('style-review.png') });
-  expect(await page.locator('canvas').evaluate(canvas => getComputedStyle(canvas).imageRendering)).toBe('pixelated');
+  expect(await page.locator('#game canvas').evaluate(canvas => getComputedStyle(canvas).imageRendering)).toBe('pixelated');
   for (const button of await page.locator('#hud button').all()) {
     if (!(await button.isVisible())) continue;
     const box = await button.boundingBox();
@@ -181,7 +181,7 @@ test('safe courtyard keeps directions visible and clicking its nearby gate retur
   const viewport = page.viewportSize()!;
   const top = viewport.height <= 600 ? 60 : 76, bottom = viewport.height <= 600 ? 104 : 168;
   const zoom = viewport.width >= 1000 && viewport.height >= 600 ? 2 : 1;
-  await page.locator('canvas').click({ position: { x: viewport.width / 2, y: top + (viewport.height - top - bottom) / 2 - 48 * zoom } });
+  await page.locator('#game canvas').click({ position: { x: viewport.width / 2, y: top + (viewport.height - top - bottom) / 2 - 48 * zoom } });
   await expect(page.locator('#hud')).toHaveAttribute('data-map', 'grove');
   await page.getByRole('button', { name: /Cel/ }).click();
   await expect(page.locator('#target-label')).toContainText('Szczur');

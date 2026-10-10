@@ -1,6 +1,6 @@
-# Eldoria 0.1.9 — profesje i cztery akcje
+# Eldoria 0.1.10 — stroje, kolory i Android
 
-Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Nie ma multiplayer ani APK.
+Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Nie ma multiplayer. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
 
 ## Uruchomienie na komputerze
 
@@ -26,7 +26,16 @@ Na Windowsie `dev:lan` uruchamia Vite bezpośrednio przez bieżący Node. W star
 npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 ```
 
-Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Ten etap nie wdraża gry na hosting i nie tworzy APK.
+Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Po zbudowaniu i zainstalowaniu APK komputer i LAN nie są potrzebne — patrz [instrukcja Androida](ANDROID.md).
+
+## Cztery kroki testu wyglądu 0.1.10
+
+1. Wyeksportuj ważną przygodę. W nowych przygodach porównaj profesje: Knight zachowuje wygląd, Archer ma łuk/kołczan i zieleń, Mag niebieski kapelusz/szatę oraz różdżkę. Przejdź w cztery strony i użyj broni/czarów w lesie.
+2. W **Plecak → Wygląd i kolory postaci** zmień każdy z czterech kolorów. Podgląd pokazuje cztery kierunki. Sprawdź czy włosy, strój, dół i buty zmieniają się bez barwienia twarzy/obrysu; zamknij plecak i obejrzyj postać w ruchu.
+3. Odśwież i wznów: profesja, kolory, wyposażenie i zadania mają zostać. Wybór innej profesji w menu nie zmienia wznowionej postaci. Przywróć **Domyślne kolory profesji** i porównaj oryginalny wygląd.
+4. Na telefonie sprawdź dostęp do wyboru kolorów i chodzenie z rzucaniem czaru drugim palcem. Jeśli budujesz APK, wykonaj także [pięć kroków testu natywnego](ANDROID.md#test-na-telefonie).
+
+Podglądy strojów **0.1.10**: [Knight](screenshots/outfit-knight-mobile.png), [Archer](screenshots/outfit-archer-mobile.png), [Mag](screenshots/outfit-mage-mobile.png), [zmienione kolory Archera](screenshots/outfit-colors-archer-mobile.png), [Archer w mieście](screenshots/outfit-archer-world-mobile.png). Zrzuty z emulacji Chromium, bez edycji obrazów.
 
 ## Pięć kroków testu profesji
 
@@ -36,7 +45,7 @@ Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Ko
 4. Otwórz **Plecak → Profesja i cztery akcje** i zmień kolejność albo przypisz miksturę. Po lewej na telefonie trzymaj joystick, drugim palcem użyj jednej z czterech ikon po prawej (2×2). Przypisz broń również do czwartego miejsca i przytrzymaj. Po puszczeniu, obrocie lub otwarciu plecaka ruch i atak mają się zatrzymać. Na komputerze: 1–4 odpowiadają pozycjom, Spacja zawsze używa broni, E pierwszego czaru.
 5. Zapisz, odśwież i wznów: profesja, broń, ustawienie przycisków oraz pozostałe odnowienia powinny zostać. Sprawdź każdą profesję jako osobną nową postać; eksport pozwala potem przywrócić wcześniejszą. Zgłoś wygodę pod kciukiem, czytelność efektów, model telefonu i zbyt silne/słabe czary.
 
-Profesje mają na razie wspólny strój bohatera. Drzewka rozwoju i osobne stroje będą dalszym etapem. To grywalne offline, bez online i APK; testy przeglądarkowe nie mierzą FPS na Twoim telefonie.
+Profesje mają osobne stroje w 0.1.10. Drzewka rozwoju pozostają dalszym etapem. Testy przeglądarkowe nie mierzą FPS na Twoim telefonie; natywnego APK nie skompilowano w chmurze bez SDK.
 
 Podglądy początku animacji w produkcji **0.1.9**: [Knight — wir](screenshots/profession-knight-mobile.png), [Archer — strzał](screenshots/profession-archer-mobile.png), [Mag — kula ognia](screenshots/profession-mage-mobile.png). Emulacja mobilnego Chromium; efekty są animowane w grze.
 

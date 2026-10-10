@@ -36,3 +36,7 @@ Otwarty PvP, domki, aukcje, gildie, crafting, rozbudowane drzewka, dziesiątki m
 ## Wybór testera — profesje wcześniej w offline
 
 0.1.9 realizuje T07b: Knight, Archer, Mag, broń, trzy umiejętności każdego i cztery przypisywane akcje. T07c pozostaje kolejnym etapem po ocenie: drzewka profesji, punkty rozwoju, zależności od poziomu i balans. Obecne stabilne ID oraz właściciel i poziom umiejętności służą przyszłej rozbudowie. Nie dodano punktów ani drzewa. W online serwer będzie sprawdzał profesję, rozwój, obrażenia i nagrody; lokalny postęp nie zostanie przeniesiony do ekonomii online.
+
+## Wygląd i przygotowanie Androida 0.1.10
+
+Na polecenie właściciela T07d dodaje własne stroje Archera i Maga, zachowuje Knighta oraz wprowadza kosmetyczne kolory z podglądem/zapisem. T17a przygotowuje wcześniej wrapper offline Capacitor 8 i instrukcję APK, bez wymagania ukończenia online. Nie zastępuje T17/M4: kompilacja Android SDK, fizyczna instalacja, tło/powrót, safe-area, udostępnianie zapisu i profilowanie wymagają oddzielnej weryfikacji na telefonie. SDK nie jest dostępne w środowisku chmurowym; binarnego APK nie deklarujemy jako wykonanego. Drzewka T07c i cały etap online pozostają przyszłą pracą.

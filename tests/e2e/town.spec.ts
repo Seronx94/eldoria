@@ -27,5 +27,5 @@ test('Vareon: located services, doors, roofs, plan, market, resize and old save 
   await page.addInitScript(()=>{const key='eldoria.offline.v1';const save=JSON.parse(localStorage.getItem(key)!);delete save.cityRevision;save.mapId='vareon';save.maps=[{mapId:'vareon',creatures:[]}];save.loot=[];save.player={x:7,y:23};save.gold=17;localStorage.setItem(key,JSON.stringify(save));});
   await page.reload();await page.locator('#resume').click();await expect(page.locator('#hud')).toHaveAttribute('data-position','32,76');await expect(page.locator('#rewards')).toContainText('17 złota');
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('eldoria.offline.v1')!).cityRevision)).toBe(2);
-  expect(await page.locator('canvas').evaluate(c=>getComputedStyle(c).imageRendering)).toBe('pixelated');expect(errors).toEqual([]);
+  expect(await page.locator('#game canvas').evaluate(c=>getComputedStyle(c).imageRendering)).toBe('pixelated');expect(errors).toEqual([]);
 });

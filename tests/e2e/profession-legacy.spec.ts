@@ -3,7 +3,7 @@ test('legacy adventure becomes Knight and foreign profession import preserves th
   test.setTimeout(60000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await page.getByRole('button',{name:/Rozpocznij/}).click();
   const legacy=await page.evaluate(()=>{
-    const d=JSON.parse(localStorage.getItem('eldoria.offline.v1')!);delete d.profession;delete d.actionSlots;delete d.spellCooldowns;delete d.guardIn;
+    const d=JSON.parse(localStorage.getItem('eldoria.offline.v1')!);delete d.profession;delete d.actionSlots;delete d.spellCooldowns;delete d.guardIn;delete d.appearance;
     d.gold=17;d.quest={status:'claimed',kills:5};return d;
   });
   await page.locator('#menu-button').click();await page.locator('#profession').selectOption('mage');

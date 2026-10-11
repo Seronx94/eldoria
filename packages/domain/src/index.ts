@@ -222,7 +222,8 @@ export class Simulation {
       const v = vectors[command.direction];
       const next = { x: s.player.x + v.x, y: s.player.y + v.y };
       if (!this.walkable(next) || this.occupied(next)) { this.notify('Przejście zablokowane.'); return; }
-      s.player = next; this.lastMove = now; this.collectNearby();return;
+      s.player = next; this.lastMove = now; this.collectNearby();
+      const stairs=this.map().portals.find(p=>p.id.startsWith('stairs-')&&distance(p,next)===0);if(stairs)this.travel(stairs,now);return;
     }
     if (command.type === 'Interact') {
       if(!command.npcId&&this.nearDepot()){s.depotOpen=true;this.notify('Otwarto depo.');return;}
@@ -241,14 +242,7 @@ export class Simulation {
       }
       const portal = this.map().portals.find(p => distance(p, s.player) <= 1);
       if (!portal) { this.notify(s.mapId==='eldoria' ? 'Podejdź obok NPC lub odkrycia. Przez bramę przechodzisz pieszo.' : 'Podejdź do świecącej bramy i wybierz Przejdź.'); return; }
-      const target = this.maps.find(m => m.id === portal.targetMapId);
-      const spawn = target?.spawns[portal.targetSpawnId];
-      if (!target || !spawn) { this.notify('Brama nie ma poprawnego celu.'); return; }
-      const arrival = this.freeArrival(target, spawn);
-      if (!arrival) { this.notify('Wejście jest zajęte — spróbuj ponownie.'); return; }
-      s.mapId = target.id; s.player = arrival; s.selectedId = null;
-      this.spawnCreatures(); this.lastMove = now;
-      this.notify(target.id === 'forest' ? 'Mroczny Las. Przytrzymaj atak podstawowy w zasięgu przeciwnika; cel jest opcjonalny.' : target.id === 'vareon' ? 'Vareon. Wróć do Miry, odpocznij u Orena lub odwiedź Borina.' : 'Przejście do drugiej sceny wzorcowej.'); return;
+      this.travel(portal,now);return;
     }
     if (command.type === 'UseItem') {
       if (s.hp >= s.maxHp) { this.notify('Masz pełne zdrowie — mikstura pozostaje w plecaku.'); return; }
@@ -316,9 +310,18 @@ export class Simulation {
       s.loot.push({ id: this.online?`world:${++this.online.world.lootSequence}`:`${s.mapId}:${target.id}:${s.eventId}`, mapId: s.mapId, x: target.x, y: target.y, gold: monsters[target.kind].gold, items: target.kind === 'rat' ? [] : [{ itemId: target.kind === 'wolf' ? 'skin' : 'chitin', quantity: 1 }] });
       if (!s.defeatedKinds.includes(target.kind)) s.defeatedKinds.push(target.kind);
       s.complete = s.mapId === 'grove' && s.defeatedKinds.length === 3;
-      this.notify(s.complete ? 'Próba ukończona! Pokonano 3 stworzenia. Wróć do menu, aby rozpocząć nową próbę.' : ['forest','eldoria'].includes(s.mapId) ? `Pokonano ${monsters[target.kind].name.toLowerCase()}. ${s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę.' : s.quest.status === 'active' ? `Zadanie: ${s.quest.kills}/5.` : 'Przyjmij zadanie u Miry.'}` : `Pokonano ${monsters[target.kind].name.toLowerCase()}. Próba: ${s.defeatedKinds.length}/3.`);
+      this.notify(s.complete ? 'Próba ukończona! Pokonano 3 stworzenia. Wróć do menu, aby rozpocząć nową próbę.' : ['forest','eldoria','catacombs','nivora'].includes(s.mapId) ? `Pokonano ${monsters[target.kind].name.toLowerCase()}. ${s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę.' : s.quest.status === 'active' ? `Zadanie: ${s.quest.kills}/5.` : 'Przyjmij zadanie u Miry.'}` : `Pokonano ${monsters[target.kind].name.toLowerCase()}. Próba: ${s.defeatedKinds.length}/3.`);
     }
     return damage;
+  }
+  private travel(portal:WorldMap['portals'][number],now:number):void {
+    if(portal.id.startsWith('boat-')&&this.combatUntil>now){this.notify('Rejs jest niedostępny podczas walki.');return;}
+    const target=this.maps.find(m=>m.id===portal.targetMapId),spawn=target?.spawns[portal.targetSpawnId];
+    if(!target||!spawn){this.notify('Przejście nie ma poprawnego celu.');return;}
+    const arrival=this.freeArrival(target,spawn);if(!arrival){this.notify('Wejście jest zajęte — spróbuj ponownie.');return;}
+    const s=this.state;s.mapId=target.id;s.player=arrival;s.selectedId=null;this.spawnCreatures();this.lastMove=now;
+    const labels:Record<string,string>={eldoria:'Eldoria · Vareon i Mroczny Las',catacombs:'Katakumby pod Mrocznym Lasem',nivora:'Nivora · zimowa wyspa', 'shop-upper':'Piętro sklepu Borina',forest:'Mroczny Las',vareon:'Vareon'};
+    this.notify(labels[target.id]??'Przejście do drugiej sceny wzorcowej.');
   }
   private freeArrival(map: WorldMap, spawn: Point): Point | undefined {
     const actors = this.creatureMaps.get(map.id)?.filter(c => c.hp > 0) ?? map.monsterSpawns;
@@ -359,7 +362,7 @@ export class Simulation {
   static restore(maps: WorldMap[], input: unknown, clock: Clock): Simulation {
     let data = saveSchema.parse(input);
     const world=maps.find(m=>m.id==='eldoria');
-    if(world && data.mapId!=='eldoria'){
+    if(world && ['vareon','forest'].includes(data.mapId)){
       const legacy=Simulation.restore(maps.filter(m=>m.id==='vareon'||m.id==='forest'),data,clock).exportSave();
       const initial=new Simulation([world],data.name,clock).exportSave();
       const town=world.regions.find(r=>r.id==='vareon');
@@ -367,7 +370,7 @@ export class Simulation {
       const offset=(p:Point,mapId:string)=>mapId==='vareon'?{x:p.x+town.x,y:p.y+town.y}:{x:p.x,y:p.y};
       data={...legacy,mapId:'eldoria',player:offset(legacy.player,legacy.mapId),maps:[{mapId:'eldoria',creatures:legacy.maps.find(m=>m.mapId==='forest')?.creatures??initial.maps[0]!.creatures}],loot:legacy.loot.map(l=>({...l,...offset(l,l.mapId),mapId:'eldoria'}))};
     }
-    if(world && (data.maps.length!==1||data.maps[0]?.mapId!=='eldoria'||data.loot.some(l=>l.mapId!=='eldoria')))throw new Error('Nieprawidłowe regiony zapisu świata');
+    if(world && (data.maps.some(m=>['vareon','forest'].includes(m.mapId))||data.loot.some(l=>['vareon','forest'].includes(l.mapId))))throw new Error('Nieprawidłowe regiony zapisu świata');
     if (new Set(data.maps.map(m => m.mapId)).size !== data.maps.length || !data.maps.some(m => m.mapId === data.mapId)) throw new Error('Nieprawidłowe mapy zapisu');
     const sim = new Simulation(maps, data.name, clock,undefined,undefined,data.profession);
     const now = sim.time;
@@ -511,7 +514,7 @@ export class Simulation {
           }
         } else c.state = 'chase';
       }
-      if (['forest','eldoria'].includes(this.map().id) && c.state === 'idle' && distance(c, s.player) > rules.sightRadius) {
+      if (['forest','eldoria','catacombs','nivora'].includes(this.map().id) && c.state === 'idle' && distance(c, s.player) > rules.sightRadius) {
         const key = `${s.mapId}:${c.id}`, due = this.patrolDue.get(key);
         if (due === undefined) this.patrolDue.set(key, now + rules.patrolMs);
         else if (now >= due) {

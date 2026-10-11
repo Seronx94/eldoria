@@ -22,7 +22,9 @@ export interface WorldRegion extends Point { id:string; label:string; width:numb
 export function regionAt(map:WorldMap,p:Point):WorldRegion|undefined { return map.regions.find(r=>p.x>=r.x&&p.y>=r.y&&p.x<r.x+r.width&&p.y<r.y+r.height); }
 export function combatAllowedAt(map:WorldMap,p:Point):boolean { return map.combatAllowed && (regionAt(map,p)?.combatAllowed ?? true); }
 export function landmarksOnMap(mapId:string,landmarkMapId:string):boolean {return mapId===landmarkMapId || mapId==='eldoria' && landmarkMapId==='forest';}
+export const sceneryKinds=['shrub','flowers','pebbles','bollard','ship','crystal','bones','snow-pine'] as const;
 export interface WorldMap {
+  scenery: (Point & {kind:typeof sceneryKinds[number]})[];
   regions:WorldRegion[];
   layoutRevision:number; cityGround:number[]; cityWalls:number[]; buildings:TownBuilding[]; townProps:TownProp[];
   id: string; combatAllowed: boolean; width: number; height: number; ground: number[]; details: number[]; above: number[]; collision: number[];
@@ -86,6 +88,7 @@ export function importMap(input: unknown): WorldMap {
     if(matches.length!==1 || l?.type!=='tilelayer' || l.data?.length!==raw.width*raw.height || l.data.some(v=>v!==0&&(v<min||v>max))) throw new Error(`${id}: nieprawidłowe kafelki ${name}`);
     return l.data;
   };
+  const scenery=optionalObjects('Scenery').map(o=>({...point(o),kind:z.enum(sceneryKinds).parse(o.name)}));
   const regions=optionalObjects('Regions').map(o=>{
     const p=point(o),width=(o.width??0)/32,height=(o.height??0)/32;
     if(!Number.isInteger(width)||!Number.isInteger(height)||width<1||height<1||p.x+width>raw.width||p.y+height>raw.height)throw new Error(`${id}: nieprawidłowy region`);
@@ -112,13 +115,13 @@ export function importMap(input: unknown): WorldMap {
   const layoutRevision=Number(z.enum(['1','2','3']).parse(raw.properties.find(p=>p.name==='layoutRevision')?.value??'1'));
   const image = raw.tilesets[0]!.image;
   if (image.startsWith('/') || image.includes('..') || image.includes(':') || !image.endsWith('.png')) throw new Error(`${id}: obraz musi być względnym PNG`);
-  return { regions,layoutRevision,cityGround,cityWalls,buildings,townProps,id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, npcs, monsterSpawns, image };
+  return { scenery,regions,layoutRevision,cityGround,cityWalls,buildings,townProps,id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, npcs, monsterSpawns, image };
 }
 export function validateMaps(maps: WorldMap[], images: ReadonlySet<string>): void {
   const ids = new Set(maps.map(m => m.id));
   if (ids.size !== maps.length) throw new Error('Powtórzone mapId');
   for (const map of maps) {
-    if(map.id==='eldoria' && (map.portals.length||combatAllowedAt(map,map.spawns.entry!)||!map.regions.some(r=>r.id==='forest'&&r.combatAllowed)||!map.regions.some(r=>r.id==='vareon'&&!r.combatAllowed)))throw new Error('Nieprawidłowe regiony ciągłego świata');
+    if(map.id==='eldoria' && (combatAllowedAt(map,map.spawns.entry!)||!map.regions.some(r=>r.id==='forest'&&r.combatAllowed)||!map.regions.some(r=>r.id==='vareon'&&!r.combatAllowed)))throw new Error('Nieprawidłowe regiony ciągłego świata');
     if (!images.has(map.image)) throw new Error(`${map.id}: brak PNG ${map.image}`);
     for (const spawn of Object.values(map.spawns)) {
       if (map.collision[spawn.y * map.width + spawn.x] !== 0) throw new Error(`${map.id}: spawn w ścianie`);

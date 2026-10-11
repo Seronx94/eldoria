@@ -35,3 +35,5 @@ const world={...town,width,height,nextlayerid:layers.length+1,nextobjectid:objec
 const data=JSON.stringify(world,null,2)+'\n';
 writeFileSync(resolve(root,'assets/source/eldoria.tmj'),data);writeFileSync(resolve(root,'apps/client/public/assets/eldoria.json'),data);
 console.log('Generated Eldoria: continuous 64×112 world, forest north / safe Vareon south.');
+
+await import('./generate-expansion.mjs');

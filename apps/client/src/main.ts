@@ -1,3 +1,4 @@
+import {worldDetails,travelLabel} from './world-details';
 import Phaser from 'phaser';
 import { depotsOnMap,combatAllowedAt, regionAt, landmarksOnMap, importMap, validateMaps, rules, monsters, items, npcs, shopRules,questRules, explorationRules, landmarks,professions,spells, type WorldMap, type NpcId } from '@eldoria/content';
 import { nameSchema,professionSchema,defaultAppearance, type Direction,type ActionId } from '@eldoria/protocol';
@@ -66,7 +67,7 @@ let lastSavedMap = '';
 function saveLocation(mapId:string,p:{x:number;y:number}):string {return `${mapId}:${regionAt(maps.find(m=>m.id===mapId)!,p)?.id??mapId}`;}
 let lastSavedEconomy = '';
 const npcDialog = element<HTMLDialogElement>('#npc-dialog');
-const storage = new OfflineStorage({ getItem: key => localStorage.getItem(key), setItem: (key,value) => localStorage.setItem(key,value) }, input => Simulation.restore(maps.filter(m => ['eldoria','vareon','forest'].includes(m.id)), input, { now: () => performance.now() }).exportSave());
+const storage = new OfflineStorage({ getItem: key => localStorage.getItem(key), setItem: (key,value) => localStorage.setItem(key,value) }, input => Simulation.restore(maps.filter(m => ['eldoria','vareon','forest','catacombs','shop-upper','nivora'].includes(m.id)), input, { now: () => performance.now() }).exportSave());
 let vitalsStyle:VitalsStyle=loadVitalsStyle();
 const vitalsChoice=element<HTMLSelectElement>('#vitals-style');vitalsChoice.value=vitalsStyle;
 vitalsChoice.addEventListener('change',()=>{vitalsStyle=vitalsChoice.value==='arcs'?'arcs':'bars';try{localStorage.setItem('eldoria.vitals',vitalsStyle);}catch{/* Keep session preference without storage. */}});
@@ -119,12 +120,12 @@ class Preload extends Phaser.Scene {
     for (const kind of ['rat','beetle','wolf']) this.load.spritesheet(`colorful-${kind}`,`${base}styles/colorful/${kind}-walk.png`,{frameWidth:32,frameHeight:32});
     for (const key of colorfulKeys.filter(k => !['rat','beetle','wolf'].includes(k))) this.load.image(`colorful-${key}`,`${base}styles/colorful/${key}.png`);
     for (const key of townAssetKeys) this.load.image(`town-${key}`,`${base}town/${key}.png`);
-    for (const key of ['courtyard', 'grove', 'eldoria', 'vareon', 'forest']) this.load.json(key, `${base}${key}.json`);
+    for (const key of ['courtyard', 'grove', 'eldoria', 'vareon', 'forest','catacombs','shop-upper','nivora']) this.load.json(key, `${base}${key}.json`);
     this.load.on('loaderror', () => { ui.loading.textContent = 'Nie udało się załadować świata. Odśwież stronę i sprawdź połączenie.'; });
   }
   create(): void {
     try {
-      maps = ['courtyard', 'grove', 'eldoria', 'vareon', 'forest'].map(id => importMap(this.cache.json.get(id)));
+      maps = ['courtyard', 'grove', 'eldoria', 'vareon', 'forest','catacombs','shop-upper','nivora'].map(id => importMap(this.cache.json.get(id)));
       validateMaps(maps, new Set(['tiles.png']));
       cityGuide=new CityGuide(maps.find(m=>m.id==='eldoria')!,element('#city-guide-content'),id=>{
         guidedNpc=id;guidedDepot=false;bagDialog.close();resetInput();if(snapshot)updateUI(snapshot);
@@ -218,6 +219,7 @@ class World extends Phaser.Scene {
     }
     for (const d of map.decorations) this.objects.push(this.add.image(d.x * 32 + 16, d.y * 32 + 32, art(colorful && d.kind === 'tree' && (d.x+d.y)%3===0 ? 'pine' : d.kind)).setOrigin(.5, 1).setDepth(d.y * 32 + 33));
     if (colorful) for (const d of map.decorations.filter(d => d.kind === 'house')) this.objects.push(this.add.image((d.x+1)*32+16,d.y*32+32,art('barrel')).setOrigin(.5,1).setDepth(d.y*32+34));
+    this.objects.push(...worldDetails(this,map));
     this.town.build(map);
     for (const n of map.npcs) {
       const talk = () => { if (playing && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({ type:'Interact', npcId:n.id }); };
@@ -249,10 +251,12 @@ class World extends Phaser.Scene {
       glow.setInteractive(new Phaser.Geom.Ellipse(p.x * 32 + 16, p.y * 32 + 16, 48, 48), Phaser.Geom.Ellipse.Contains);
       glow.input!.cursor = 'pointer';
       glow.on('pointerdown', enter);
-      glow.lineStyle(2, 0xd1c785, .9).strokeEllipse(p.x * 32 + 16, p.y * 32 + 16, 27, 18);
-      glow.fillStyle(0xa7c7a0, .5).fillEllipse(p.x * 32 + 16, p.y * 32 + 16, 17, 10);
+      if(p.id.startsWith('stairs-')){
+        for(let step=0;step<5;step++){glow.fillStyle(step%2?0xaca78a:0x5d655c).fillRect(p.x*32+3,p.y*32+3+step*5,26,4);}
+      }else{glow.lineStyle(2,0xd1c785,.9).strokeEllipse(p.x*32+16,p.y*32+16,27,18);}
+
       this.objects.push(glow);
-      const label = this.add.text(p.x * 32 + 16, p.y * 32 - 14, ({grove:'DO ZAGAJNIKA',courtyard:'NA DZIEDZINIEC',forest:'DO LASU',vareon:'DO VAREON'})[p.targetMapId] ?? 'BRAMA', { fontFamily: 'monospace', fontSize: '10px', color: '#efe2ac', backgroundColor: '#213b32' }).setOrigin(.5).setInteractive({ useHandCursor: true });
+      const label = this.add.text(p.x * 32 + 16, p.y * 32 - 14, travelLabel(p.targetMapId), { fontFamily: 'monospace', fontSize: '10px', color: '#efe2ac', backgroundColor: '#213b32' }).setOrigin(.5).setInteractive({ useHandCursor: true });
       label.on('pointerdown', enter);
       this.objects.push(label);
     }
@@ -378,7 +382,7 @@ function updateUI(s: Snapshot): void {
   ui.hp.max = s.maxHp; ui.mana.max = s.maxMana; ui.hp.value = s.hp; ui.mana.value = s.mana;
   ui.hpLabel.textContent = `${s.hp} HP · ${s.mana} MP`;
   ui.playerName.textContent = `${s.name} · ${professions[s.profession].name} ${s.level}`;
-  ui.mapName.textContent = regionAt(maps.find(m=>m.id===s.mapId)!,s.player)?.label ?? ({courtyard:'DZIEDZINIEC WZORCOWY',grove:'ZAGAJNIK WZORCOWY',vareon:'VAREON',forest:'MROCZNY LAS'})[s.mapId] ?? s.mapId;
+  ui.mapName.textContent = regionAt(maps.find(m=>m.id===s.mapId)!,s.player)?.label ?? ({courtyard:'DZIEDZINIEC WZORCOWY',grove:'ZAGAJNIK WZORCOWY',vareon:'VAREON',forest:'MROCZNY LAS',catacombs:'KATAKUMBY',nivora:'NIVORA', 'shop-upper':'SKLEP BORINA · PIĘTRO'})[s.mapId] ?? s.mapId;
   ui.objective.textContent = adventure ? s.quest.status === 'available' ? 'Mira →' : s.quest.status === 'claimed' ? '✓' : `${s.quest.kills} / 5` : `${s.defeatedKinds.length} / 3`;
   element('#objective-title').textContent = adventure ? 'NIEPOKÓJ ZA BRAMĄ' : 'PRÓBA WĘDROWCA';
   if (adventure && ['available','claimed'].includes(s.quest.status) && ['active','ready'].includes(s.exploration.status)) {
@@ -393,16 +397,16 @@ function updateUI(s: Snapshot): void {
   const map = maps.find(m => m.id === s.mapId)!;
   const distance = (p: { x: number; y: number }) => Math.abs(p.x - s.player.x) + Math.abs(p.y - s.player.y);
   const portal = [...map.portals].sort((a, b) => distance(a) - distance(b))[0];
-  const gateHint = s.mapId==='eldoria' ? combatAllowedAt(map,s.player) ? 'Vareon ↓ · wróć pieszo' : 'Las ↑ · przejdź pieszo przez bramę' : portal ? `Brama ${portal.x > s.player.x ? '→' : portal.x < s.player.x ? '←' : ''}${portal.y > s.player.y ? '↓' : portal.y < s.player.y ? '↑' : ''} · ${distance(portal)} kratek · Przejdź (F)` : '';
+  const gateHint = portal && (s.mapId!=='eldoria'||distance(portal)<16) ? `${travelLabel(portal.targetMapId)} · ${distance(portal)} kratek · ${portal.id.startsWith('stairs-')?'wejdź na schody':'F: rejs'}` : s.mapId==='eldoria' ? combatAllowedAt(map,s.player) ? 'Vareon ↓ · wróć pieszo' : 'Las ↑ · przejdź pieszo przez bramę' : '';
   const interact = element<HTMLButtonElement>('#interact');
   element('#interact-label').textContent = adventure ? 'Rozmowa' : 'Przejdź';
   const nearbyNpc = map.npcs.find(n => distance(n) <= 1);
   const nearbyLandmark = landmarks.find(l => landmarksOnMap(s.mapId,l.mapId) && distance(l) <= 1);
   interact.classList.toggle('ready', !!nearbyLandmark || !!nearbyNpc || !!portal && distance(portal) <= 1);
-  interact.title = adventure ? 'F: rozmowa / zbadaj odkrycie. Brama jest zwykłą drogą.' : portal && distance(portal) <= 1 ? 'Brama w zasięgu — kliknij Przejdź lub bramę' : 'Podejdź obok bramy; można też kliknąć ją na mapie';
-  if (adventure && !combatAllowedAt(map,s.player)) ui.targetLabel.textContent = `${s.quest.status === 'available' ? nearbyNpc?.id==='mira' ? 'Porozmawiaj z Mirą obok (F)' : 'Wróć do Miry po zadanie (F)' : s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę (F)' : s.quest.status === 'claimed' ? 'Zadanie ukończone · Oren leczy, Borin handluje' : 'Pokonaj 5 stworzeń w lesie'} · ${gateHint}`;
+  interact.title = adventure ? 'F: rozmowa / odkrycie / statek. Schody: wejdź na kratkę.' : portal && distance(portal) <= 1 ? 'Brama w zasięgu — kliknij Przejdź lub bramę' : 'Podejdź obok bramy; można też kliknąć ją na mapie';
+  if (adventure && !combatAllowedAt(map,s.player) && s.mapId==='eldoria') ui.targetLabel.textContent = `${s.quest.status === 'available' ? nearbyNpc?.id==='mira' ? 'Porozmawiaj z Mirą obok (F)' : 'Wróć do Miry po zadanie (F)' : s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę (F)' : s.quest.status === 'claimed' ? 'Zadanie ukończone · Oren leczy, Borin handluje' : 'Pokonaj 5 stworzeń w lesie'} · ${gateHint}`;
   else if (walkingOnly) ui.targetLabel.textContent = `Spacer bez potworów · ${gateHint}`;
-  else if (!combatAllowedAt(map,s.player)) ui.targetLabel.textContent = `Bezpieczny dziedziniec · Potwory za bramą · ${gateHint}`;
+  else if (!combatAllowedAt(map,s.player)) ui.targetLabel.textContent = `Strefa bezpieczna · ${gateHint}`;
   else if (adventure && s.quest.status === 'ready') ui.targetLabel.textContent = `Zadanie gotowe — wróć do Miry · ${gateHint}`;
   else if (target) ui.targetLabel.textContent = `${monsters[target.kind].name} · ${target.hp} HP · ${target.x > s.player.x ? '→' : target.x < s.player.x ? '←' : ''}${target.y > s.player.y ? '↓' : target.y < s.player.y ? '↑' : ''} ${distance(target)} kratek`;
   else {
@@ -416,7 +420,7 @@ function updateUI(s: Snapshot): void {
     if (!target) ui.targetLabel.textContent = `${explorationHint} · ${gateHint}`;
   }
   if (nearbyLandmark && !target) ui.targetLabel.textContent = `${nearbyLandmark.name} · F / Rozmowa: zbadaj · ${s.exploration.found.includes(nearbyLandmark.id) ? 'odkryte' : 'niezbadane'}`;
-  if(s.dialog===guidedNpc)guidedNpc=undefined;
+  if(s.dialog===guidedNpc||guidedNpc&&!map.npcs.some(n=>n.id===guidedNpc))guidedNpc=undefined;
   if(adventure&&guidedNpc) {
     const npc=map.npcs.find(n=>n.id===guidedNpc)!;
     ui.targetLabel.textContent=`${npcs[npc.id].name} · ${npcs[npc.id].role} ${npc.x>s.player.x?'→':npc.x<s.player.x?'←':''}${npc.y>s.player.y?'↓':npc.y<s.player.y?'↑':''} · ${distance(npc)} kratek · F: rozmowa`;
@@ -465,7 +469,7 @@ function start(name: string): void {
   walkingOnly = element<HTMLInputElement>('#walk-mode').checked;
   adventure = !walkingOnly && element<HTMLSelectElement>('#mode').value === 'adventure';
   const samples = maps.filter(m => ['courtyard','grove'].includes(m.id));
-  const startingMaps = adventure ? maps.filter(m => ['eldoria','vareon','forest'].includes(m.id)) : walkingOnly ? samples : [...samples].reverse();
+  const startingMaps = adventure ? maps.filter(m => ['eldoria','vareon','forest','catacombs','shop-upper','nivora'].includes(m.id)) : walkingOnly ? samples : [...samples].reverse();
   activate(new Simulation(startingMaps, name, { now: () => performance.now() }, walkingOnly ? [] : undefined,undefined,professionSchema.parse(element<HTMLSelectElement>('#profession').value)));
 }
 element<HTMLFormElement>('#start-form').addEventListener('submit', event => {
@@ -750,11 +754,11 @@ function refreshSaveMenu(): void {
   const status = storage.load();
   element('#resume').hidden = !status.data;
   element('#recover').hidden = !status.backup;
-  element('#save-menu-status').textContent = status.error ?? (status.data ? `Zapis: ${status.data.name} · poziom ${status.data.level} · ${status.data.mapId === 'eldoria' ? 'Eldoria' : status.data.mapId === 'vareon' ? 'Vareon' : 'Mroczny Las'}` : 'Brak zapisu przygody.');
+  element('#save-menu-status').textContent = status.error ?? (status.data ? `Zapis: ${status.data.name} · poziom ${status.data.level} · ${status.data.mapId === 'eldoria' ? 'Eldoria' : status.data.mapId === 'vareon' ? 'Vareon' : travelLabel(status.data.mapId)}` : 'Brak zapisu przygody.');
 }
 function resumeSave(data: SaveData, recovery = false): void {
   adventure = true; walkingOnly = false;
-  activate(Simulation.restore(maps.filter(m => ['eldoria','vareon','forest'].includes(m.id)),data,{now:() => performance.now()}));
+  activate(Simulation.restore(maps.filter(m => ['eldoria','vareon','forest','catacombs','shop-upper','nivora'].includes(m.id)),data,{now:() => performance.now()}));
   saveNow(recovery);
 }
 element('#resume').addEventListener('click', () => { const data = storage.load().data; if (data) resumeSave(data); });
@@ -772,7 +776,7 @@ element<HTMLInputElement>('#import-save').addEventListener('change', async event
   if (!file) return;
   try {
     if (file.size > 1000000) throw new Error('Za duży plik');
-    const simulation = Simulation.restore(maps.filter(m => ['eldoria','vareon','forest'].includes(m.id)),JSON.parse(await file.text()),{now:() => performance.now()});
+    const simulation = Simulation.restore(maps.filter(m => ['eldoria','vareon','forest','catacombs','shop-upper','nivora'].includes(m.id)),JSON.parse(await file.text()),{now:() => performance.now()});
     adventure = true; walkingOnly = false; activate(simulation); saveNow(true);
   } catch { element('#save-menu-status').textContent = 'Import odrzucony: niepoprawny lub nieobsługiwany zapis. Bieżące dane zachowano.'; }
   input.value = '';

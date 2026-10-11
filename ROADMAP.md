@@ -61,3 +61,7 @@ Właściciel zaakceptował T11 („T11 jest okay”). T12 dodaje Node/Colyseus 0
 ## Konta i zapis postaci 0.1.15
 
 T13 dodaje konta email/hasło, PostgreSQL, trzy postacie bezpłatne/pięć premium, wybór profesji, trwały checkpoint postaci i skilli, blokadę wylogowania w walce i piętnastominutową bezczynność. Mobilna góra to plecak i ustawienia; inni gracze pokazują nick, lvl i publiczny HP. Market graczy czeka nadal na T14 — transakcje i trwałą gospodarkę. T15 obejmie reconnect i regiony. Drzewka rozwoju profesji, reset hasła, weryfikacja emaila i płatności wymagają dalszych etapów. M3 jako całość pozostaje nieukończone.
+
+## Rozszerzenie świata na polecenie testera — 0.1.18
+
+Port na wschodzie Vareon, pierwsza zimowa wyspa Nivora, katakumby w lesie i schody do piętra sklepu. Główna mapa miasta i lasu pozostaje ciągła. Nowe piętra i wyspa mają własne kolizje, spawny, potwory oraz powroty; zapisy offline i konta przechowują pozycję. Grafika i aranżacja czekają na ocenę testera w T05c REVIEW. To pierwszy odcinek podróży; kolejne wyspy, boss, nowe zadania i finalny balans nie są ukończone. T14/T15 pozostają kolejnymi etapami infrastruktury online.

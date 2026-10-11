@@ -29,6 +29,16 @@ for (const directory of [source, output]) {
     if(!reached)throw new Error(`Niedostępne stanowisko depo: ${map.id}/${depot.id}`);
   }
   validateMaps(maps, new Set(readdirSync(directory)));
+  for(const map of maps.filter(m=>['eldoria','catacombs','shop-upper','nivora'].includes(m.id))){
+    const queue=[map.spawns.entry!],seen=new Set<string>();
+    for(let i=0;i<queue.length;i++){
+      const p=queue[i]!,key=`${p.x},${p.y}`;
+      if(seen.has(key)||p.x<0||p.y<0||p.x>=map.width||p.y>=map.height||map.collision[p.y*map.width+p.x]!==0||map.npcs.some(n=>n.x===p.x&&n.y===p.y))continue;
+      seen.add(key);for(const [dx,dy]of [[1,0],[-1,0],[0,1],[0,-1]])queue.push({x:p.x+dx!,y:p.y+dy!});
+    }
+    for(const portal of map.portals)if(!seen.has(`${portal.x},${portal.y}`))throw new Error(`${map.id}: niedostępne przejście ${portal.id}`);
+  }
+
   if (new Set(landmarks.map(l=>l.id)).size !== landmarks.length) throw new Error('Powtórzone ID odkrycia');
   for (const l of landmarks) {
     const matching=maps.filter(m=>landmarksOnMap(m.id,l.mapId));

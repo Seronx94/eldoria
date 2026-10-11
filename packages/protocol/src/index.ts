@@ -49,7 +49,7 @@ export const commandSchema = z.discriminatedUnion('type', [
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export const nameSchema = z.string().trim().min(3, 'Imię: 3–16 znaków').max(16, 'Imię: 3–16 znaków');
-export const PROTOCOL_VERSION = 4;
+export const PROTOCOL_VERSION = 5;
 export const guestJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),name:nameSchema,profession:professionSchema}).strict();
 export const onlineJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),characterId:z.uuid()}).strict();
 export const credentialsSchema=z.object({email:z.email().max(254).trim().toLowerCase(),password:z.string().min(10).max(128)}).strict();

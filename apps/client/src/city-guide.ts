@@ -27,7 +27,7 @@ export class CityGuide {
     for(const [id,label]of [['mira','Mira · wartownia'],['oren','Oren · świątynia'],['borin','Borin · sklep']] as const) {
       const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.guide=id;button.addEventListener('click',()=>onChoose(id));actions.append(button);
     }
-    const hint=document.createElement('p');hint.textContent='Błękitny punkt: Twoja pozycja w mieście. Wybierz usługę, a wskazówka nad światem pokaże kierunek. Wejdź południowymi drzwiami; dach odsłoni wnętrze. Depo Pod Liściem na południowym zachodzie ma cztery osobne stanowiska. Domy i warsztat są do zwiedzania.';
+    const hint=document.createElement('p');hint.textContent='Błękitny punkt: Twoja pozycja w mieście. Wybierz usługę, a wskazówka nad światem pokaże kierunek. Wejdź południowymi drzwiami; dach odsłoni wnętrze. Depo Pod Liściem na południowym zachodzie ma cztery osobne stanowiska. Port leży za wschodnim murem, na wysokości rynku. Statek prowadzi na zimową Nivorę. Schody w sklepie Borina prowadzą na piętro, a wejście do katakumb leży na południowym zachodzie lasu. Domy i warsztat są do zwiedzania.';
     root.append(actions,hint);
   }
   update(mapId:string,p:{x:number;y:number}):void {

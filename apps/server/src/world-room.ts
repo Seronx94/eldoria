@@ -7,13 +7,14 @@ import {CommandGate} from './command-gate';
 import {Accounts,AccountError,cookieToken,type Identity} from './accounts';
 import {sameOrigin} from './auth-api';
 export const worldMap=importMap(JSON.parse(readFileSync(new URL('../../client/public/assets/eldoria.json',import.meta.url),'utf8')));
+export const worldMaps=[worldMap,...['catacombs','shop-upper','nivora'].map(id=>importMap(JSON.parse(readFileSync(new URL(`../../client/public/assets/${id}.json`,import.meta.url),'utf8'))))];
 interface Actor {characterId:string;leaseId:string;removed:boolean;finalData?:CharacterProgress;identity:Identity;connected:boolean;closing:boolean;expired:boolean;failed:boolean;write:Promise<void>;lastTouch:number;checking:boolean;}
 export class WorldRoom extends Room {
  static accounts:Accounts|undefined;
  protected guests=false;
  maxClients=Number.MAX_SAFE_INTEGER;
  maxMessagesPerSecond=120;
- private world=new SharedWorld([worldMap],{now:()=>performance.now()});
+ private world=new SharedWorld(worldMaps,{now:()=>performance.now()});
  private gates=new Map<string,CommandGate>();
  private actors=new Map<string,Actor>();
  async onAuth(_client:Client,input:unknown,context:AuthContext):Promise<Identity|boolean> {

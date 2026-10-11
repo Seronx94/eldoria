@@ -1,3 +1,6 @@
+import cave from '../../../apps/client/public/assets/catacombs.json';
+import shop from '../../../apps/client/public/assets/shop-upper.json';
+import snow from '../../../apps/client/public/assets/nivora.json';
 import {describe,it,expect} from 'vitest';
 import {importMap,validateMaps,combatAllowedAt,regionAt} from '@eldoria/content';
 import rawWorld from '../../../apps/client/public/assets/eldoria.json';
@@ -8,7 +11,7 @@ const world=importMap(rawWorld),legacy=[importMap(town),importMap(forest)],maps=
 function setup(){let now=0;const clock={now:()=>now},sim=new Simulation(maps,'Tester',clock);return{sim,clock,advance(ms=200){now+=ms;sim.tick();},move(direction:'up'|'down',n=1){for(let i=0;i<n;i++){now+=200;sim.send({type:'Move',direction});}}};}
 describe('continuous world',()=>{
   it('connects the town and forest by ordinary single steps, five times without interaction or changing map',()=>{
-    validateMaps(maps,new Set(['tiles.png']));expect(world.portals).toEqual([]);
+    validateMaps([...maps,...[cave,shop,snow].map(importMap)],new Set(['tiles.png']));expect(world.portals.some(p=>p.id==='gate')).toBe(false);
     const t=setup();t.move('up',12);expect(t.sim.snapshot().player).toEqual({x:32,y:64});
     for(let i=0;i<5;i++){
       const before=t.sim.snapshot();t.move('up');const outside=t.sim.snapshot();

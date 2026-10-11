@@ -95,3 +95,7 @@ Drewniana skrzynka depo w main.ts oraz nick/paski/łuki w hero-vitals.ts są aut
 ## Etykiety zdrowia 0.1.13
 
 PublicVitals i health-display to własne rysowanie małego HP oraz kolory nicków dla Eldorii przez Codexa, na zasadach pozostałego wkładu projektu. Referencja testera służy sposobowi prezentacji; nie kopiowano grafiki ani materiałów innych gier.
+
+## Dodatki świata 0.1.18
+
+Krzewy, kwiaty, kamienie, kości, kryształy, śnieg, schody i statek są autorską geometrią pikselową w apps/client/src/world-details.ts oraz main.ts. Nowe mapy mają odtwarzalne źródło scripts/generate-expansion.mjs i edytowalne pliki Tiled. Katakumby wykorzystują istniejącą autorską podłogę miasta z tintem; zimowe drzewa istniejącą sosnę z tintem i śnieżnymi detalami. Nie kopiowano grafik ani układu map Tibii. Nowa oprawa jest zestawem roboczym do oceny testera.

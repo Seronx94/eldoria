@@ -20,7 +20,7 @@ describe('profession combat and validated actions',()=>{
     t.sim.send({type:'Attack'});const first=t.sim.snapshot();expect(first.creatures[0]!.hp).toBe(70-professions[p].damage+2);expect(first.mana).toBe(50);
     expect(first.combatEvents.at(-1)).toMatchObject({kind:'ranged',effect:professions[p].effect,targetId:'target'});
     t.sim.send({type:'Attack'});expect(t.sim.snapshot().combatEvents).toHaveLength(1);
-    t.map.collision[11*t.map.width+15]=1;t.advance(800);t.sim.send({type:'Attack'});
+    for(let y=1;y<t.map.height-1;y++)t.map.collision[y*t.map.width+15]=1;t.advance(800);t.sim.send({type:'Attack'});
     expect(t.sim.snapshot().creatures[0]!.hp).toBe(first.creatures[0]!.hp);expect(t.sim.snapshot().combatEvents.at(-1)?.targetId).toBeNull();
   });
   it.each(['archer','mage'] as const)('%s keeps the chosen ranged target, rejects a blocked lock and supports clearing it',p=>{

@@ -1,14 +1,14 @@
 {
   "name": "@eldoria/server",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "private": true,
   "type": "module",
   "dependencies": {
     "@colyseus/core": "0.18.18",
     "@colyseus/ws-transport": "0.18.4",
-    "@eldoria/content": "0.1.18",
-    "@eldoria/domain": "0.1.18",
-    "@eldoria/protocol": "0.1.18",
+    "@eldoria/content": "0.1.19",
+    "@eldoria/domain": "0.1.19",
+    "@eldoria/protocol": "0.1.19",
     "express": "5.1.0",
     "pg": "8.16.3"
   }

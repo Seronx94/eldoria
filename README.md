@@ -1,6 +1,6 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.18 — podziemia, piętro sklepu i zimowa wyspa**. Grywalne Vareon i Mroczny Las, trzy profesje, NPC, zadania, handel, depo oraz skille. Grafika pozostaje autorskim zestawem roboczym. Wspólny świat obsługuje osiem postaci. Projekt Androida wymaga lokalnego Android SDK; konta są obecnie testowane w przeglądarce web/LAN.
+Status implementacji: **0.1.19 — osiem kierunków ruchu postaci i potworów**. Grywalne Vareon i Mroczny Las, trzy profesje, NPC, zadania, handel, depo oraz skille. Grafika pozostaje autorskim zestawem roboczym. Wspólny świat obsługuje osiem postaci. Projekt Androida wymaga lokalnego Android SDK; konta są obecnie testowane w przeglądarce web/LAN.
 
 ## Zagraj w bieżącą wersję
 
@@ -201,7 +201,7 @@ AGENTS.md określa pracę, ROADMAP.md bramki wydania, TASKS.md kolejkę. Paramet
 - Capacitor: https://capacitorjs.com/docs oraz https://capacitorjs.com/docs/getting-started/environment-setup
 Dokumentacja sprawdzona podczas przygotowania specyfikacji; API wybranych wersji trzeba ponownie sprawdzić podczas implementacji.
 
-Automatyczny łup: **Plecak → Automatyczne zbieranie łupu**. Katalog obejmuje wszystkie siedem obecnych przedmiotów, z ikonami i wyszukiwaniem. Zaznacz przedmiot i wybierz jego przegrodę: Główny, Zapasy lub Materiały. Wszystkie przegrody dzielą 20 pól; wybór w sekcji Plecak pokazuje ich zawartość. Złoto trafia do sakiewki. Filtr i przydziały zapisują się z postacią; starsze zapisy trafiają do Głównego. Zapisy z przegrodami wymagają 0.1.16+. Online klient i serwer muszą być z tej samej wersji (protokół 5); po aktualizacji uruchom ponownie serwer.
+Automatyczny łup: **Plecak → Automatyczne zbieranie łupu**. Katalog obejmuje wszystkie siedem obecnych przedmiotów, z ikonami i wyszukiwaniem. Zaznacz przedmiot i wybierz jego przegrodę: Główny, Zapasy lub Materiały. Wszystkie przegrody dzielą 20 pól; wybór w sekcji Plecak pokazuje ich zawartość. Złoto trafia do sakiewki. Filtr i przydziały zapisują się z postacią; starsze zapisy trafiają do Głównego. Zapisy z przegrodami wymagają 0.1.16+. Online klient i serwer muszą być z tej samej wersji (protokół 6); po aktualizacji uruchom ponownie serwer.
 
 Locker depo ma skróty Stash i Market graczy. Wszystkie skrzynki udostępniają ten sam prywatny stash postaci; market pozostaje w przygotowaniu. Miasto ma układ mapy 3. Starsze zapisy w miejscu nowych przegród zostają bezpiecznie przeniesione do korytarza depo z zachowaniem postępu. Nakładające się postacie nie wyświetlają wielu etykiet na sobie; właściciel zachowuje swój nick i zasoby. Pokój nadal obsługuje maksymalnie osiem postaci.
 
@@ -212,7 +212,7 @@ Vareon i las nadal tworzą jedną ciągłą mapę. Wschodnia droga na wysokości
 
 W sklepie Borina wejdź na schody po wschodniej stronie wnętrza, żeby wejść na umeblowane piętro. W lesie, na południowym zachodzie, schody prowadzą do katakumb: połączonych sal z kryształami, lampami, szczurami i żukami. Schody działają przez wejście na kratkę; na miejscu można także użyć F. Współrzędne wejść: sklep **46,87**, katakumby **18,57**, statek **59,93**. To osobne piętra/mapy, nie teleportujące bramy między miastem a lasem.
 
-Postać i jej postęp zapisują się na nowych mapach, offline oraz na koncie. Offline zapis zachowuje również odwiedzone piętra, potwory i łup. Stare zapisy miasta i lasu nadal migrują do głównego świata; zapisy z nowymi miejscami wymagają 0.1.18+. Po aktualizacji uruchom ponownie backend — klient i serwer używają protokołu 5. Źródła map pozostają edytowalne w Tiled; `npm run maps:generate-town` odtwarza miasto, świat, port, piętro, katakumby i Nivorę.
+Postać i jej postęp zapisują się na nowych mapach, offline oraz na koncie. Offline zapis zachowuje również odwiedzone piętra, potwory i łup. Stare zapisy miasta i lasu nadal migrują do głównego świata; zapisy z nowymi miejscami wymagają 0.1.18+. Po aktualizacji uruchom ponownie backend — klient i serwer używają protokołu 6. Źródła map pozostają edytowalne w Tiled; `npm run maps:generate-town` odtwarza miasto, świat, port, piętro, katakumby i Nivorę.
 
 Test dla właściciela:
 1. Wyjdź wschodnią drogą z miasta do portu i obejrzyj statek oraz roślinność.
@@ -220,3 +220,19 @@ Test dla właściciela:
 3. Wejdź po schodach na piętro sklepu i wróć na parter.
 4. Znajdź wejście do katakumb, przejdź korytarzami i sprawdź walkę oraz powrót.
 5. Na telefonie sprawdź gałkę, przycisk rejsu i czytelność nowych scen.
+
+
+## Chodzenie po skosie — 0.1.19
+
+Na komputerze przytrzymaj dwa klawisze kierunku, np. **W+A** lub **strzałkę w górę + w lewo**. Klawiatura numeryczna: **7/9/1/3** to skosy, **8/2/4/6** to góra/dół/lewo/prawo. Górny rząd **1–4** nadal uruchamia przypisane akcje. Na telefonie wychyl gałkę w wybranym kierunku — rozpoznaje osiem kierunków.
+
+Potwory także chodzą po skosie podczas pościgu, patrolu i powrotu. Dłuższy krok zajmuje proporcjonalnie więcej czasu; ruch nie przyspiesza po skosie. Postać i potwory nie przecinają narożników ścian ani zablokowanych sąsiednich kratek. Chód jest animowany również po skosie, z istniejącym kierunkowym wyglądem postaci. Zasięg ataków pozostaje bez zmian.
+
+Po pobraniu aktualizacji wykonaj `npm ci` i ponownie uruchom `npm run dev:online` (konta) lub `npm run dev:lan` (offline). Obie strony online wymagają protokołu 6; starsze zapisy nadal można wczytać, a zapis wykonany podczas kroku po skosie wymaga wersji 0.1.19+.
+
+Test dla właściciela:
+1. Na rynku przytrzymaj W+A, następnie sprawdź pozostałe trzy skosy i klawiaturę numeryczną.
+2. Na telefonie wychyl gałkę po skosie i puść ją — postać powinna się zatrzymać.
+3. Podejdź do narożnika budynku; sprawdź, że nie da się przejść przez ścianę.
+4. W lesie lub katakumbach przyciągnij potwora i sprawdź jego ruch po skosie oraz obchodzenie przeszkód.
+5. Wyloguj postać w bezpiecznym miejscu i zaloguj ją ponownie — pozycja powinna się zachować.

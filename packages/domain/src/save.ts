@@ -25,10 +25,10 @@ export const saveSchema = z.object({
   quest: questSchema, exploration: explorationSchema.default({status:'available',found:[]}), inventory: inventorySchema,
   stash:stashSchema.default([]),lootSettings:lootSettingsSchema.default(defaultLootSettings),
   equipment: z.object({ weapon: weaponSchema.nullable(), armor: z.literal('tunic').nullable() }).strict(),
-  cooldowns: z.object({ move: integer(rules.stepMs), attack: integer(rules.attackMs), spell: integer(rules.spellMs), potion: integer(rules.potionMs), mana: integer(rules.manaRegenMs) }).strict(),
+  cooldowns: z.object({ move: integer(rules.diagonalStepMs), attack: integer(rules.attackMs), spell: integer(rules.spellMs), potion: integer(rules.potionMs), mana: integer(rules.manaRegenMs) }).strict(),
   maps: z.array(z.object({ mapId: z.enum(['vareon', 'forest', 'eldoria', 'catacombs', 'shop-upper', 'nivora']), creatures: z.array(z.object({
     id: z.string().min(1).max(80), kind: z.enum(['rat', 'beetle', 'wolf']), x: integer(255), y: integer(255), hp: integer(70),
-    state: z.enum(['idle', 'chase', 'attack', 'return', 'dead']), attackIn: integer(rules.monsterAttackMs), moveIn: integer(rules.stepMs*2), respawnIn: integer(rules.respawnMs),
+    state: z.enum(['idle', 'chase', 'attack', 'return', 'dead']), attackIn: integer(rules.monsterAttackMs), moveIn: integer(rules.diagonalStepMs*2), respawnIn: integer(rules.respawnMs),
   }).strict()).max(12) }).strict()).min(1).max(4),
   loot: z.array(z.object({ id: z.string().min(1).max(100), mapId: z.enum(['vareon', 'forest', 'eldoria', 'catacombs', 'shop-upper', 'nivora']), x: integer(255), y: integer(255), gold: integer(3), items: inventorySchema }).strict()).max(1000),
   eventId: integer(1000000000),

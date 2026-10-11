@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import {rules,type CombatVisual} from '@eldoria/content';
+import {movementDuration,type CombatVisual} from '@eldoria/content';
 import type {PublicPlayer} from '@eldoria/domain';
 import {PublicVitals} from './public-vitals';
 import {recolorOutfit} from './outfit-colors';
@@ -23,7 +23,7 @@ export class RemotePlayers {
    const source=p.profession==='knight'?(colorful?'colorful-wanderer':'wanderer'):`colorful-${p.profession}`,signature=JSON.stringify([source,p.appearance]);
    if(view.signature!==signature){view.signature=signature;const ctx=view.texture.context;ctx.clearRect(0,0,96,192);ctx.imageSmoothingEnabled=false;ctx.drawImage(this.scene.textures.get(source).getSourceImage() as CanvasImageSource,0,0);const data=ctx.getImageData(0,0,96,192);data.data.set(recolorOutfit(data.data,p.profession,p.appearance));ctx.putImageData(data,0,0);view.texture.refresh();}
    const position=`${p.player.x},${p.player.y}`,x=p.player.x*32+16,y=p.player.y*32+32;
-   if(position!==view.position){view.tween?.stop();if(view.position&&Math.hypot(view.sprite.x-x,view.sprite.y-y)<=64){view.tween=this.scene.tweens.add({targets:view.sprite,x,y,duration:rules.stepMs+20,ease:'Linear'});view.until=this.scene.time.now+rules.stepMs+20;}else view.sprite.setPosition(x,y);view.position=position;}
+   if(position!==view.position){const previous=view.position.split(',').map(Number);view.tween?.stop();if(view.position&&Math.hypot(view.sprite.x-x,view.sprite.y-y)<=64){view.tween=this.scene.tweens.add({targets:view.sprite,x,y,duration:movementDuration({x:previous[0]!,y:previous[1]!},p.player)+20,ease:'Linear'});view.until=this.scene.time.now+movementDuration({x:previous[0]!,y:previous[1]!},p.player)+20;}else view.sprite.setPosition(x,y);view.position=position;}
    view.sprite.setData('direction',p.direction).setDepth(view.sprite.y);
    if(this.scene.time.now>=view.actionUntil){if(this.scene.time.now<view.until)view.sprite.play(`remote-${p.id}-${p.direction}`,true);else{view.sprite.anims.stop();view.sprite.setFrame(['down','left','right','up'].indexOf(p.direction)*3);}}
    const sharesOwner=p.player.x===owner?.x&&p.player.y===owner?.y;

@@ -1,3 +1,4 @@
+import {movementVectors,movementFacing,movementDuration} from '@eldoria/content';
 import { combatRules,skillRequired,skillPower,inventoryRules,depotOnMap,depotAtStand,legacyDepotPositionAllowed,depotRules,combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items,onlineRules, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
 import { commandSchema,defaultSkills,type Skills, nameSchema,defaultLootSettings,type LootSettings,defaultAppearance,type Appearance,professionSchema, type Command, type Direction,type Profession,type SpellId,type ActionId,type Weapon } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
@@ -47,6 +48,7 @@ export interface GameGateway {
   subscribe(listener: (snapshot: Snapshot) => void): () => void; disconnect(): void;
 }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+const pathDistance=(a:Point,b:Point)=>{const dx=Math.abs(a.x-b.x),dy=Math.abs(a.y-b.y);return Math.max(dx,dy)+(Math.SQRT2-1)*Math.min(dx,dy);};
 const distance = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 export class Simulation {
   private state: Snapshot;
@@ -54,7 +56,7 @@ export class Simulation {
   private combatUntil=0;
   private patrolDue = new Map<string, number>();
   private creatureMaps = new Map<string, Creature[]>();
-  private lastMove = -Infinity;
+  private moveReadyAt = -Infinity;
   private lastAttack = -Infinity;
   private lastSpell = -Infinity;
   private lastSpells=new Map<SpellId,number>();
@@ -98,6 +100,10 @@ export class Simulation {
   }
   private occupied(point: Point, except?: string): boolean {
     return (except?[...(this.online?.world.players.values()??[])].some(p=>p!==this&&p.state.mapId===this.state.mapId&&distance(p.state.player,point)===0):this.exclusivePlayerTile(this.state.mapId,point))||this.map().npcs.some(n => distance(n, point) === 0) || this.state.creatures.some(c => c.id !== except && c.hp > 0 && distance(c, point) === 0);
+  }
+  private canStep(from:Point,to:Point,creatureId?:string):boolean {
+    const free=(p:Point)=>this.walkable(p)&&!this.occupied(p,creatureId)&&(!creatureId||distance(p,this.state.player)!==0);
+    return free(to)&&(from.x===to.x||from.y===to.y||free({x:from.x,y:to.y})&&free({x:to.x,y:from.y}));
   }
   private spawnCreatures(): void {
     const cached = this.creatureMaps.get(this.state.mapId);
@@ -217,12 +223,12 @@ export class Simulation {
       this.notify('Założono wyposażenie.'); return;
     }
     if (command.type === 'Move') {
-      if (now - this.lastMove < rules.stepMs) return;
-      s.direction = command.direction;
-      const v = vectors[command.direction];
+      if (now < this.moveReadyAt) return;
+      s.direction = movementFacing(command.direction);
+      const v = movementVectors[command.direction];
       const next = { x: s.player.x + v.x, y: s.player.y + v.y };
-      if (!this.walkable(next) || this.occupied(next)) { this.notify('Przejście zablokowane.'); return; }
-      s.player = next; this.lastMove = now; this.collectNearby();
+      if (!this.canStep(s.player,next)) { this.notify('Przejście zablokowane.'); return; }
+      this.moveReadyAt=now+movementDuration(s.player,next);s.player = next; this.collectNearby();
       const stairs=this.map().portals.find(p=>p.id.startsWith('stairs-')&&distance(p,next)===0);if(stairs)this.travel(stairs,now);return;
     }
     if (command.type === 'Interact') {
@@ -319,7 +325,7 @@ export class Simulation {
     const target=this.maps.find(m=>m.id===portal.targetMapId),spawn=target?.spawns[portal.targetSpawnId];
     if(!target||!spawn){this.notify('Przejście nie ma poprawnego celu.');return;}
     const arrival=this.freeArrival(target,spawn);if(!arrival){this.notify('Wejście jest zajęte — spróbuj ponownie.');return;}
-    const s=this.state;s.mapId=target.id;s.player=arrival;s.selectedId=null;this.spawnCreatures();this.lastMove=now;
+    const s=this.state;s.mapId=target.id;s.player=arrival;s.selectedId=null;this.spawnCreatures();this.moveReadyAt=now+rules.stepMs;
     const labels:Record<string,string>={eldoria:'Eldoria · Vareon i Mroczny Las',catacombs:'Katakumby pod Mrocznym Lasem',nivora:'Nivora · zimowa wyspa', 'shop-upper':'Piętro sklepu Borina',forest:'Mroczny Las',vareon:'Vareon'};
     this.notify(labels[target.id]??'Przejście do drugiej sceny wzorcowej.');
   }
@@ -341,7 +347,7 @@ export class Simulation {
     return saveSchema.parse({
       version: 1, cityRevision: (this.maps.find(m=>m.id==='eldoria')??this.maps.find(m=>m.id==='vareon'))?.layoutRevision ?? 1, mode: 'offline',appearance:s.appearance, profession:s.profession,actionSlots:s.actionSlots,spellCooldowns:this.spellCooldowns(),guardIn:Math.min(professionRules.guardMs,Math.max(0,Math.ceil(this.guardUntil-now))), name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
       skills:s.skills,combatIn:Math.min(combatRules.logoutLockMs,Math.max(0,Math.ceil(this.combatUntil-now))),level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, stash:s.stash,lootSettings:s.lootSettings, inventory: s.inventory, equipment: s.equipment,
-      cooldowns: { move: remaining(this.lastMove,rules.stepMs), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
+      cooldowns: { move: Math.max(0,Math.ceil(this.moveReadyAt-now)), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
       maps: [...this.creatureMaps].map(([mapId, creatures]) => ({ mapId, creatures: creatures.map(c => ({ id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, attackIn:remaining(c.lastAttack,rules.monsterAttackMs), moveIn:remaining(c.lastMove,rules.stepMs*2), respawnIn: c.hp === 0 ? remaining(c.diedAt,rules.respawnMs) : 0 })) })),
       loot: s.loot, eventId: s.eventId,
     });
@@ -356,7 +362,7 @@ export class Simulation {
     this.spawnCreatures();s.player=this.freeArrival(m,data.player)??(()=>{throw new Error('Brak miejsca dla postaci');})();
     this.combatUntil=this.time+data.combatIn;this.guardUntil=this.time+data.guardIn;
     this.lastAttack=this.time+data.cooldowns.attack-professions[data.profession].attackMs;this.lastPotion=this.time+data.cooldowns.potion-rules.potionMs;
-    this.lastMove=this.time+data.cooldowns.move-rules.stepMs;this.lastMana=this.time+data.cooldowns.mana-rules.manaRegenMs;
+    this.moveReadyAt=this.time+data.cooldowns.move;this.lastMana=this.time+data.cooldowns.mana-rules.manaRegenMs;
     for(const id of Object.keys(spells) as SpellId[])this.lastSpells.set(id,this.time+(data.spellCooldowns?.[id]??0)-spells[id].cooldown);
   }
   static restore(maps: WorldMap[], input: unknown, clock: Clock): Simulation {
@@ -406,7 +412,7 @@ export class Simulation {
     sim.state = { ...sim.state,skills:data.skills, name:data.name,appearance:data.appearance,profession:data.profession,actionSlots:data.actionSlots, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, stash:data.stash,lootSettings:data.lootSettings, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:relocated ? 'Vareon przebudowano — wznowiono w bezpiecznym miejscu. Postęp i wyposażenie zachowano.' : 'Wznowiono przygodę offline.' };
     for(const id of Object.keys(spells) as SpellId[])sim.lastSpells.set(id,now+data.spellCooldowns[id]-spells[id].cooldown);
     sim.guardUntil=now+data.guardIn;sim.combatUntil=now+data.combatIn;
-    sim.lastMove = now+data.cooldowns.move-rules.stepMs;
+    sim.moveReadyAt = now+data.cooldowns.move;
     sim.lastAttack = now+data.cooldowns.attack-rules.attackMs;
     sim.lastSpell = now+data.cooldowns.spell-rules.spellMs;
     sim.lastPotion = now+data.cooldowns.potion-rules.potionMs;
@@ -459,15 +465,15 @@ export class Simulation {
     const closed = new Set<string>();
     let goal: Point | undefined;
     for (let expanded = 0; open.length && expanded < 512; expanded++) {
-      open.sort((a, b) => (cost.get(key(a))! + distance(a, target)) - (cost.get(key(b))! + distance(b, target)));
+      open.sort((a, b) => (cost.get(key(a))! + pathDistance(a,target)) - (cost.get(key(b))! + pathDistance(b,target)));
       const current = open.shift()!;
       if (closed.has(key(current))) continue;
       closed.add(key(current));
       if (distance(current, target) <= (creature.state === 'return' ? 0 : 1)) { goal = current; break; }
-      for (const v of Object.values(vectors)) {
+      for (const v of Object.values(movementVectors)) {
         const next = { x: current.x + v.x, y: current.y + v.y }, nextKey = key(next);
-        const nextCost = cost.get(key(current))! + 1;
-        if (closed.has(nextKey) || !this.walkable(next) || !combatAllowedAt(this.map(),next) || this.occupied(next, creature.id) || distance(next, this.state.player) === 0 || nextCost >= (cost.get(nextKey) ?? Infinity)) continue;
+        const nextCost = cost.get(key(current))! + (v.x&&v.y?Math.SQRT2:1);
+        if (closed.has(nextKey) || !this.canStep(current,next,creature.id) || !combatAllowedAt(this.map(),next) || v.x!==0&&v.y!==0&&(!combatAllowedAt(this.map(),{x:current.x,y:next.y})||!combatAllowedAt(this.map(),{x:next.x,y:current.y})) || nextCost >= (cost.get(nextKey) ?? Infinity)) continue;
         previous.set(nextKey, current); cost.set(nextKey, nextCost); open.push(next);
       }
     }
@@ -520,19 +526,21 @@ export class Simulation {
         else if (now >= due) {
           this.patrolDue.set(key, now + rules.patrolMs);
           const hash = [...c.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-          const directions = Object.values(vectors);
-          for (let i = 0; i < 4; i++) {
-            const v = directions[(Math.floor(now / rules.patrolMs) + hash + i) % 4]!;
+          const directions = Object.values(movementVectors);
+          for (let i = 0; i < directions.length; i++) {
+            const v = directions[(Math.floor(now / rules.patrolMs) + hash + i) % directions.length]!;
             const next = { x: c.x + v.x, y: c.y + v.y };
-            if (distance(next, c.spawn) > rules.patrolRadius || distance(next, s.player) <= rules.sightRadius || !this.walkable(next) || !combatAllowedAt(this.map(),next) || this.occupied(next, c.id) || this.map().portals.some(p => distance(p, next) <= 1)) continue;
-            Object.assign(c, next); c.lastMove = now; break;
+            if (distance(next, c.spawn) > rules.patrolRadius || distance(next, s.player) <= rules.sightRadius || !this.canStep(c,next,c.id) || !combatAllowedAt(this.map(),next) || v.x!==0&&v.y!==0&&(!combatAllowedAt(this.map(),{x:c.x,y:next.y})||!combatAllowedAt(this.map(),{x:next.x,y:c.y})) || this.map().portals.some(p => distance(p, next) <= 1)) continue;
+            const duration=movementDuration(c,next);Object.assign(c, next); c.lastMove = now+(duration-rules.stepMs)*2; break;
           }
         }
       }
       if ((c.state === 'chase' || c.state === 'return') && now - c.lastMove >= rules.stepMs * 2) {
         const next = this.nextStep(c, c.state === 'return' ? c.spawn : s.player);
+        // A future cooldown anchor preserves diagonal timing in existing creature saves.
+        const duration=next?movementDuration(c,next):rules.stepMs;
         if (next) Object.assign(c, next);
-        c.lastMove = now;
+        c.lastMove = now+(duration-rules.stepMs)*2;
       }
     }
   }
@@ -541,7 +549,7 @@ export class Simulation {
     const m = this.maps.find(m => m.id==='eldoria') ?? this.maps.find(m => !m.combatAllowed) ?? this.maps[0]!;
     this.state.mapId = m.id; this.state.player = this.online?(this.freeArrival(m,m.spawns.entry!)??{...m.spawns.entry!}):{ ...m.spawns.entry! };
     this.state.hp = this.state.maxHp; this.state.mana = this.state.maxMana; this.state.selectedId = null; this.state.dialog = null;
-    this.spawnCreatures(); this.lastMove = this.time;
+    this.spawnCreatures(); this.moveReadyAt = this.time+rules.stepMs;
     this.notify(`Omdlenie. Wracasz do ${['vareon','eldoria'].includes(m.id) ? 'Vareon' : 'bezpiecznego dziedzińca'} z pełnym zdrowiem i maną, bez utraty zdobyczy.`);
   }
 }

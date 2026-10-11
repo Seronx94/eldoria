@@ -13,7 +13,7 @@ run(['--env-file-if-exists=.eldoria-local/server.env','--import','tsx','apps/ser
 const port=process.env.ELDORIA_SERVER_PORT??'2567';
 let ready=false;
 for(let attempt=0;attempt<50&&!stopping;attempt++){
- try{const response=await globalThis.fetch(`http://127.0.0.1:${port}/health`,{signal:globalThis.AbortSignal.timeout(1000)});const body=await response.json();if(response.ok&&body.protocolVersion===5&&body.mode==='accounts'){ready=true;break;}}catch{/* Server still starting. */}
+ try{const response=await globalThis.fetch(`http://127.0.0.1:${port}/health`,{signal:globalThis.AbortSignal.timeout(1000)});const body=await response.json();if(response.ok&&body.protocolVersion===6&&body.mode==='accounts'){ready=true;break;}}catch{/* Server still starting. */}
  await delay(100);
 }
 if(ready&&!stopping){

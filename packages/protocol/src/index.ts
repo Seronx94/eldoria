@@ -1,5 +1,7 @@
 import { z } from 'zod';
 export const directionSchema = z.enum(['down', 'left', 'right', 'up']);
+export const moveDirectionSchema=z.enum(['down','left','right','up','up-left','up-right','down-left','down-right']);
+export type MoveDirection=z.infer<typeof moveDirectionSchema>;
 export type Direction = z.infer<typeof directionSchema>;
 export const professionSchema=z.enum(['knight','archer','mage']);
 export type Profession=z.infer<typeof professionSchema>;
@@ -24,7 +26,7 @@ export const lootSettingsSchema=z.object({enabled:z.boolean(),gold:z.boolean(),d
 export type LootSettings=z.infer<typeof lootSettingsSchema>;
 export function defaultLootSettings():LootSettings {return {enabled:true,gold:true,itemIds:[...itemIdSchema.options]};}
 export const commandSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('Move'), direction: directionSchema }).strict(),
+  z.object({ type: z.literal('Move'), direction: moveDirectionSchema }).strict(),
   z.object({ type: z.literal('Select'), targetId: z.string().min(1).max(80) }).strict(),
   z.object({ type: z.literal('Attack') }).strict(),
   z.object({type:z.literal('ClearTarget')}).strict(),
@@ -49,7 +51,7 @@ export const commandSchema = z.discriminatedUnion('type', [
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export const nameSchema = z.string().trim().min(3, 'Imię: 3–16 znaków').max(16, 'Imię: 3–16 znaków');
-export const PROTOCOL_VERSION = 5;
+export const PROTOCOL_VERSION = 6;
 export const guestJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),name:nameSchema,profession:professionSchema}).strict();
 export const onlineJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),characterId:z.uuid()}).strict();
 export const credentialsSchema=z.object({email:z.email().max(254).trim().toLowerCase(),password:z.string().min(10).max(128)}).strict();

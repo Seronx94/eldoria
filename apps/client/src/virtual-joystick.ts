@@ -1,9 +1,10 @@
-import type {Direction} from '@eldoria/protocol';
+import {movementDirection} from '@eldoria/content';
+import type {MoveDirection} from '@eldoria/protocol';
 /** One captured thumb owns movement; other pointers remain available for actions. */
 export class VirtualJoystick {
   private pointer:number|undefined;
-  private direction:Direction|undefined;
-  constructor(private root:HTMLElement,enabled:()=>boolean,private onDirection:(pointer:number,d:Direction|undefined)=>void) {
+  private direction:MoveDirection|undefined;
+  constructor(private root:HTMLElement,enabled:()=>boolean,private onDirection:(pointer:number,d:MoveDirection|undefined)=>void) {
     root.addEventListener('pointerdown',e=>{
       e.preventDefault();if(this.pointer!==undefined||!enabled())return;
       this.pointer=e.pointerId;root.setPointerCapture(e.pointerId);root.classList.add('held');this.update(e);
@@ -16,13 +17,10 @@ export class VirtualJoystick {
     const box=this.root.getBoundingClientRect(),radius=Math.min(box.width,box.height)*.32;
     const x=e.clientX-box.x-box.width/2,y=e.clientY-box.y-box.height/2,length=Math.hypot(x,y),scale=length>radius?radius/length:1;
     this.root.style.setProperty('--stick-x',`${x*scale}px`);this.root.style.setProperty('--stick-y',`${y*scale}px`);
-    let next:Direction|undefined;
+    let next:MoveDirection|undefined;
     if(length>=radius*.3) {
-      // A small axis margin avoids alternating directions at a diagonal boundary.
-      const horizontal=this.direction==='left'||this.direction==='right';
-      const vertical=this.direction==='up'||this.direction==='down';
-      const useHorizontal=horizontal?Math.abs(x)*1.15>=Math.abs(y):vertical?Math.abs(x)>Math.abs(y)*1.15:Math.abs(x)>=Math.abs(y);
-      next=useHorizontal?(x<0?'left':'right'):(y<0?'up':'down');
+      const angle=Math.atan2(y,x),sector=Math.round(angle/(Math.PI/4));
+      next=movementDirection(Math.round(Math.cos(sector*Math.PI/4)),Math.round(Math.sin(sector*Math.PI/4)));
     }
     if(next!==this.direction){this.direction=next;this.onDirection(e.pointerId,next);}
   }

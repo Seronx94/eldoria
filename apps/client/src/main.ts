@@ -1,7 +1,8 @@
+import {movementVectors,movementDirection,movementDuration} from '@eldoria/content';
 import {worldDetails,travelLabel} from './world-details';
 import Phaser from 'phaser';
 import { depotsOnMap,combatAllowedAt, regionAt, landmarksOnMap, importMap, validateMaps, rules, monsters, items, npcs, shopRules,questRules, explorationRules, landmarks,professions,spells, type WorldMap, type NpcId } from '@eldoria/content';
-import { nameSchema,professionSchema,defaultAppearance, type Direction,type ActionId } from '@eldoria/protocol';
+import { nameSchema,professionSchema,defaultAppearance, type Direction,type MoveDirection,type ActionId } from '@eldoria/protocol';
 import { Simulation, LocalGateway, type Snapshot, type OnlineSnapshot,type SaveData } from '@eldoria/domain';
 import {createTileLayer} from './tile-layer';
 import { CityGuide } from './city-guide';
@@ -78,8 +79,8 @@ const bagDialog = element<HTMLDialogElement>('#bag');
 const settingsDialog=element<HTMLDialogElement>('#settings-dialog');
 let completionDismissed = false;
 let bagSignature = '';
-const pointerDirections = new Map<number, Direction>();
-const heldKeys = new Map<string, Direction>();
+const pointerDirections = new Map<number, MoveDirection>();
+const heldKeys = new Map<string, MoveDirection>();
 const attackPointers = new Set<number>();
 const attackKeys=new Set<string>();
 const actionButtons=Array.from(document.querySelectorAll<HTMLButtonElement>('[data-slot]'));
@@ -89,14 +90,17 @@ const joystick = new VirtualJoystick(element('#joystick'), () => playing && ui.c
   movement();
 });
 function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); attackPointers.clear(); attackKeys.clear(); joystick.reset(); }
-function direction(): Direction | undefined { return [...pointerDirections.values()].at(-1) ?? [...heldKeys.values()].at(-1); }
+function direction(): MoveDirection | undefined {
+  const pointer=[...pointerDirections.values()].at(-1);if(pointer)return pointer;
+  let x=0,y=0;for(const d of new Set(heldKeys.values())){x+=movementVectors[d].x;y+=movementVectors[d].y;}return movementDirection(x,y);
+}
 let nextMovementAt=0;
 function movement(): void {
   const d = direction();
   if (!ui.complete.hidden || settingsDialog.open || bagDialog.open || npcDialog.open || depotDialog.open) return;
   if (d && playing && performance.now()>=nextMovementAt && !document.hidden && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) {
     gateway?.send({ type: 'Move', direction: d });
-    nextMovementAt=performance.now()+rules.stepMs;
+    nextMovementAt=performance.now()+movementDuration({x:0,y:0},movementVectors[d]);
   }
 }
 const movementTimer = window.setInterval(() => {
@@ -290,14 +294,14 @@ class World extends Phaser.Scene {
     const position = `${s.player.x},${s.player.y}`;
     if (position !== this.playerPosition) {
       const previous=this.playerPosition.split(',').map(Number);
-      const first = this.playerPosition === '' || Math.abs(s.player.x-previous[0]!) + Math.abs(s.player.y-previous[1]!) > 1;
+      const first = changedMap || newWorld || this.playerPosition === '' || Math.max(Math.abs(s.player.x-previous[0]!),Math.abs(s.player.y-previous[1]!)) > 1;
       this.playerPosition = position;
       this.movingTween?.stop();
       const x = s.player.x * 32 + 16, y = s.player.y * 32 + 32;
       if (first) { this.movingUntil=0; this.hero.setPosition(x, y); this.cameras.main.centerOn(x, y); }
       else {
-        this.movingTween = this.tweens.add({ targets: this.hero, x, y, duration: rules.stepMs+20, ease: 'Linear' });
-        this.movingUntil = this.time.now + rules.stepMs+20;
+        this.movingTween = this.tweens.add({ targets: this.hero, x, y, duration: movementDuration({x:previous[0]!,y:previous[1]!},s.player)+20, ease: 'Linear' });
+        this.movingUntil = this.time.now + movementDuration({x:previous[0]!,y:previous[1]!},s.player)+20;
       }
     }
     this.vitals.show();this.vitals.draw(s,this.hero.x,this.hero.y,vitalsStyle);ui.hud.dataset.vitalsStyle=vitalsStyle;
@@ -335,8 +339,8 @@ class World extends Phaser.Scene {
       if (view.position !== creaturePosition) {
         const [oldX,oldY] = view.position.split(',').map(Number);
         view.facing=creatureFacing({x:oldX!,y:oldY!},creature,view.facing);
-        view.position = creaturePosition; view.until = this.time.now + rules.stepMs*2;
-        view.tween?.stop(); view.tween = this.tweens.add({targets:sprite,x:creature.x*32+16,y:creature.y*32+32,duration:rules.stepMs*2,ease:'Linear'});
+        view.position = creaturePosition; view.until = this.time.now + movementDuration({x:oldX!,y:oldY!},creature)*2;
+        view.tween?.stop(); view.tween = this.tweens.add({targets:sprite,x:creature.x*32+16,y:creature.y*32+32,duration:movementDuration({x:oldX!,y:oldY!},creature)*2,ease:'Linear'});
       }
       const pose=creatureFrames[view.facing];sprite.setFlipX(colorful&&pose.flipX);
       if (colorful && this.time.now < view.until) sprite.play(`colorful-${creature.kind}-${view.facing}`,true);
@@ -544,17 +548,19 @@ const keyDirections: Record<string, Direction> = { arrowup: 'up', arrowdown: 'do
 window.addEventListener('keydown', event => {
   if (!playing || event.target instanceof HTMLInputElement) return;
   const key = event.key.toLowerCase();
+  const pad=({Numpad1:'down-left',Numpad2:'down',Numpad3:'down-right',Numpad4:'left',Numpad6:'right',Numpad7:'up-left',Numpad8:'up',Numpad9:'up-right'} as Record<string,MoveDirection>)[event.code];
+  if(pad&&ui.complete.hidden&&!settingsDialog.open&&!bagDialog.open&&!npcDialog.open&&!depotDialog.open){event.preventDefault();heldKeys.set(event.code,pad);if(!event.repeat)movement();return;}
   if(key==='escape'&&!settingsDialog.open && !bagDialog.open&&!npcDialog.open&&!depotDialog.open){gateway?.send({type:'ClearTarget'});return;}
   if (key === 't' && !event.repeat && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) { event.preventDefault(); cycleTarget(); return; }
   if (key === 'i' && !event.repeat) { event.preventDefault(); toggleBag(); return; }
   if (!ui.complete.hidden || settingsDialog.open || bagDialog.open || npcDialog.open || depotDialog.open) return;
   if(/^[1-4]$/.test(key)&&snapshot){event.preventDefault();const action=snapshot.actionSlots[Number(key)-1]!;if(action==='attack')attackKeys.add(key);if(!event.repeat)useAction(action);return;}
   const d = keyDirections[key];
-  if (d) { event.preventDefault(); heldKeys.set(key, d); if (!event.repeat) movement(); return; }
+  if (d) { event.preventDefault(); heldKeys.set(event.code||key, d); if (!event.repeat) movement(); return; }
   const type = ({ ' ': 'Attack', e: 'Cast', q: 'UseItem', f: 'Interact', r: 'Loot' } as const)[key as ' ' | 'e' | 'q' | 'f' | 'r'];
   if (type) { event.preventDefault(); if(type === 'Attack') attackKeys.add(key); if(!event.repeat) gateway?.send({ type }); }
 });
-window.addEventListener('keyup', event => { heldKeys.delete(event.key.toLowerCase());attackKeys.delete(event.key.toLowerCase()); });
+window.addEventListener('keyup', event => { heldKeys.delete(event.code||event.key.toLowerCase());attackKeys.delete(event.key.toLowerCase()); });
 window.addEventListener('blur', resetInput);
 window.addEventListener('resize', resetInput);
 document.addEventListener('visibilitychange', () => {

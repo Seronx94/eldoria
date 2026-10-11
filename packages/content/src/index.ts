@@ -1,5 +1,5 @@
 export const rules = {
-  tileSize: 32, stepMs: 200, tickMs: 50,autoLootRange:1,
+  tileSize: 32, stepMs: 200, diagonalStepMs: 283, tickMs: 50,autoLootRange:1,
   maxHp: 100, maxMana: 50, playerDefense: 3,
   attackDamage: 12, attackMs: 800, meleeRange: 1,
   spellDamage: 18, spellMs: 1500, spellCost: 8, spellRange: 4,
@@ -24,3 +24,5 @@ export {professions,spells,professionRules,defaultActions,actionAllowed,emptySpe
 
 export {depotRules,depotOnMap,depotsOnMap,depotAtStand,legacyDepotPositionAllowed,type DepotStation} from './depot';
 export {onlineRules} from './online';
+
+export {movementVectors,movementDirection,movementFacing,movementDuration} from './movement';

@@ -59,7 +59,19 @@ describe('adventure maps and NPCs', () => {
     for(let i=0;i<5;i++) {
       inForest(t); expect(t.sim.snapshot().mapId).toBe('forest'); expect(t.sim.snapshot().creatures).toHaveLength(12);
       t.sim.send({type:'Interact'}); expect(t.sim.snapshot().mapId).toBe('forest');
-      t.move('down'); t.sim.send({type:'Interact'}); expect(t.sim.snapshot().mapId).toBe('vareon');
+      // Diagonal AI can occupy the old entry: approach from the actual free arrival.
+      for(let step=0;step<16;step++){
+        const state=t.sim.snapshot(),map=maps().find(m=>m.id==='forest')!,portal=map.portals[0]!;
+        const queue=[{...state.player,path:[] as Direction[]}],seen=new Set<string>();let route:Direction[]|undefined;
+        for(let i=0;i<queue.length;i++){
+          const p=queue[i]!,key=`${p.x},${p.y}`;
+          if(seen.has(key)||p.x<0||p.y<0||p.x>=map.width||p.y>=map.height||map.collision[p.y*map.width+p.x]||state.creatures.some(c=>c.hp>0&&c.x===p.x&&c.y===p.y))continue;
+          seen.add(key);if(Math.abs(p.x-portal.x)+Math.abs(p.y-portal.y)<=1){route=p.path;break;}
+          for(const [d,x,y]of [['up',0,-1],['down',0,1],['left',-1,0],['right',1,0]] as const)queue.push({x:p.x+x,y:p.y+y,path:[...p.path,d]});
+        }
+        expect(route).toBeDefined();if(!route!.length)break;t.move(route![0]!);
+      }
+      t.sim.send({type:'Interact'}); expect(t.sim.snapshot().mapId).toBe('vareon');
       expect(t.sim.snapshot().player).toEqual({x:24,y:12});
     }
   });

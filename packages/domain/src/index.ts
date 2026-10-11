@@ -1,4 +1,4 @@
-import { combatRules,skillRequired,skillPower,inventoryRules,depotOnMap,depotRules,combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items,onlineRules, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { combatRules,skillRequired,skillPower,inventoryRules,depotOnMap,depotAtStand,legacyDepotPositionAllowed,depotRules,combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items,onlineRules, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
 import { commandSchema,defaultSkills,type Skills, nameSchema,defaultLootSettings,type LootSettings,defaultAppearance,type Appearance,professionSchema, type Command, type Direction,type Profession,type SpellId,type ActionId,type Weapon } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
@@ -93,8 +93,11 @@ export class Simulation {
     const m = this.map();
     return point.x >= 0 && point.y >= 0 && point.x < m.width && point.y < m.height && m.collision[point.y * m.width + point.x] === 0;
   }
+  private exclusivePlayerTile(mapId:string,point:Point):boolean {
+    return !!depotAtStand(mapId,point)&&[...(this.online?.world.players.values()??[])].some(p=>p!==this&&p.state.mapId===mapId&&distance(p.state.player,point)===0);
+  }
   private occupied(point: Point, except?: string): boolean {
-    return [...(this.online?.world.players.values()??[])].some(p=>p!==this&&p.state.mapId===this.state.mapId&&distance(p.state.player,point)===0)||this.map().npcs.some(n => distance(n, point) === 0) || this.state.creatures.some(c => c.id !== except && c.hp > 0 && distance(c, point) === 0);
+    return (except?[...(this.online?.world.players.values()??[])].some(p=>p!==this&&p.state.mapId===this.state.mapId&&distance(p.state.player,point)===0):this.exclusivePlayerTile(this.state.mapId,point))||this.map().npcs.some(n => distance(n, point) === 0) || this.state.creatures.some(c => c.id !== except && c.hp > 0 && distance(c, point) === 0);
   }
   private spawnCreatures(): void {
     const cached = this.creatureMaps.get(this.state.mapId);
@@ -124,7 +127,7 @@ export class Simulation {
     if(command.type==='ClearTarget'){s.selectedId=null;return;}
     if(command.type==='CloseDepot'){s.depotOpen=false;return;}
     if(command.type==='OpenDepot'){
-      if(s.dialog||!this.nearDepot()){this.notify('Podejdź do skrzynki depo w gospodzie.');return;}
+      if(s.dialog||!this.nearDepot()||command.depotId&&depotAtStand(s.mapId,s.player)?.id!==command.depotId){this.notify('Stań na wolnym stanowisku przed skrzynką depo.');return;}
       s.depotOpen=true;this.notify('Depo: przenoś przedmioty pomiędzy plecakiem i stashem.');return;
     }
     if(command.type==='StashTransfer'){
@@ -324,7 +327,7 @@ export class Simulation {
       const p = queue.shift()!, key = `${p.x},${p.y}`;
       if (seen.has(key) || p.x < 0 || p.y < 0 || p.x >= map.width || p.y >= map.height || map.collision[p.y*map.width+p.x] !== 0) continue;
       seen.add(key);
-      if (![...map.npcs,...actors].some(a => distance(a,p) === 0)&&![...(this.online?.world.players.values()??[])].some(a=>a!==this&&a.state.mapId===map.id&&distance(a.state.player,p)===0)) return p;
+      if (![...map.npcs,...actors].some(a => distance(a,p) === 0)&&!this.exclusivePlayerTile(map.id,p)) return p;
       for (const v of Object.values(vectors)) queue.push({x:p.x+v.x,y:p.y+v.y});
     }
     return undefined;
@@ -343,7 +346,8 @@ export class Simulation {
   exportProgress():CharacterProgress {return characterProgressSchema.parse(this.exportSave());}
   restoreProgress(input:unknown):void {
     const data=characterProgressSchema.parse(input),m=this.maps.find(m=>m.id===data.mapId);
-    if(!m||data.player.x>=m.width||data.player.y>=m.height||m.collision[data.player.y*m.width+data.player.x])throw new Error('Nieprawidłowa pozycja postaci');
+    if(!m||data.player.x>=m.width||data.player.y>=m.height)throw new Error('Nieprawidłowa pozycja postaci');
+    if(m.collision[data.player.y*m.width+data.player.x]){if(legacyDepotPositionAllowed(m.id,data.player))data.player={...depotOnMap(m.id)!.stand,x:depotOnMap(m.id)!.stand.x,y:depotOnMap(m.id)!.stand.y+2};else throw new Error('Nieprawidłowa pozycja postaci');}
     const s=this.state;
     Object.assign(s,{name:data.name,profession:data.profession,skills:data.skills,appearance:data.appearance,actionSlots:data.actionSlots??defaultActions(data.profession),mapId:data.mapId,player:data.player,direction:data.direction,level:data.level,hp:data.hp,mana:data.mana,exp:data.exp,gold:data.gold,kills:data.kills,quest:data.quest,exploration:data.exploration,stash:data.stash,lootSettings:data.lootSettings,inventory:data.inventory,equipment:data.equipment,eventId:data.eventId,maxHp:rules.maxHp+(data.level-1)*10,maxMana:rules.maxMana+(data.level-1)*5,potions:countItem(data.inventory,'potion')});
     this.spawnCreatures();s.player=this.freeArrival(m,data.player)??(()=>{throw new Error('Brak miejsca dla postaci');})();
@@ -375,7 +379,9 @@ export class Simulation {
     const revision = (maps.find(m=>m.id==='eldoria')??maps.find(m=>m.id==='vareon'))?.layoutRevision ?? 1;
     if (data.cityRevision > revision) throw new Error('Zapis wymaga nowszej mapy miasta');
     if (!walkable(data.mapId,data.player)) {
-      if (data.mapId==='vareon' && data.cityRevision < revision && legacyTownPositionAllowed(data.player)) {
+      if (data.cityRevision===2&&revision===3&&legacyDepotPositionAllowed(data.mapId,data.player)){
+        data.player={...depotOnMap(data.mapId)!.stand,y:depotOnMap(data.mapId)!.stand.y+2};relocated=true;
+      } else if (data.mapId==='vareon' && data.cityRevision===1 && data.cityRevision < revision && legacyTownPositionAllowed(data.player)) {
         data.player = {...maps.find(m=>m.id==='vareon')!.spawns.entry!}; relocated = true;
       } else throw new Error('Pozycja zapisu w ścianie');
     }
@@ -405,7 +411,7 @@ export class Simulation {
     return sim;
   }
   private nearDepot():boolean {
-    const depot=depotOnMap(this.state.mapId);return !!depot&&distance(depot,this.state.player)<=depotRules.range;
+    return !!depotAtStand(this.state.mapId,this.state.player)&&!this.exclusivePlayerTile(this.state.mapId,this.state.player);
   }
   private collectNearby():void {
     const s=this.state,settings=s.lootSettings;if(!settings.enabled)return;

@@ -28,7 +28,7 @@ test('depot chest, stash transfers and NPC trade icons/prices persist',async({pa
  await page.screenshot({path:info.outputPath('depot-chest.png')});await page.keyboard.press('f');await expect(page.locator('#depot-dialog')).toBeVisible();
  await page.getByRole('button',{name:'Odłóż stos: Skóra wilka',exact:true}).click();await expect(page.locator('#stash-items')).toContainText('Skóra wilka ×4');
  await page.getByRole('button',{name:'Pobierz 1: Skóra wilka',exact:true}).click();await expect(page.locator('#stash-items')).toContainText('Skóra wilka ×3');
- await page.locator('#player-market summary').click();await expect(page.locator('#player-market')).toContainText('po wprowadzeniu trybu online');
+ await page.locator('#player-market summary').click();await expect(page.locator('#player-market')).toContainText('trwałej gospodarki online');
  await page.screenshot({path:info.outputPath('stash.png')});await page.locator('#close-depot').click();await page.reload();await page.locator('#resume').click();await page.keyboard.press('f');await expect(page.locator('#stash-items')).toContainText('Skóra wilka ×3');await page.locator('#close-depot').click();
  await fixture(page,d=>{d.player={x:44,y:86};});
  await page.keyboard.press('f');await expect(page.locator('#npc-dialog')).toBeVisible();await expect(page.locator('#npc-actions .trade-row svg')).toHaveCount(3);
@@ -41,7 +41,13 @@ for(const profession of ['archer','mage'])test(`${profession}: clicked target re
  await fixture(page,d=>{d.player={x:32,y:60};for(const c of d.maps[0]!.creatures){if(c.id==='rat-1')Object.assign(c,{x:32,y:53,hp:30,state:'idle',moveIn:400,attackIn:1200});if(c.id==='beetle-1')Object.assign(c,{x:34,y:60,hp:45,state:'idle',moveIn:400,attackIn:1200});}});
  await page.keyboard.press('t');await page.locator('#attack').click();await expect(page.locator('#message')).toContainText('poza zasięgiem');await page.locator('#cast').click();await expect(page.locator('#message')).toContainText('poza zasięgiem');
  await fixture(page,d=>{d.player={x:32,y:60};d.mana=50;for(const c of d.maps[0]!.creatures)if(c.id==='rat-1')Object.assign(c,{x:32,y:58,hp:30,state:'idle',moveIn:400,attackIn:1200});});
- await expect.poll(async()=>JSON.parse((await page.locator('#hud').getAttribute('data-creature-poses'))!).find((c:{id:string})=>c.id==='rat-1')?.screenY).toBeGreaterThan(60);
+ // Tap the settled rendered rat, rather than coordinates read mid-chase.
+ let previous:{screenX:number;screenY:number}|undefined;
+ await expect.poll(async()=>{
+  const rat=(JSON.parse((await page.locator('#hud').getAttribute('data-creature-poses'))!) as {id:string;y:number;animation:string|null;screenX:number;screenY:number}[]).find(c=>c.id==='rat-1')!;
+  const stable=previous&&Math.hypot(rat.screenX-previous.screenX,rat.screenY-previous.screenY)<.5;previous={screenX:rat.screenX,screenY:rat.screenY};
+  return rat.y===59&&rat.animation===null&&!!stable;
+ }).toBe(true);
  const point=await page.locator('#hud').evaluate(el=>JSON.parse(el.dataset.creaturePoses!).find((c:{id:string})=>c.id==='rat-1'));
  if(infoTouch(page))await page.touchscreen.tap(point.screenX,point.screenY);else await page.mouse.click(point.screenX,point.screenY);
  await expect(page.locator('#hud')).toHaveAttribute('data-selected-id','rat-1');

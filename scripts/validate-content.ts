@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { importMap, validateMaps, landmarks, landmarksOnMap,depotOnMap } from '@eldoria/content';
+import { importMap, validateMaps, landmarks, landmarksOnMap,depotsOnMap } from '@eldoria/content';
 const source = resolve('assets/source');
 const output = resolve('apps/client/public/assets');
 for(const kind of ['rat','beetle','wolf'])for(const directory of [source,output]){
@@ -21,7 +21,13 @@ for (const directory of [source, output]) {
     const data = readFileSync(resolve(directory, directory === source ? name : name.replace('.tmj', '.json')), 'utf8');
     return importMap(JSON.parse(data));
   });
-  for(const map of maps){const depot=depotOnMap(map.id);if(depot&&(map.collision[depot.y*map.width+depot.x]!==0||!map.buildings.some(b=>b.purpose==='inn'&&depot.x>b.x&&depot.x<b.x+b.width-1&&depot.y>b.y&&depot.y<b.y+b.height-1)))throw new Error(`Depo poza dostępną gospodą: ${map.id}`);}
+  for(const map of maps)for(const depot of depotsOnMap(map.id)){
+    const stand=depot.stand;
+    if(map.collision[depot.y*map.width+depot.x]!==1||map.collision[stand.y*map.width+stand.x]!==0||!map.buildings.some(b=>b.purpose==='inn'&&depot.x>b.x&&depot.x<b.x+b.width-1&&depot.y>b.y&&depot.y<b.y+b.height-1))throw new Error(`Nieprawidłowe stanowisko depo: ${map.id}/${depot.id}`);
+    const queue=[map.spawns.entry!],seen=new Set<string>();let reached=false;
+    for(let i=0;i<queue.length;i++){const p=queue[i]!,key=`${p.x},${p.y}`;if(seen.has(key)||p.x<0||p.y<0||p.x>=map.width||p.y>=map.height||map.collision[p.y*map.width+p.x]!==0||map.npcs.some(n=>n.x===p.x&&n.y===p.y))continue;seen.add(key);if(p.x===stand.x&&p.y===stand.y){reached=true;break;}for(const [dx,dy]of [[1,0],[-1,0],[0,1],[0,-1]])queue.push({x:p.x+dx!,y:p.y+dy!});}
+    if(!reached)throw new Error(`Niedostępne stanowisko depo: ${map.id}/${depot.id}`);
+  }
   validateMaps(maps, new Set(readdirSync(directory)));
   if (new Set(landmarks.map(l=>l.id)).size !== landmarks.length) throw new Error('Powtórzone ID odkrycia');
   for (const l of landmarks) {

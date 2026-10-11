@@ -50,12 +50,12 @@ describe('town save revision migration',()=>{
     Object.assign(data,{player:{x:7,y:23},gold:50,hp:30,mana:20,quest:{status:'active',kills:2},exploration:{status:'active',found:['trail']}});
     const sim=Simulation.restore(maps,data,{now:()=>9000});
     expect(sim.snapshot()).toMatchObject({player:{x:24,y:12},gold:50,hp:30,mana:20,quest:{status:'active',kills:2},exploration:{status:'active',found:['trail']}});
-    expect(sim.snapshot().message).toContain('przebudowano');expect(sim.exportSave().cityRevision).toBe(2);
+    expect(sim.snapshot().message).toContain('przebudowano');expect(sim.exportSave().cityRevision).toBe(3);
     const again=Simulation.restore(maps,sim.exportSave(),{now:()=>10000});expect(again.snapshot().player).toEqual({x:24,y:12});
   });
   it('keeps an old position that is still valid and rejects corrupt or current-revision wall positions',()=>{
     const data=save();data.cityRevision=1;data.player={x:23,y:12};
     expect(Simulation.restore(maps,data,{now:()=>0}).snapshot().player).toEqual(data.player);
-    for(const bad of [{...data,player:{x:0,y:0}},{...data,cityRevision:2,player:{x:7,y:23}},{...data,cityRevision:3}])expect(()=>Simulation.restore(maps,bad,{now:()=>0})).toThrow();
+    for(const bad of [{...data,player:{x:0,y:0}},{...data,cityRevision:3,player:{x:7,y:23}},{...data,cityRevision:4}])expect(()=>Simulation.restore(maps,bad,{now:()=>0})).toThrow();
   });
 });

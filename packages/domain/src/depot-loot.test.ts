@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {importMap,depotOnMap} from '@eldoria/content';
+import {importMap,depotOnMap,depotsOnMap} from '@eldoria/content';
 import {Simulation,countItem,type Stack} from './index';
 import {defaultLootSettings} from '@eldoria/protocol';
 import world from '../../../apps/client/public/assets/eldoria.json';
@@ -45,9 +45,13 @@ describe('automatic filtered loot',()=>{
  });
 });
 describe('depot storage transactions',()=>{
+ it('opens only on a service tile, rejects a different locker and exposes the same private stash at every station',()=>{
+  for(const depot of depotsOnMap('eldoria')){const t=setup(depot.stand,[],[{itemId:'skin',quantity:5}]);t.sim.send({type:'OpenDepot',depotId:'invalid'});expect(t.sim.snapshot().depotOpen).toBe(false);t.sim.send({type:'OpenDepot',depotId:depot.id==='depot-1'?'depot-2':'depot-1'});expect(t.sim.snapshot().depotOpen).toBe(false);t.sim.send({type:'OpenDepot',depotId:depot.id});expect(t.sim.snapshot()).toMatchObject({depotOpen:true,stash:[{itemId:'skin',quantity:5}]});}
+  const corridor=setup({x:21,y:99});corridor.sim.send({type:'OpenDepot'});expect(corridor.sim.snapshot().depotOpen).toBe(false);
+ });
  const position={x:21,y:98};
  it('chest is on the inn floor; rejects remote/closed/malformed transfers, blocks movement while open',()=>{
-  const t=setup();const chest=depotOnMap('eldoria')!;expect(t.map.collision[chest.y*t.map.width+chest.x]).toBe(0);
+  const t=setup();const chest=depotOnMap('eldoria')!;expect(t.map.collision[chest.y*t.map.width+chest.x]).toBe(1);expect(t.map.collision[chest.stand.y*t.map.width+chest.stand.x]).toBe(0);
   t.sim.send({type:'OpenDepot'});t.sim.send({type:'StashTransfer',direction:'deposit',itemId:'potion',quantity:1});expect(t.sim.snapshot()).toMatchObject({stash:[],potions:3,depotOpen:false});
   const near=setup(position).sim;near.send({type:'StashTransfer',direction:'deposit',itemId:'potion',quantity:1});expect(near.snapshot().stash).toEqual([]);
   near.send({type:'Interact'});near.send({type:'Move',direction:'right'});expect(near.snapshot()).toMatchObject({depotOpen:true,player:position});

@@ -907,3 +907,11 @@ button:disabled { opacity:.5; cursor:default; }
 .loot-row select, #bag-view { min-height:48px; width:100%; }
 .loot-bulk { display:flex; gap:8px; flex-wrap:wrap; }
 @media(max-width:480px) { .loot-row { grid-template-columns:1fr; } }
+
+#locker-slots { display:flex; flex-wrap:wrap; gap:10px; padding:12px; background:#0d202b; border:2px solid #526872; }
+#locker-slots button { display:flex; flex-direction:column; align-items:center; min-width:100px; min-height:90px; gap:4px; }
+.locker-icon { display:flex; align-items:center; justify-content:center; width:42px; height:42px; font-size:32px; color:#d9b36b; background:#17252c; border:2px solid #79919b; }
+#locker-slots small { font:11px system-ui; color:#a8b6b8; }
+.locker-icon svg { width:36px; height:36px; image-rendering:pixelated; }
+
+#depot-dialog .bag-header { position:sticky; top:0; z-index:1; background:#172b28; padding-block:8px; }

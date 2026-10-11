@@ -29,7 +29,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Attack') }).strict(),
   z.object({type:z.literal('ClearTarget')}).strict(),
   z.object({type:z.literal('SetLootSettings'),settings:lootSettingsSchema}).strict(),
-  z.object({type:z.literal('OpenDepot')}).strict(),
+  z.object({type:z.literal('OpenDepot'),depotId:z.enum(['depot-1','depot-2','depot-3','depot-4']).optional()}).strict(),
   z.object({type:z.literal('CloseDepot')}).strict(),
   z.object({type:z.literal('StashTransfer'),direction:z.enum(['deposit','withdraw']),itemId:itemIdSchema,quantity:z.number().int().min(1).max(99)}).strict(),
   z.object({ type: z.literal('Cast'),spellId:spellSchema.optional() }).strict(),
@@ -49,7 +49,7 @@ export const commandSchema = z.discriminatedUnion('type', [
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export const nameSchema = z.string().trim().min(3, 'Imię: 3–16 znaków').max(16, 'Imię: 3–16 znaków');
-export const PROTOCOL_VERSION = 3;
+export const PROTOCOL_VERSION = 4;
 export const guestJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),name:nameSchema,profession:professionSchema}).strict();
 export const onlineJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),characterId:z.uuid()}).strict();
 export const credentialsSchema=z.object({email:z.email().max(254).trim().toLowerCase(),password:z.string().min(10).max(128)}).strict();

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { depotOnMap,combatAllowedAt, regionAt, landmarksOnMap, importMap, validateMaps, rules, monsters, items, npcs, shopRules,questRules, explorationRules, landmarks,professions,spells, type WorldMap, type NpcId } from '@eldoria/content';
+import { depotsOnMap,combatAllowedAt, regionAt, landmarksOnMap, importMap, validateMaps, rules, monsters, items, npcs, shopRules,questRules, explorationRules, landmarks,professions,spells, type WorldMap, type NpcId } from '@eldoria/content';
 import { nameSchema,professionSchema,defaultAppearance, type Direction,type ActionId } from '@eldoria/protocol';
 import { Simulation, LocalGateway, type Snapshot, type OnlineSnapshot,type SaveData } from '@eldoria/domain';
 import {createTileLayer} from './tile-layer';
@@ -170,7 +170,7 @@ class World extends Phaser.Scene {
     this.effects = new CombatEffects(this); this.town = new TownView(this);
     this.bars = this.add.graphics().setDepth(10000);
     this.hero = this.add.sprite(13 * 32 + 16, 11 * 32 + 32, 'outfit', 0).setOrigin(.5, 1);
-    this.hero.setDepth(this.hero.y);
+    this.hero.setDepth(this.hero.y+.5);
     this.renderMap(maps[0]!);
     this.cameras.main.startFollow(this.hero, true, .12, .12);
     this.resize();
@@ -258,14 +258,14 @@ class World extends Phaser.Scene {
     }
     this.cameras.main.setBounds(0, 0, map.width * 32, map.height * 32);
     this.playerPosition = '';
-    const depot=depotOnMap(map.id);
-    if(depot){
+    for(const depot of depotsOnMap(map.id)){
       const x=depot.x*32,y=depot.y*32,g=this.add.graphics().setDepth(y+31);
+      const carpet=this.add.graphics().setDepth(depot.stand.y*32-1);carpet.fillStyle(0x953c34).fillRect(depot.stand.x*32+3,depot.stand.y*32+2,26,28);carpet.lineStyle(1,0xe1b165).strokeRect(depot.stand.x*32+5,depot.stand.y*32+4,22,24);this.objects.push(carpet);
       g.fillStyle(0x192832,.7).fillEllipse(x+16,y+29,30,10);g.fillStyle(0x523129).fillRect(x+2,y+8,28,22);
       g.fillStyle(0xb9894c).fillRect(x+4,y+10,24,17);g.fillStyle(0xd9b36b).fillRect(x+4,y+8,24,5);
       g.lineStyle(2,0x332a24).lineBetween(x+3,y+16,x+29,y+16);g.fillStyle(0xe9d087).fillRect(x+13,y+14,6,7);
-      g.setInteractive(new Phaser.Geom.Rectangle(x,y,32,32),Phaser.Geom.Rectangle.Contains).on('pointerdown',()=>{if(playing&&!settingsDialog.open && !bagDialog.open&&!npcDialog.open&&!depotDialog.open)gateway?.send({type:'OpenDepot'});});
-      const label=this.add.text(x+16,y-4,'DEPO',{fontFamily:'monospace',fontSize:'9px',color:'#f6df9b',stroke:'#18222b',strokeThickness:2}).setOrigin(.5,1).setDepth(y+32);
+      g.setInteractive(new Phaser.Geom.Rectangle(x,y,32,32),Phaser.Geom.Rectangle.Contains).on('pointerdown',()=>{if(playing&&!settingsDialog.open && !bagDialog.open&&!npcDialog.open&&!depotDialog.open)gateway?.send({type:'OpenDepot',depotId:depot.id});});
+      const label=this.add.text(x+16,y+7,depot.id.replace('depot-',''),{fontFamily:'monospace',fontSize:'9px',color:'#f6df9b',stroke:'#18222b',strokeThickness:2}).setOrigin(.5,1).setDepth(y+32);
       this.objects.push(g,label);
     }
 
@@ -297,7 +297,7 @@ class World extends Phaser.Scene {
       }
     }
     this.vitals.show();this.vitals.draw(s,this.hero.x,this.hero.y,vitalsStyle);ui.hud.dataset.vitalsStyle=vitalsStyle;
-    this.hero.setDepth(this.hero.y);
+    this.hero.setDepth(this.hero.y+.5);
     ui.hud.dataset.heroProfession=s.profession;ui.hud.dataset.heroTexture=this.hero.texture.key;
     if (this.time.now < this.actionUntil) {
       this.hero.anims.stop(); this.hero.setFrame(['down','left','right','up'].indexOf(s.direction)*3 + (this.actionKind === 'melee' ? 2 : 1));
@@ -306,7 +306,7 @@ class World extends Phaser.Scene {
     ui.hud.dataset.heroFrame=String(this.hero.frame.name);ui.hud.dataset.heroNick=s.name;
     ui.hud.dataset.heroHp=String(s.hp/s.maxHp);ui.hud.dataset.heroNameColor=healthDisplay(s.hp,s.maxHp).css;ui.hud.dataset.heroMana=String(s.mana/s.maxMana);
     ui.hud.dataset.heroPosition=`${this.hero.x.toFixed(3)},${this.hero.y.toFixed(3)}`;
-    this.remote.update('players'in s?(s as OnlineSnapshot).players:[],colorful);ui.hud.dataset.remotePlayers=JSON.stringify(this.remote.poses);
+    this.remote.update('players'in s?(s as OnlineSnapshot).players:[],colorful,s.player);ui.hud.dataset.remotePlayers=JSON.stringify(this.remote.poses);
     this.bars.clear();
     if(s.guardMs>0)this.bars.lineStyle(2,0x98c7ef,.6+Math.sin(this.time.now/180)*.2).strokeEllipse(this.hero.x,this.hero.y-10,34,28);
     for (const loot of s.loot.filter(l => l.mapId === s.mapId)) {
@@ -421,9 +421,9 @@ function updateUI(s: Snapshot): void {
     const npc=map.npcs.find(n=>n.id===guidedNpc)!;
     ui.targetLabel.textContent=`${npcs[npc.id].name} · ${npcs[npc.id].role} ${npc.x>s.player.x?'→':npc.x<s.player.x?'←':''}${npc.y>s.player.y?'↓':npc.y<s.player.y?'↑':''} · ${distance(npc)} kratek · F: rozmowa`;
   }
-  const depot=depotOnMap(s.mapId);
+  const depot=depotsOnMap(s.mapId).sort((a,b)=>(Math.abs(s.player.x-a.stand.x)+Math.abs(s.player.y-a.stand.y))-(Math.abs(s.player.x-b.stand.x)+Math.abs(s.player.y-b.stand.y)))[0];
   if(s.depotOpen)guidedDepot=false;
-  if(depot&&(guidedDepot||Math.abs(s.player.x-depot.x)+Math.abs(s.player.y-depot.y)<=1))ui.targetLabel.textContent=`Depo · gospoda na południowym zachodzie ${depot.x>s.player.x?'→':depot.x<s.player.x?'←':''}${depot.y>s.player.y?'↓':depot.y<s.player.y?'↑':''} · ${Math.abs(s.player.x-depot.x)+Math.abs(s.player.y-depot.y)} kratek · F: otwórz stash`;
+  if(depot&&(guidedDepot||Math.abs(s.player.x-depot.x)+Math.abs(s.player.y-depot.y)<=1))ui.targetLabel.textContent=`Depo · stanowisko ${depot.id.replace('depot-','')} ${depot.x>s.player.x?'→':depot.x<s.player.x?'←':''}${depot.y>s.player.y?'↓':depot.y<s.player.y?'↑':''} · ${Math.abs(s.player.x-depot.x)+Math.abs(s.player.y-depot.y)} kratek · F: otwórz stash`;
   ui.complete.hidden = !s.complete || completionDismissed;
   if (!ui.complete.hidden) resetInput();
   if (bagDialog.open) renderBag(s);

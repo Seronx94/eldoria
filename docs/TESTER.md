@@ -1,4 +1,4 @@
-# Eldoria 0.1.16 — konta i zapis postaci
+# Eldoria 0.1.17 — kabiny depo i wspólne kratki graczy
 
 Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Dostępny jest multiplayer z kontami i zapisem postaci opisany w [ONLINE.md](ONLINE.md), z trzema postaciami bezpłatnymi i pięcioma premium. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
 
@@ -127,3 +127,5 @@ npm run test:e2e
 ```
 
 Playwright automatycznie używa `/usr/bin/chromium`, jeśli istnieje, lub swojej zainstalowanej przeglądarki. Na własnym komputerze bez Chromium najpierw `npx playwright install chromium`. Opcjonalnie ustaw `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` na pełną ścieżkę do Chromium. Testy wymagają wolnego portu 5173. Szczegóły i aktualne wyniki znajdują się w `TASKS.md`; CI jest przygotowane, lecz wynik na GitHub będzie znany dopiero po zapisaniu zmian.
+
+Depo dla kilku graczy: zaloguj dwa różne konta na dwóch urządzeniach, wejdź do Depo Pod Liściem na południowym zachodzie i stań obiema postaciami w korytarzu. Możecie się nakładać. Wejdź pierwszą na czerwony dywanik przed skrzynką; druga nie może wejść na zajęty dywanik ani otworzyć tego lockera. Otwórz drugą kabinę i sprawdź osobne stashe. Samo Zamknij depo pozostawia zajęte stanowisko, odejście zwalnia je dla innego gracza. Sprawdź też zapis/wznowienie oraz market oznaczony jako w przygotowaniu.

@@ -31,7 +31,7 @@ layers.push({id:layers.length+1,name:'Regions',type:'objectgroup',objects:[
   {id:objectId++,name:'forest',x:0,y:0,width:64*32,height:64*32,properties:[property('label','MROCZNY LAS'),property('combatAllowed',true)]},
   {id:objectId++,name:'vareon',x:8*32,y:64*32,width:48*32,height:48*32,properties:[property('label','VAREON · STREFA BEZPIECZNA'),property('combatAllowed',false)]},
 ]});
-const world={...town,width,height,nextlayerid:layers.length+1,nextobjectid:objectId,properties:[property('mapId','eldoria'),property('combatAllowed',true),property('layoutRevision',2)],layers};
+const world={...town,width,height,nextlayerid:layers.length+1,nextobjectid:objectId,properties:[property('mapId','eldoria'),property('combatAllowed',true),property('layoutRevision',3)],layers};
 const data=JSON.stringify(world,null,2)+'\n';
 writeFileSync(resolve(root,'assets/source/eldoria.tmj'),data);writeFileSync(resolve(root,'apps/client/public/assets/eldoria.json'),data);
 console.log('Generated Eldoria: continuous 64×112 world, forest north / safe Vareon south.');

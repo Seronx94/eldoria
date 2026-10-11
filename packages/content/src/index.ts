@@ -22,5 +22,5 @@ export { npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,
 export {legacyTownPositionAllowed} from './town';
 export {professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual} from './professions';
 
-export {depotRules,depotOnMap} from './depot';
+export {depotRules,depotOnMap,depotsOnMap,depotAtStand,legacyDepotPositionAllowed,type DepotStation} from './depot';
 export {onlineRules} from './online';

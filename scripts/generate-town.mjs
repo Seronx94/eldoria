@@ -19,7 +19,7 @@ const buildings=[
   {id:'gatehouse',label:'Wartownia',purpose:'guard',x:21,y:5,w:7,h:9,passage:true},
   {id:'temple',label:'Świątynia Świtu',purpose:'temple',x:7,y:18,w:11,h:9},
   {id:'shop',label:'Sklep Borina',purpose:'shop',x:31,y:18,w:11,h:9},
-  {id:'inn',label:'Gospoda Pod Liściem',purpose:'inn',x:7,y:31,w:11,h:9},
+  {id:'inn',label:'Depo Pod Liściem',purpose:'inn',x:7,y:31,w:11,h:9},
   {id:'smith',label:'Warsztat',purpose:'workshop',x:31,y:31,w:11,h:9},
   {id:'home-west',label:'Dom wędrowców',purpose:'home',x:7,y:6,w:10,h:9},
   {id:'home-east',label:'Dom zielarki',purpose:'home',x:32,y:6,w:10,h:9},
@@ -39,7 +39,7 @@ const props=[
   ['counter',25,10,'gatehouse',2],['bookcase',22,7,'gatehouse',1],
   ['altar',11,20,'temple',2],['bookcase',8,20,'temple',1],['bookcase',16,20,'temple',1],
   ['counter',34,22,'shop',2],['counter',37,22,'shop',2],['bookcase',32,20,'shop',1],['crates',40,24,'shop',1],
-  ['counter',9,34,'inn',2],['bed',15,33,'inn',1],['bed',15,36,'inn',1],
+  ['bookcase',8,32,'inn',1],['bookcase',16,32,'inn',1],
   ['forge',36,34,'smith',2],['crates',33,36,'smith',1],
   ['bed',9,8,'home-west',1],['bookcase',14,8,'home-west',1],['bed',39,8,'home-east',1],['bookcase',34,8,'home-east',1],
   ['fountain',23,23,'',3],['stall',20,30,'',2],['stall',28,30,'',2],
@@ -50,10 +50,13 @@ for(const [kind,x,y,,w] of props) {
   // The sprite contains its water and stone basin. Its transparent edge must reveal paving, not a square lake.
   if(kind==='fountain') area(23,21,3,3,i=>{collision[i]=1;ground[i]=4;cityGround[i]=1;});
 }
+// Four lockable service tiles with a shared corridor below them.
+for(const x of [8,10,12,14,16])for(const y of [33,34]){collision[y*48+x]=1;cityWalls[y*48+x]=2;}
+for(const x of [9,11,13,15]){collision[33*48+x]=1;cityGround[34*48+x]=2;}
 const trees=[[5,5],[18,7],[29,7],[43,5],[5,19],[43,19],[5,32],[43,32],[19,40],[29,40],[5,42],[43,42]];
 for(const [x,y] of trees)collision[y*48+x]=1;
 const tileLayer=(id,name,data,visible=true)=>({id,name,type:'tilelayer',width,height,x:0,y:0,opacity:1,visible,data});
-m.properties=[property('mapId','vareon'),property('combatAllowed','false'),property('layoutRevision',2)];
+m.properties=[property('mapId','vareon'),property('combatAllowed','false'),property('layoutRevision',3)];
 m.layers=[tileLayer(1,'Ground',ground),tileLayer(2,'Details',details),tileLayer(3,'Collision',collision,false),tileLayer(4,'Above',Array(width*height).fill(0)),
   {id:5,name:'Spawns',type:'objectgroup',objects:[object(1,'entry',24,12)]},
   {id:6,name:'Portals',type:'objectgroup',objects:[object(2,'gate',24,4,[property('targetMapId','forest'),property('targetSpawnId','entry')])]},
@@ -70,6 +73,6 @@ for(const l of m.layers)if(l.name==='CityGround')l.data=l.data.map(v=>v?v+4:0);e
 m.nextlayerid=13;m.nextobjectid=250;
 const data=JSON.stringify(m,null,2)+'\n';
 writeFileSync(resolve(root,'assets/source/vareon.tmj'),data);writeFileSync(resolve(root,'apps/client/public/assets/vareon.json'),data);
-console.log('Generated Vareon revision 2: seven enterable buildings, market and located services.');
+console.log('Generated Vareon revision 3: seven enterable buildings, market and located services.');
 
 await import('./generate-world.mjs');

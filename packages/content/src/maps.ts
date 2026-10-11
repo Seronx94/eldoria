@@ -109,7 +109,7 @@ export function importMap(input: unknown): WorldMap {
       if(!ts||!('tiles' in ts)||ts.name!==name||ts.firstgid!==firstgid||ts.tilecount!==images.length||ts.tiles.length!==images.length||ts.tiles.some((t,index)=>t.id!==index||t.image!==`town/${images[index]}.png`)) throw new Error(`${id}: nieprawidłowe tilesety miasta`);
     }
   } else if(cityGround.some(Boolean)||cityWalls.some(Boolean)||buildings.length||townProps.length) throw new Error(`${id}: brak tilesetów miasta`);
-  const layoutRevision=Number(z.enum(['1','2']).parse(raw.properties.find(p=>p.name==='layoutRevision')?.value??'1'));
+  const layoutRevision=Number(z.enum(['1','2','3']).parse(raw.properties.find(p=>p.name==='layoutRevision')?.value??'1'));
   const image = raw.tilesets[0]!.image;
   if (image.startsWith('/') || image.includes('..') || image.includes(':') || !image.endsWith('.png')) throw new Error(`${id}: obraz musi być względnym PNG`);
   return { regions,layoutRevision,cityGround,cityWalls,buildings,townProps,id, combatAllowed: raw.properties.find(p => p.name === 'combatAllowed')?.value !== 'false', width: raw.width, height: raw.height, ground: tileLayer('Ground'), details: tileLayer('Details'), above: tileLayer('Above'), collision: tileLayer('Collision'), spawns, portals, decorations, npcs, monsterSpawns, image };

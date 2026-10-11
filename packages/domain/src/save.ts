@@ -15,7 +15,7 @@ export const explorationSchema = z.object({
   found: z.array(z.enum(['trail', 'camp', 'stone'])).max(3),
 }).strict().refine(q => new Set(q.found).size === q.found.length && (q.status === 'available' ? q.found.length === 0 : q.status === 'active' ? q.found.length < 3 : q.found.length === 3), 'Nieprawidłowy postęp eksploracji');
 export const saveSchema = z.object({
-  version: z.literal(1), cityRevision: z.number().int().min(1).max(2).default(1), mode: z.literal('offline'), name: nameSchema,
+  version: z.literal(1), cityRevision: z.number().int().min(1).max(3).default(1), mode: z.literal('offline'), name: nameSchema,
   skills:skillsSchema.default(defaultSkills),combatIn:integer(60000).default(0),
   appearance:appearanceSchema.default(defaultAppearance),profession:professionSchema.default('knight'),actionSlots:z.tuple([actionSchema,actionSchema,actionSchema,actionSchema]).optional(),
   spellCooldowns:spellCooldownSchema.optional(),guardIn:integer(professionRules.guardMs).default(0),

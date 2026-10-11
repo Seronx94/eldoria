@@ -1,11 +1,11 @@
 {
   "name": "@eldoria/content",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "private": true,
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
     "zod": "4.6.5",
-    "@eldoria/protocol": "0.1.16"
+    "@eldoria/protocol": "0.1.17"
   }
 }

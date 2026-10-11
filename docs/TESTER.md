@@ -28,7 +28,13 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Po zbudowaniu i zainstalowaniu APK komputer i LAN nie są potrzebne — patrz [instrukcja Androida](ANDROID.md).
 
-## Trzy kroki testu 0.1.13
+## Trzy kroki testu poprawionych nicków i pasków
+
+1. Uruchom `npm run dev:online` i dołącz dwoma urządzeniami lub kartami jako różne profesje. Sprawdź czytelność obu nicków na tle kostki i trawy.
+2. Przejdź obok drugiego gracza: jego mały pasek HP ma być nad głową, a nick nad paskiem. Podczas chodzenia oba elementy powinny podążać za postacią.
+3. W menu przełącz własne paski na łuki. Inny gracz nadal ma tylko mały pasek HP; mana i łuki należą wyłącznie do Twojego widoku. Powtórz w poziomie na telefonie.
+
+## Poprzednie trzy kroki testu 0.1.13
 
 1. Sprawdź własny nick oraz HP i manę. W menu wybierz łuki: niebieska mana ma nadal występować tylko przy Twoim bohaterze. Zapisany wybór pozostaje po wznowieniu.
 2. Zaznacz zdrowego potwora — dostanie mały pasek HP i zieloną nazwę. Zdejmij cel: etykieta zdrowego potwora znika. Zrań go: etykieta zostaje także bez zaznaczenia, ale nie pokazuje many ani bocznych łuków.

@@ -517,7 +517,8 @@ input {
     font-size:19px
   }
   .world-label {
-    top:68px;
+    top:auto;
+    bottom:148px;
     font-size:9px
   }
   .controls {

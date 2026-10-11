@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import {healthDisplay} from './health-display';
+import {createNameplate} from './nameplate';
 import type {Snapshot} from '@eldoria/domain';
 export type VitalsStyle='bars'|'arcs';
 export function loadVitalsStyle():VitalsStyle {try{return localStorage.getItem('eldoria.vitals')==='arcs'?'arcs':'bars';}catch{return 'bars';}}
@@ -8,15 +9,15 @@ export class HeroVitals {
   private name:Phaser.GameObjects.Text;
   constructor(scene:Phaser.Scene){
     this.graphics=scene.add.graphics().setDepth(10003);
-    this.name=scene.add.text(0,0,'',{fontFamily:'monospace',fontSize:'11px',color:'#ffe8b1',stroke:'#101e23',strokeThickness:3}).setOrigin(.5,1).setDepth(10004);
+    this.name=createNameplate(scene,12,10004);
   }
   draw(s:Snapshot,x:number,y:number,style:VitalsStyle):void {
     const health=healthDisplay(s.hp,s.maxHp);
-    this.name.setText(s.name).setColor(health.css).setPosition(Math.round(x),Math.round(y-59));
+    this.name.setText(s.name).setColor(health.css).setPosition(Math.round(x),Math.round(y-66));
     const g=this.graphics;g.clear();
     const hp=health.ratio,mana=Phaser.Math.Clamp(s.mana/s.maxMana,0,1);
     if(style==='bars'){
-      for(const [offset,value,color]of [[-54,hp,health.color],[-47,mana,0x569bff]]){
+      for(const [offset,value,color]of [[-61,hp,health.color],[-54,mana,0x569bff]]){
         g.fillStyle(0x0c1920,.9).fillRect(Math.round(x)-23,Math.round(y+offset!)-1,46,6);
         g.fillStyle(color!).fillRect(Math.round(x)-22,Math.round(y+offset!),Math.round(44*value!),4);
       }

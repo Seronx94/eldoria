@@ -18,7 +18,7 @@ export class RemotePlayers {
     const key=`remote-${p.id}`,texture=this.scene.textures.createCanvas(key,96,192);if(!texture)throw new Error('Brak tekstury gracza');texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     for(let row=0;row<4;row++)for(let col=0;col<3;col++)texture.add(row*3+col,0,col*32,row*48,32,48);
     for(const [row,d]of ['down','left','right','up'].entries())this.scene.anims.create({key:`${key}-${d}`,frames:this.scene.anims.generateFrameNumbers(key,{start:row*3,end:row*3+2}),frameRate:10,repeat:-1});
-    view={sprite:this.scene.add.sprite(p.player.x*32+16,p.player.y*32+32,key,0).setOrigin(.5,1),vitals:new PublicVitals(this.scene),texture,signature:'',position:'',until:0,actionUntil:0};this.views.set(p.id,view);
+    view={sprite:this.scene.add.sprite(p.player.x*32+16,p.player.y*32+32,key,0).setOrigin(.5,1),vitals:new PublicVitals(this.scene,12),texture,signature:'',position:'',until:0,actionUntil:0};this.views.set(p.id,view);
    }
    const source=p.profession==='knight'?(colorful?'colorful-wanderer':'wanderer'):`colorful-${p.profession}`,signature=JSON.stringify([source,p.appearance]);
    if(view.signature!==signature){view.signature=signature;const ctx=view.texture.context;ctx.clearRect(0,0,96,192);ctx.imageSmoothingEnabled=false;ctx.drawImage(this.scene.textures.get(source).getSourceImage() as CanvasImageSource,0,0);const data=ctx.getImageData(0,0,96,192);data.data.set(recolorOutfit(data.data,p.profession,p.appearance));ctx.putImageData(data,0,0);view.texture.refresh();}
@@ -26,10 +26,10 @@ export class RemotePlayers {
    if(position!==view.position){view.tween?.stop();if(view.position&&Math.hypot(view.sprite.x-x,view.sprite.y-y)<=64){view.tween=this.scene.tweens.add({targets:view.sprite,x,y,duration:rules.stepMs+20,ease:'Linear'});view.until=this.scene.time.now+rules.stepMs+20;}else view.sprite.setPosition(x,y);view.position=position;}
    view.sprite.setData('direction',p.direction).setDepth(view.sprite.y);
    if(this.scene.time.now>=view.actionUntil){if(this.scene.time.now<view.until)view.sprite.play(`remote-${p.id}-${p.direction}`,true);else{view.sprite.anims.stop();view.sprite.setFrame(['down','left','right','up'].indexOf(p.direction)*3);}}
-   view.vitals.draw(p.name,p.hp,p.maxHp,view.sprite.x,view.sprite.y,true);
+   view.vitals.draw(p.name,p.hp,p.maxHp,view.sprite.x,view.sprite.y,true,view.sprite.displayHeight);
   }
  }
  clear():void {for(const [id,view]of this.views)this.remove(id,view);}
  private remove(id:string,view:View):void {view.tween?.stop();view.sprite.destroy();view.vitals.destroy();for(const d of ['down','left','right','up'])this.scene.anims.remove(`remote-${id}-${d}`);this.scene.textures.remove(`remote-${id}`);this.views.delete(id);}
- get poses():{id:string;x:number;y:number;hpVisible:boolean;nameColor:string}[]{return [...this.views].map(([id,v])=>({id,x:v.sprite.x,y:v.sprite.y,hpVisible:v.vitals.presentation.visible,nameColor:v.vitals.presentation.color}));}
+ get poses():{id:string;x:number;y:number;headTop:number;hpVisible:boolean;nameColor:string;nameBottom:number;hpTop:number;hpBottom:number;centerX:number}[]{return [...this.views].map(([id,v])=>{const p=v.vitals.presentation;return {id,x:v.sprite.x,y:v.sprite.y,headTop:v.sprite.getBounds().top,hpVisible:p.visible,nameColor:p.color,nameBottom:p.nameBottom,hpTop:p.hpTop,hpBottom:p.hpBottom,centerX:p.centerX};});}
 }

@@ -22,3 +22,4 @@ export {legacyTownPositionAllowed} from './town';
 export {professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual} from './professions';
 
 export {depotRules,depotOnMap} from './depot';
+export {onlineRules} from './online';

@@ -44,3 +44,5 @@ export const commandSchema = z.discriminatedUnion('type', [
 export type Command = z.infer<typeof commandSchema>;
 export const nameSchema = z.string().trim().min(3, 'Imię: 3–16 znaków').max(16, 'Imię: 3–16 znaków');
 export const PROTOCOL_VERSION = 1;
+export const onlineJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),name:nameSchema,profession:professionSchema}).strict();
+export const onlineCommandSchema=z.object({sequence:z.number().int().min(1).max(2147483647),command:commandSchema}).strict();

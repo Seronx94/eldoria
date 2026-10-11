@@ -1,6 +1,6 @@
-# Eldoria 0.1.13 — prywatne paski i kolory HP
+# Eldoria 0.1.14 — wspólna sesja online
 
-Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Nie ma multiplayer. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
+Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Dostępny jest testowy multiplayer gościnny opisany w [ONLINE.md](ONLINE.md), bez kont i trwałego zapisu. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
 
 ## Uruchomienie na komputerze
 

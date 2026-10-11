@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { depotOnMap,combatAllowedAt, regionAt, landmarksOnMap, importMap, validateMaps, rules, monsters, items, npcs, shopRules,questRules, explorationRules, landmarks,professions,spells, type WorldMap, type NpcId } from '@eldoria/content';
 import { nameSchema,professionSchema,defaultAppearance, type Direction,type ActionId } from '@eldoria/protocol';
-import { Simulation, LocalGateway, type Snapshot, type SaveData } from '@eldoria/domain';
+import { Simulation, LocalGateway, type Snapshot, type OnlineSnapshot,type SaveData } from '@eldoria/domain';
 import {createTileLayer} from './tile-layer';
 import { CityGuide } from './city-guide';
 import { TownView, townAssetKeys } from './town-view';
@@ -10,6 +10,8 @@ import { OfflineStorage } from './storage';
 import {VirtualJoystick} from './virtual-joystick';
 import {renderActionIcons,actionIcon} from './action-icons';
 import {renderInventory,itemIcon} from './inventory-view';
+import {OnlineGateway} from './online-gateway';
+import {RemotePlayers} from './remote-players';
 import {PublicVitals} from './public-vitals';
 import {healthDisplay} from './health-display';
 import {HeroVitals,loadVitalsStyle,type VitalsStyle} from './hero-vitals';
@@ -35,7 +37,8 @@ const ui = {
   potionCount: element('#potion-count'), targetLabel: element('#target-label'), complete: element('#complete'),
 };
 let maps: WorldMap[] = [];
-let gateway: LocalGateway | undefined;
+let gateway: LocalGateway|OnlineGateway|undefined;
+let onlineMode=false;
 let snapshot: Snapshot | undefined;
 let unsubscribe: (() => void) | undefined;
 let playing = false;
@@ -138,6 +141,7 @@ class Menu extends Phaser.Scene {
 }
 class World extends Phaser.Scene {
   private vitals!:HeroVitals;
+  private remote!:RemotePlayers;
   private publicVitals=new Map<string,PublicVitals>();
   private hero!: Phaser.GameObjects.Sprite;
   private appearance!:HeroAppearance;
@@ -158,7 +162,7 @@ class World extends Phaser.Scene {
   private movingTween?: Phaser.Tweens.Tween;
   constructor() { super('World'); }
   create(): void {
-    this.vitals=new HeroVitals(this);
+    this.vitals=new HeroVitals(this);this.remote=new RemotePlayers(this);
     this.appearance=new HeroAppearance(this);
     this.effects = new CombatEffects(this); this.town = new TownView(this);
     this.bars = this.add.graphics().setDepth(10000);
@@ -181,7 +185,7 @@ class World extends Phaser.Scene {
     this.effects.clear();
     this.movingTween?.stop(); this.movingUntil = 0; this.actionUntil = 0;
     for (const view of this.creatureViews.values()) view.tween?.stop();
-    this.creatureViews.clear();
+    this.creatureViews.clear();this.remote.clear();
     for(const vitals of this.publicVitals.values())vitals.destroy();this.publicVitals.clear();
     this.hero.anims.stop(); this.hero.setTexture('outfit',0);
     for (const object of this.objects) object.destroy();
@@ -268,8 +272,8 @@ class World extends Phaser.Scene {
     if (!s) return;
     this.resize();
     const newWorld = this.epoch !== worldEpoch;
-    if (newWorld) { this.epoch = worldEpoch; this.lastCombatId = 0; }
-    if (!playing) { this.vitals.hide();for(const vitals of this.publicVitals.values())vitals.hide();this.effects.clear(); ui.hud.dataset.effects = '0'; return; }
+    if (newWorld) { this.epoch = worldEpoch; this.lastCombatId = onlineMode?(s.combatEvents.at(-1)?.id??0):0; }
+    if (!playing) { this.vitals.hide();this.remote.clear();for(const vitals of this.publicVitals.values())vitals.hide();this.effects.clear(); ui.hud.dataset.effects = '0'; return; }
     this.appearance.update(s,colorful);
     const changedMap = this.mapId !== s.mapId;
     if (newWorld || changedMap || this.colorful !== colorful) this.renderMap(maps.find(m => m.id === s.mapId)!);
@@ -298,6 +302,7 @@ class World extends Phaser.Scene {
     ui.hud.dataset.heroFrame=String(this.hero.frame.name);ui.hud.dataset.heroNick=s.name;
     ui.hud.dataset.heroHp=String(s.hp/s.maxHp);ui.hud.dataset.heroNameColor=healthDisplay(s.hp,s.maxHp).css;ui.hud.dataset.heroMana=String(s.mana/s.maxMana);
     ui.hud.dataset.heroPosition=`${this.hero.x.toFixed(3)},${this.hero.y.toFixed(3)}`;
+    this.remote.update('players'in s?(s as OnlineSnapshot).players:[],colorful);ui.hud.dataset.remotePlayers=JSON.stringify(this.remote.poses);
     this.bars.clear();
     if(s.guardMs>0)this.bars.lineStyle(2,0x98c7ef,.6+Math.sin(this.time.now/180)*.2).strokeEllipse(this.hero.x,this.hero.y-10,34,28);
     for (const loot of s.loot.filter(l => l.mapId === s.mapId)) {
@@ -345,9 +350,10 @@ class World extends Phaser.Scene {
       if (event.id <= this.lastCombatId) continue;
       this.lastCombatId = event.id;
       if (event.mapId !== s.mapId) continue;
-      const source = event.sourceId === 'player' ? this.hero : this.creatureSprites.get(event.sourceId);
-      const target = event.targetId === 'player' ? this.hero : event.targetId ? this.creatureSprites.get(event.targetId) : undefined;
-      this.effects.play(event, source, target,id=>id==='player'?this.hero:this.creatureSprites.get(id));
+      const source = event.sourceId === 'player' ? this.hero : this.remote.sprite(event.sourceId)??this.creatureSprites.get(event.sourceId);
+      const target = event.targetId === 'player' ? this.hero : event.targetId ? this.remote.sprite(event.targetId)??this.creatureSprites.get(event.targetId) : undefined;
+      this.effects.play(event, source, target,id=>id==='player'?this.hero:this.remote.sprite(id)??this.creatureSprites.get(id));
+      this.remote.action(event.sourceId,event.effect);
       if (event.sourceId === 'player') { ui.hud.dataset.playerCombatTarget=event.targetId??'';ui.hud.dataset.playerCombatKind=event.kind; this.actionUntil = this.time.now + 280; this.actionKind = event.kind === 'spell' ? 'spell' : 'melee'; }
       ui.hud.dataset.combatDamage = String(event.damage); ui.hud.dataset.combatTarget = event.targetId ?? '';
       ui.hud.dataset.combat = event.kind; ui.hud.dataset.combatId = String(event.id);
@@ -418,7 +424,7 @@ function updateUI(s: Snapshot): void {
   if (!ui.complete.hidden) resetInput();
   if (bagDialog.open) renderBag(s);
   renderNpc(s);depotView.update(s);if(s.depotOpen)resetInput();
-  if (playing && adventure) autosave(s);
+  if (playing && adventure && !onlineMode) autosave(s);
   // Accessible state for UI tests; never used to decide simulation outcomes.
   ui.hud.dataset.position = `${s.player.x},${s.player.y}`;
   ui.hud.dataset.map = s.mapId;
@@ -426,21 +432,33 @@ function updateUI(s: Snapshot): void {
   ui.hud.dataset.graphics = colorful ? 'colorful' : 'classic';
   ui.hud.dataset.profession=s.profession;ui.hud.dataset.actionSlots=s.actionSlots.join(',');
 }
-function activate(simulation: Simulation): void {
+function activate(simulation: Simulation): void {activateGateway(new LocalGateway(simulation),false);element<HTMLSelectElement>('#profession').value=simulation.snapshot().profession;}
+function activateGateway(next:LocalGateway|OnlineGateway,isOnline:boolean):void {
   chooseGraphics(); worldEpoch++; guidedNpc=undefined;guidedDepot=false;
-  element<HTMLSelectElement>('#profession').value=simulation.snapshot().profession;
+
   delete ui.hud.dataset.playerCombatTarget;delete ui.hud.dataset.playerCombatKind;delete ui.hud.dataset.selectedId;
   delete ui.hud.dataset.combat; delete ui.hud.dataset.combatId; delete ui.hud.dataset.combatDamage; delete ui.hud.dataset.combatTarget;
   delete ui.hud.dataset.combatEffect;delete ui.hud.dataset.effectTypes;
   unsubscribe?.(); gateway?.disconnect(); resetInput();
   completionDismissed = false; ui.complete.hidden = true;
-  gateway = new LocalGateway(simulation);
+  element<HTMLSelectElement>('#connection-mode').value=isOnline?'online':'offline';syncConnectionChoices();
+  gateway=next;onlineMode=isOnline;snapshot=undefined;ui.hud.dataset.connection=isOnline?'connecting':'offline';element<HTMLButtonElement>('#save-button').disabled=isOnline;
   playing = true; ui.menu.hidden = true; ui.hud.hidden = false;
-  element('#save-status').textContent = adventure ? 'Przygoda offline · zapis lokalny' : 'Próba i spacer nie są zapisywane';
+  element('#save-status').textContent = isOnline?'Online · sesja testowa bez trwałego zapisu':adventure ? 'Przygoda offline · zapis lokalny' : 'Próba i spacer nie są zapisywane';
   lastSavedSignature = ''; lastSaveTime = performance.now(); lastSavedMap = ''; lastSavedEconomy = '';
   unsubscribe = gateway.subscribe(updateUI); gateway.connect();
 }
+function syncConnectionChoices():void {const online=element<HTMLSelectElement>('#connection-mode').value==='online';element<HTMLSelectElement>('#mode').disabled=online;element<HTMLInputElement>('#walk-mode').disabled=online;}
+element('#connection-mode').addEventListener('change',syncConnectionChoices);
 function start(name: string): void {
+  if(element<HTMLSelectElement>('#connection-mode').value==='online'){
+    adventure=true;walkingOnly=false;
+    const endpoint=import.meta.env.VITE_ONLINE_URL as string|undefined??`${location.protocol==='https:'?'wss':'ws'}://${location.host}/online`;
+    const next=new OnlineGateway(endpoint,name,professionSchema.parse(element<HTMLSelectElement>('#profession').value),(message,failed)=>{
+      if(gateway!==next)return;element('#save-status').textContent=message;ui.hud.dataset.connection=failed?'disconnected':message.startsWith('Łączenie')?'connecting':'online';
+      if(failed){playing=false;resetInput();ui.hud.hidden=true;ui.menu.hidden=false;ui.nameError.textContent=message;refreshSaveMenu();}
+    });activateGateway(next,true);return;
+  }
   walkingOnly = element<HTMLInputElement>('#walk-mode').checked;
   adventure = !walkingOnly && element<HTMLSelectElement>('#mode').value === 'adventure';
   const samples = maps.filter(m => ['courtyard','grove'].includes(m.id));
@@ -453,7 +471,7 @@ element<HTMLFormElement>('#start-form').addEventListener('submit', event => {
   ui.nameError.textContent = ''; ui.name.blur(); start(result.data);
 });
 element('#menu-button').addEventListener('click', () => {
-  if (adventure) saveNow();
+  if (adventure&&!onlineMode) saveNow();
   playing = false; resetInput(); gateway?.disconnect(); unsubscribe?.();
   ui.hud.hidden = true; ui.menu.hidden = false; refreshSaveMenu();
 });
@@ -509,10 +527,11 @@ window.addEventListener('blur', resetInput);
 window.addEventListener('resize', resetInput);
 document.addEventListener('visibilitychange', () => {
   resetInput();
-  if (document.hidden) { if (adventure) saveNow(); gateway?.disconnect(); }
+  if(onlineMode)return;
+  if (document.hidden) { if (adventure&&!onlineMode) saveNow(); gateway?.disconnect(); }
   else if (playing && gateway) { unsubscribe = gateway.subscribe(updateUI); gateway.connect(); }
 });
-window.addEventListener('pagehide', () => { if (adventure) saveNow(); clearInterval(movementTimer); gateway?.disconnect(); game.destroy(true); });
+window.addEventListener('pagehide', () => { if (adventure&&!onlineMode) saveNow(); clearInterval(movementTimer); gateway?.disconnect(); game.destroy(true); });
 
 let loadoutProfession='';
 let spellbookSignature='';
@@ -656,7 +675,7 @@ npcDialog.addEventListener('cancel', event => { event.preventDefault(); gateway?
 npcDialog.addEventListener('close', resetInput);
 
 function saveNow(explicitRecovery = false): void {
-  if (!gateway || !adventure) return;
+  if (!(gateway instanceof LocalGateway) || !adventure || onlineMode) return;
   lastSaveTime = performance.now();
   if (snapshot) { lastSavedMap = saveLocation(snapshot.mapId,snapshot.player); lastSavedEconomy = JSON.stringify([snapshot.gold,snapshot.quest.status,snapshot.exploration,snapshot.profession,snapshot.actionSlots,snapshot.appearance]); }
   try {
@@ -670,9 +689,10 @@ function persistentSignature(data: SaveData): string {
   return JSON.stringify([data.cityRevision,data.stash,data.lootSettings,data.appearance,data.profession,data.actionSlots,data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
 }
 function autosave(s: Snapshot): void {
+  if(!(gateway instanceof LocalGateway)||onlineMode)return;
   const economy = JSON.stringify([s.stash,s.lootSettings,s.inventory,s.gold,s.quest.status,s.exploration,s.profession,s.actionSlots,s.appearance]);
   if (saveLocation(s.mapId,s.player) !== lastSavedMap || economy !== lastSavedEconomy || performance.now()-lastSaveTime >= 30000) {
-    const data = gateway?.exportSave();
+    const data = gateway.exportSave();
     if (data && persistentSignature(data) !== lastSavedSignature) saveNow();
     else lastSaveTime = performance.now();
   }
@@ -690,10 +710,10 @@ function resumeSave(data: SaveData, recovery = false): void {
 }
 element('#resume').addEventListener('click', () => { const data = storage.load().data; if (data) resumeSave(data); });
 element('#recover').addEventListener('click', () => { const data = storage.load().backup; if (data) resumeSave(data,true); });
-element('#save-button').addEventListener('click', () => { if (adventure) saveNow(); else element('#save-status').textContent = 'Próba i spacer nie są zapisywane.'; });
+element('#save-button').addEventListener('click', () => { if (adventure&&!onlineMode) saveNow(); else element('#save-status').textContent = 'Próba i spacer nie są zapisywane.'; });
 element('#export-save').addEventListener('click', async () => {
   try {
-    const data = adventure && gateway ? gateway.exportSave() : storage.load().data ?? storage.load().backup;
+    const data = adventure && gateway instanceof LocalGateway ? gateway.exportSave() : storage.load().data ?? storage.load().backup;
     if (!data) { element('#save-menu-status').textContent = 'Brak poprawnego zapisu do eksportu.'; return; }
     await exportSave(data);
   } catch { element('#save-menu-status').textContent = 'Nie udało się wyeksportować zapisu.'; }

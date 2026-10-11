@@ -1,16 +1,27 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.13 — prywatne paski postaci i czytelne HP**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; to przygoda offline. Projekt Androida jest przygotowany; kompilacja i test fizycznego APK wymagają Android SDK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.14 — pierwsza wspólna sesja online (T12)**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza. Dostępna jest przygoda offline oraz testowa wspólna sesja gościnna bez kont i trwałego zapisu. Projekt Androida jest przygotowany; kompilacja i test fizycznego APK wymagają Android SDK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
 
+Tryb online uruchom z katalogu projektu:
+
+```sh
+npm ci
+npm run dev:online
+```
+
+W menu wybierz **Online — wspólna sesja testowa**, wpisz nick i wybierz profesję. Otwórz grę na komputerze oraz telefonie w tej samej sieci, pod adresem LAN wypisanym w terminalu. Oba urządzenia muszą korzystać z tego samego uruchomionego serwera. Szczegóły i test: [docs/ONLINE.md](docs/ONLINE.md). Ruch, potwory, walka i łup są wspólne, reguły rozstrzyga serwer. Limit testowy: 8 osób; nie jest pomiarem pojemności MMORPG.
+
+**Menu, rozłączenie i restart kończą postać testową; ponowne wejście zaczyna od poziomu 1.** Nie ma kont, reconnectu, trwałej gospodarki ani marketu. Zapis offline jest osobny i pozostaje dostępny po wyjściu z sesji online. Domyślnie menu wybiera offline; `npm run dev` oraz `npm run dev:lan` nadal służą temu trybowi.
+
 Wybierz potwora kliknięciem/dotykiem albo przyciskiem **Cel / T**. Łuk, różdżka i czary kierowane lecą w wybrany cel w zasięgu i przy wolnej linii widzenia. Zbyt daleki lub zasłonięty cel blokuje atak bez zużycia many; nie przełącza go na innego przeciwnika. Ponowny dotyk tego samego potwora, Escape lub przejście klawiszem T za ostatni cel usuwa zaznaczenie. Wtedy działa dotychczasowy automatyczny wybór pobliskiego celu. Wir, leczenie, osłona i lodowy krąg pozostają umiejętnościami wokół postaci. Lot pocisku wizualnie śledzi pobliski ruch celu; obrażenia nadal rozstrzyga symulacja przy użyciu umiejętności.
 
-Pełne HP i mana nad bohaterem lub w bocznych łukach są widokiem właściciela postaci. Pozostałe jednostki korzystają z osobnego widoku publicznego: nick i mały pasek HP, bez many oraz łuków. W obecnej grze offline tymi jednostkami są potwory; gracze i logowanie pozostają etapem online. Dane publicznego widoku nie przyjmują many; przyszły serwer musi osobno ograniczać dane wysyłane do innych graczy. Zdrowe, niezaznaczone potwory nie mają etykiety; pokazuje się po zaznaczeniu lub zranieniu, znika po śmierci. Nick i HP zmieniają kolor: zielony powyżej 50%, żółty do 50%, czerwony do 25%. Nad bohaterem widać nick, pod nim HP i manę. **Menu → Paski nad postacią** pozwala wybrać poziome paski lub łuki po bokach; ustawienie zapamiętuje przeglądarka.
+Pełne HP i mana nad bohaterem lub w bocznych łukach są widokiem właściciela postaci. Pozostałe jednostki korzystają z osobnego widoku publicznego: nick i mały pasek HP, bez many oraz łuków. Online inni gracze mają nick i mały pasek HP. Serwer wysyła ich dane publiczne bez many, plecaka i stashu; pełne zasoby otrzymuje wyłącznie właściciel bieżącej sesji. Konta i logowanie pozostają T13. Zdrowe, niezaznaczone potwory nie mają etykiety; pokazuje się po zaznaczeniu lub zranieniu, znika po śmierci. Nick i HP zmieniają kolor: zielony powyżej 50%, żółty do 50%, czerwony do 25%. Nad bohaterem widać nick, pod nim HP i manę. **Menu → Paski nad postacią** pozwala wybrać poziome paski lub łuki po bokach; ustawienie zapamiętuje przeglądarka.
 
 Łup zbiera się automatycznie podczas przechodzenia przez niego lub obok (także po przekątnej). **Plecak → Automatyczne zbieranie łupu** pozwala wyłączyć zbieranie, złoto lub konkretne przedmioty. Pominięte rzeczy i stosy niemieszczące się w plecaku pozostają na ziemi. Ręczny przycisk Łup zbiera niezależnie od filtra, jeśli cały łup mieści się w plecaku.
 
-**Depo** jest w Gospodzie Pod Liściem, na południowym zachodzie Vareon. **Plecak → Plan Vareon → Depo** pokazuje wskazówkę drogi. Podejdź do drewnianej skrzynki i dotknij jej lub użyj **F**. Stash ma 100 pól; przyciski przenoszą jeden przedmiot lub do 99 sztuk. Wyposażoną broń/pancerz trzeba wcześniej zdjąć do plecaka. Transfery i filtry zapisują się automatycznie, wraz ze stashem także w eksportowanym zapisie. Starsze zapisy otrzymują pusty stash i domyślne zbieranie wszystkiego; nowy zapis wymaga **0.1.12+**. Depo nie jest bankiem złota. Właściciel wybrał market graczy: powstanie po uruchomieniu online, na razie depo zawiera wyłącznie informację o tym planie. Borin sprzedaje i kupuje w wierszach z ikoną, nazwą i ceną.
+**Depo** jest w Gospodzie Pod Liściem, na południowym zachodzie Vareon. **Plecak → Plan Vareon → Depo** pokazuje wskazówkę drogi. Podejdź do drewnianej skrzynki i dotknij jej lub użyj **F**. Stash ma 100 pól; przyciski przenoszą jeden przedmiot lub do 99 sztuk. Wyposażoną broń/pancerz trzeba wcześniej zdjąć do plecaka. W trybie offline transfery i filtry zapisują się automatycznie, wraz ze stashem także w eksportowanym zapisie. Starsze zapisy otrzymują pusty stash i domyślne zbieranie wszystkiego; nowy zapis wymaga **0.1.12+**. Depo nie jest bankiem złota. Właściciel wybrał market graczy: powstanie po uruchomieniu online, na razie depo zawiera wyłącznie informację o tym planie. Borin sprzedaje i kupuje w wierszach z ikoną, nazwą i ceną.
 
 W **0.1.13** przed nową przygodą wybierz **Knight, Archer albo Mag**. Każda profesja ma własną broń, trzy umiejętności odblokowywane na poziomach 1, 3 i 5 i osobne animacje. Podstawowy miecz trafia z sąsiedniej kratki, łuk do pięciu, różdżka do czterech; wszystkie odnawiają się co 0,8 s i nie zużywają many ani amunicji. Atak można przytrzymać bez wybierania celu. Zasięgi liczone są po kratkach (Manhattan), ściany i strefa miasta blokują walkę.
 

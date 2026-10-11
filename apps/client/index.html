@@ -5,12 +5,13 @@
   <div id="loading" role="status">Rozpalamy świat Eldorii…</div>
   <main id="menu" hidden>
     <div class="menu-shell">
-      <div class="eyebrow"><span class="spark"></span> AUTORSKIE RPG · OFFLINE</div>
+      <div class="eyebrow"><span class="spark"></span> AUTORSKIE RPG · OFFLINE / ONLINE TEST</div>
       <h1>ELDORIA<span>Miasto, które pamięta.</span></h1>
       <p class="intro">Każda podróż zaczyna się od pierwszego kroku.<br/>Twoja — w Vareon, mieście przy bramie do Mrocznego Lasu.</p>
       <form id="start-form">
         <label for="name">IMIĘ WĘDROWCA</label>
         <div class="start-row"><input id="name" name="name" value="Wędrowiec" minlength="3" maxlength="16" required autocomplete="off"/><button class="primary" type="submit">Rozpocznij <span>→</span></button></div>
+        <label for="connection-mode">TRYB GRY</label><select id="connection-mode"><option value="offline">Offline — zapis na urządzeniu</option><option value="online">Online — wspólna sesja testowa</option></select><p class="online-note">Online: nowe postacie, bez kont i trwałego zapisu. Menu opuszcza sesję.</p>
         <label for="profession">PROFESJA</label><select id="profession"><option value="knight">Knight — miecz i osłona</option><option value="archer">Archer — łuk i strzały</option><option value="mage">Mag — różdżka i magia</option></select>
         <label for="mode">PRZYGODA</label><select id="mode"><option value="adventure">Vareon — Niepokój za bramą</option><option value="trial">Próba Wędrowca — trening walki</option></select>
         <label for="graphics-style">GRAFIKA</label><select id="graphics-style"><option value="colorful">Kolorowy pixel art — do oceny</option><option value="classic">Poprzednia grafika — porównanie</option></select>
@@ -18,7 +19,7 @@
         <p id="name-error" role="alert"></p>
       </form>
       <div class="save-menu"><button id="resume" hidden>Wznów przygodę</button><button id="recover" hidden>Odzyskaj kopię zapisu</button><button id="export-save">Eksport zapisu</button><label class="import-label">Import zapisu<input id="import-save" type="file" accept="application/json,.json"/></label><p id="save-menu-status" role="status"></p></div>
-      <label class="vitals-choice">Paski nad postacią<select id="vitals-style"><option value="bars">Nick i paski HP / many</option><option value="arcs">Nick i łuki po bokach postaci</option></select></label><div class="menu-meta"><span>0.1.13 · PRZYGODA OFFLINE</span><span>WALKA BEZ CELU · BEZ AUDIO</span></div>
+      <label class="vitals-choice">Paski nad postacią<select id="vitals-style"><option value="bars">Nick i paski HP / many</option><option value="arcs">Nick i łuki po bokach postaci</option></select></label><div class="menu-meta"><span>0.1.14 · VAREON</span><span>WALKA BEZ CELU · BEZ AUDIO</span></div>
       <div class="instructions"><strong>Niepokój za bramą</strong><p>Mira stoi obok miejsca startu. Porozmawiaj (F), przyjmij zadanie, przejdź pieszo przez północną bramę i pokonaj pięć stworzeń w lesie. Zbierz łup, wróć po nagrodę, odwiedź Orena i Borina. Mira zleca też odkrycie trzech miejsc dawnego szlaku. Ich historie przeczytasz w kronice w plecaku. Przygoda zapisuje się lokalnie. Trening walki pozostaje dostępny w wyborze przygody.</p><span>WASD / strzałki · T: cel opcjonalny · Spacja: atak podstawowy · E: pierwszy czar · 1–4: przypisane akcje · Q: mikstura · F: rozmowa/odkrycie · R: łup · I: plecak</span></div>
     </div>
     <div class="scene-note">VAREON · MROCZNY LAS <span>01 / 02</span></div>

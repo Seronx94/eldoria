@@ -1,4 +1,4 @@
-import { inventoryRules,depotOnMap,depotRules,combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { inventoryRules,depotOnMap,depotRules,combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items,onlineRules, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
 import { commandSchema, nameSchema,defaultLootSettings,type LootSettings,defaultAppearance,type Appearance,professionSchema, type Command, type Direction,type Profession,type SpellId,type ActionId,type Weapon } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
@@ -30,6 +30,13 @@ export interface Snapshot {
   inventory: Stack[]; equipment: { weapon: Weapon | null; armor: 'tunic' | null }; loot: Loot[];
   message: string; eventId: number; complete: boolean;
 }
+export interface PublicPlayer {
+  id:string;name:string;profession:Profession;appearance:Appearance;mapId:string;player:Point;direction:Direction;hp:number;maxHp:number;level:number;
+}
+export interface OnlineSnapshot extends Snapshot {selfId:string;players:PublicPlayer[];}
+interface SharedState {
+  players:Map<string,Simulation>;creatures:Map<string,Creature[]>;loot:Loot[];events:CombatEvent[];sequence:number;lootSequence:number;patrol:Map<string,number>;
+}
 export interface Spawn extends Point { id: string; kind: MonsterKind }
 export interface Clock { now(): number }
 export interface GameGateway {
@@ -51,27 +58,38 @@ export class Simulation {
   private lastPotion = -Infinity;
   private lastMana: number;
   private time: number;
-  constructor(private maps: WorldMap[], name: string, private clock: Clock, private spawns?: Spawn[], initialInventory: Stack[] = [{ itemId: 'potion', quantity: 3 }], profession:Profession='knight') {
+  constructor(private maps: WorldMap[], name: string, private clock: Clock, private spawns?: Spawn[], initialInventory: Stack[] = [{ itemId: 'potion', quantity: 3 }], profession:Profession='knight',private online?:{id:string;world:SharedState}) {
     const map = maps[0];
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
     profession=professionSchema.parse(profession);
     this.state = { stash:[],lootSettings:defaultLootSettings(),depotOpen:false,appearance:defaultAppearance(),profession:'knight',actionSlots:defaultActions('knight'),attackCooldown:0,spellCooldowns:emptySpellCooldowns(),guardMs:0,exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Przytrzymaj atak podstawowy i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
     this.state.profession=profession;this.state.actionSlots=defaultActions(profession);this.state.equipment.weapon=professions[profession].weapon;
+    if(online){this.creatureMaps=online.world.creatures;this.patrolDue=online.world.patrol;}
     this.spawnCreatures();
+    if(online)this.state.player=this.freeArrival(map,map.spawns.entry)??(()=>{throw new Error('Brak miejsca na start');})();
+  }
+  private syncShared():void {
+    if(!this.online)return;
+    this.state.loot=this.online.world.loot;this.state.combatEvents=this.online.world.events;
   }
   private map(): WorldMap { return this.maps.find(m => m.id === this.state.mapId)!; }
   private notify(message: string): void { this.state.message = message; this.state.eventId++; }
   private combat(kind: CombatEvent['kind'], sourceId: string, targetId: string | null, from: Point, to: Point, damage: number,extra:Partial<Pick<CombatEvent,'effect'|'abilityId'|'hits'|'radius'|'healing'>>={}): void {
-    this.state.combatEvents.push({ id: ++this.combatSequence, mapId: this.state.mapId, kind, sourceId, targetId, direction: this.state.direction, from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, damage,effect:kind==='monster'?'claw':'sword',abilityId:sourceId==='player'?'attack':null,radius:0,healing:0,hits:targetId&&damage>0?[{targetId,to:{x:to.x,y:to.y},damage}]:[],...extra });
-    this.state.combatEvents = this.state.combatEvents.slice(-16);
+    const id=this.online?++this.online.world.sequence:++this.combatSequence;
+    const actorId=this.online?.id??'player';
+    this.syncShared();
+    this.state.combatEvents.push({ id, mapId: this.state.mapId, kind, sourceId, targetId, direction: this.state.direction, from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, damage,effect:kind==='monster'?'claw':'sword',abilityId:sourceId==='player'?'attack':null,radius:0,healing:0,hits:targetId&&damage>0?[{targetId:targetId==='player'?actorId:targetId,to:{x:to.x,y:to.y},damage}]:[],...extra });
+    const event=this.state.combatEvents.at(-1)!;if(this.online){if(event.sourceId==='player')event.sourceId=actorId;if(event.targetId==='player')event.targetId=actorId;}
+    this.state.combatEvents = this.state.combatEvents.slice(this.online?-64:-16);
+    if(this.online)this.online.world.events=this.state.combatEvents;
   }
   private walkable(point: Point): boolean {
     const m = this.map();
     return point.x >= 0 && point.y >= 0 && point.x < m.width && point.y < m.height && m.collision[point.y * m.width + point.x] === 0;
   }
   private occupied(point: Point, except?: string): boolean {
-    return this.map().npcs.some(n => distance(n, point) === 0) || this.state.creatures.some(c => c.id !== except && c.hp > 0 && distance(c, point) === 0);
+    return [...(this.online?.world.players.values()??[])].some(p=>p!==this&&p.state.mapId===this.state.mapId&&distance(p.state.player,point)===0)||this.map().npcs.some(n => distance(n, point) === 0) || this.state.creatures.some(c => c.id !== except && c.hp > 0 && distance(c, point) === 0);
   }
   private spawnCreatures(): void {
     const cached = this.creatureMaps.get(this.state.mapId);
@@ -86,12 +104,13 @@ export class Simulation {
   private spellCooldowns():Record<SpellId,number> {
     const result=emptySpellCooldowns();for(const id of Object.keys(spells) as SpellId[])result[id]=this.remaining(this.lastSpells.get(id)??-Infinity,spells[id].cooldown);return result;
   }
-  snapshot(): Snapshot { return {...structuredClone(this.state),attackCooldown:this.remaining(this.lastAttack,professions[this.state.profession].attackMs),spellCooldowns:this.spellCooldowns(),guardMs:Math.max(0,this.guardUntil-this.time)}; }
+  snapshot(): Snapshot { this.syncShared();return {...structuredClone(this.state),attackCooldown:this.remaining(this.lastAttack,professions[this.state.profession].attackMs),spellCooldowns:this.spellCooldowns(),guardMs:Math.max(0,this.guardUntil-this.time)}; }
   send(input: unknown): void {
     const parsed = commandSchema.safeParse(input);
     if (!parsed.success) { this.notify('Nieprawidłowa komenda.'); return; }
     this.tick();
     this.command(parsed.data);
+    if(this.online)this.online.world.loot=this.state.loot;
   }
   private command(command: Command): void {
     const now = this.time;
@@ -279,7 +298,7 @@ export class Simulation {
         s.quest.kills = Math.min(questRules.kills, s.quest.kills + 1);
         if (s.quest.kills === questRules.kills) s.quest.status = 'ready';
       }
-      s.loot.push({ id: `${s.mapId}:${target.id}:${s.eventId}`, mapId: s.mapId, x: target.x, y: target.y, gold: monsters[target.kind].gold, items: target.kind === 'rat' ? [] : [{ itemId: target.kind === 'wolf' ? 'skin' : 'chitin', quantity: 1 }] });
+      s.loot.push({ id: this.online?`world:${++this.online.world.lootSequence}`:`${s.mapId}:${target.id}:${s.eventId}`, mapId: s.mapId, x: target.x, y: target.y, gold: monsters[target.kind].gold, items: target.kind === 'rat' ? [] : [{ itemId: target.kind === 'wolf' ? 'skin' : 'chitin', quantity: 1 }] });
       if (!s.defeatedKinds.includes(target.kind)) s.defeatedKinds.push(target.kind);
       s.complete = s.mapId === 'grove' && s.defeatedKinds.length === 3;
       this.notify(s.complete ? 'Próba ukończona! Pokonano 3 stworzenia. Wróć do menu, aby rozpocząć nową próbę.' : ['forest','eldoria'].includes(s.mapId) ? `Pokonano ${monsters[target.kind].name.toLowerCase()}. ${s.quest.status === 'ready' ? 'Wróć do Miry po nagrodę.' : s.quest.status === 'active' ? `Zadanie: ${s.quest.kills}/5.` : 'Przyjmij zadanie u Miry.'}` : `Pokonano ${monsters[target.kind].name.toLowerCase()}. Próba: ${s.defeatedKinds.length}/3.`);
@@ -293,7 +312,7 @@ export class Simulation {
       const p = queue.shift()!, key = `${p.x},${p.y}`;
       if (seen.has(key) || p.x < 0 || p.y < 0 || p.x >= map.width || p.y >= map.height || map.collision[p.y*map.width+p.x] !== 0) continue;
       seen.add(key);
-      if (![...map.npcs,...actors].some(a => distance(a,p) === 0)) return p;
+      if (![...map.npcs,...actors].some(a => distance(a,p) === 0)&&![...(this.online?.world.players.values()??[])].some(a=>a!==this&&a.state.mapId===map.id&&distance(a.state.player,p)===0)) return p;
       for (const v of Object.values(vectors)) queue.push({x:p.x+v.x,y:p.y+v.y});
     }
     return undefined;
@@ -430,11 +449,17 @@ export class Simulation {
   tick(): void {
     const now = this.clock.now();
     if (!Number.isFinite(now) || now < this.time) throw new Error('Zegar musi być monotoniczny');
-    this.time = now;
+    this.time = now;this.syncShared();
     const s = this.state;
     const manaTicks = Math.floor((now - this.lastMana) / rules.manaRegenMs);
     if (manaTicks > 0) { s.mana = Math.min(s.maxMana, s.mana + manaTicks); this.lastMana += manaTicks * rules.manaRegenMs; }
     for (const c of s.creatures) {
+      if(this.online){
+        const players=[...this.online.world.players.values()].filter(p=>p.state.mapId===s.mapId);
+        const target=players.filter(p=>combatAllowedAt(p.map(),p.state.player)&&p.lineOfSight(c,p.state.player)).sort((a,b)=>distance(a.state.player,c)-distance(b.state.player,c)||a.online!.id.localeCompare(b.online!.id))[0]??players[0];
+        // Exactly one actor context advances each shared creature, even when clients send rapidly.
+        if(target!==this)continue;
+      }
       if (c.hp === 0) {
         if (now - c.diedAt >= rules.respawnMs && distance(c.spawn, s.player) !== 0 && !this.occupied(c.spawn, c.id)) {
           Object.assign(c, c.spawn); c.hp = monsters[c.kind].hp; c.state = 'idle'; c.lastAttack = now;
@@ -481,7 +506,7 @@ export class Simulation {
   private die(): void {
     this.guardUntil=0;
     const m = this.maps.find(m => m.id==='eldoria') ?? this.maps.find(m => !m.combatAllowed) ?? this.maps[0]!;
-    this.state.mapId = m.id; this.state.player = { ...m.spawns.entry! };
+    this.state.mapId = m.id; this.state.player = this.online?(this.freeArrival(m,m.spawns.entry!)??{...m.spawns.entry!}):{ ...m.spawns.entry! };
     this.state.hp = this.state.maxHp; this.state.mana = this.state.maxMana; this.state.selectedId = null; this.state.dialog = null;
     this.spawnCreatures(); this.lastMove = this.time;
     this.notify(`Omdlenie. Wracasz do ${['vareon','eldoria'].includes(m.id) ? 'Vareon' : 'bezpiecznego dziedzińca'} z pełnym zdrowiem i maną, bez utraty zdobyczy.`);
@@ -504,3 +529,27 @@ export class LocalGateway implements GameGateway {
   private emit(): void { for (const listener of this.listeners) listener(this.simulation.snapshot()); }
   disconnect(): void { clearInterval(this.timer); this.timer = undefined; this.listeners.clear(); }
 }
+
+/** One transient authoritative world, with private actor resources and shared creatures/loot. */
+export class SharedWorld {
+  private shared:SharedState={players:new Map(),creatures:new Map(),loot:[],events:[],sequence:0,lootSequence:0,patrol:new Map()};
+  constructor(private maps:WorldMap[],private clock:Clock){}
+  join(id:string,name:string,profession:Profession):void {
+    if(this.shared.players.has(id))throw new Error('Powtórzona sesja');
+    const sim=new Simulation(this.maps,name,this.clock,undefined,undefined,profession,{id,world:this.shared});this.shared.players.set(id,sim);
+  }
+  leave(id:string):void {this.shared.players.delete(id);}
+  send(id:string,command:unknown):void {this.shared.players.get(id)?.send(command);}
+  tick():void {for(const sim of this.shared.players.values())sim.tick();}
+  snapshot(id:string):OnlineSnapshot {
+    const actor=this.shared.players.get(id);if(!actor)throw new Error('Nie ma sesji');const own=actor.snapshot();
+    const players=[...this.shared.players].filter(([other])=>other!==id).map(([other,sim])=>{
+      const s=sim.snapshot();return {id:other,name:s.name,profession:s.profession,appearance:s.appearance,mapId:s.mapId,player:s.player,direction:s.direction,hp:s.hp,maxHp:s.maxHp,level:s.level};
+    }).filter(s=>s.mapId===own.mapId&&Math.max(Math.abs(s.player.x-own.player.x),Math.abs(s.player.y-own.player.y))<=onlineRules.interestRadius);
+    const remap=(target:string)=>target===id?'player':target;
+    own.combatEvents=own.combatEvents.map(e=>({...e,sourceId:remap(e.sourceId),targetId:e.targetId?remap(e.targetId):null,hits:e.hits.map(h=>({...h,targetId:remap(h.targetId)}))}));
+    own.creatures=own.creatures.map(c=>({...c,lastAttack:Number.isFinite(c.lastAttack)?c.lastAttack:0,lastMove:Number.isFinite(c.lastMove)?c.lastMove:0}));
+    return {...own,selfId:id,players};
+  }
+}
+export {onlineSnapshotSchema,onlinePacketSchema} from './online-snapshot';

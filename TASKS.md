@@ -25,9 +25,9 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 | T08 | M2 | DONE | Ekwipunek, loot i mikstury | T07 |
 | T09 | M2 | DONE | Sklep i quest | T06, T08 |
 | T10 | M2 | DONE | Zapis i odtworzenie | T09 |
-| T11 | M2 | REVIEW | Wydanie 0.1 i poprawki mobilne | T05–T10 |
+| T11 | M2 | DONE | Wydanie 0.1 i poprawki mobilne | T05–T10 |
 | T09a | M2 | DONE | Ślady dawnego szlaku — quest eksploracji i kronika (wybór testera) | T05, T06, T09, T10 |
-| T12 | M3 | TODO | Serwer i protokół | T11 |
+| T12 | M3 | DONE | Serwer i protokół | T11 |
 | T13 | M3 | TODO | Konta i PostgreSQL | T12 |
 | T14 | M3 | TODO | Gospodarka i trwałość | T13 |
 | T15 | M3 | TODO | Regiony i reconnect | T14 |
@@ -120,14 +120,16 @@ Quest i sklep według README. Quest liczy zabójstwa tylko po przyjęciu, nagrod
 **Kryteria docelowe:**
 Wersjonowany zapis, walidacja, backup poprzedniego poprawnego zapisu i błąd quota. Odtworzenie poziomu, inventory, questa i pozycji; nie zapisuj aktywnego cooldownu jako możliwości natychmiastowego oszustwa w przyszłym online. Test uszkodzenia, nieobsługiwanej wersji, powrotu po śmierci i wielokrotnego odczytu.
 
-### T11 — REVIEW
+### T11 — DONE
+
+**Akceptacja właściciela:** „tak zróbmy T11 jest okay”. T11 zaakceptowane 11 października 2026; nie dopisujemy wyniku fizycznego testu ani pomiaru FPS.
 
 **Wynik sesji:** Przygotowano przygodę offline 0.1.0 oraz pięć kroków w docs/TESTER.md. Wszystkie dostępne kontrole oraz pełna przygoda, zapis i regresje treningu zaliczone na desktopie i mobilnym Chromium. Test telefonu, model urządzenia, czas przygody i wygoda sterowania wymagają raportu testera; nie deklarujemy ich jako wykonanych.
 
 **Kryteria docelowe:**
 Pełny smoke test 0.1, UI dotykowe, audio ustawienia, aktualna instrukcja dla testera. Typecheck/lint/test/e2e/content/build. Tester dostaje 5 kroków: rozmowa, las, walka, nagroda, restart. Zanotuj model telefonu oraz ograniczenia. Brak testu telefonu oznacz jako niewykonany, a nie zaliczony.
 
-### T12 — TODO
+### T12 — DONE
 Node/Colyseus, OnlineGateway i serwer domeny. Dwa klienty widzą tę samą postać/potwora. Klient wysyła intencję, serwer oblicza skutek. Test fałszywego HP/złota, teleportu, niepoprawnego schematu i limitu komend. Nie implementuj protokołu na podstawie API innej wersji Colyseus.
 
 ### T13 — TODO
@@ -426,3 +428,22 @@ Uwagi testera: pełne HP/mana i boczne łuki ma widzieć właściciel, inne post
 - Ocenione nieedytowane zrzuty własnej gry zapisano jako docs/screenshots/health-yellow-mobile.png i health-red-arcs-mobile.png. Nick/HP żółte i czerwone, mały HP potwora, własna mana niebieska, brak many/łuków potwora. Produkcyjny JS index-D7KTlppe.js, CSS index-Dw7mhf2c.css. Bez nowych pakietów; strukturalne porównanie zewnętrznych wpisów lockfile z HEAD PASS.
 - cloud-environment-onboarding:setup: istniejąca instalacja/start i zamrożony lockfile nadal obsługują ten sam workflow. Bez nowych zależności/usług/sekretów, zapisane install_script/start_skill pozostają aktualne; nie wymagały zmiany szkicu.
 - Końcowa mobilna regresja produkcyjna joystick.spec.ts/world.spec.ts: **3 PASS**, 1,1 min, exit 0. Wielodotyk/odpowiedzialność palca, zwolnienie/cancel, obrót/resize/dialog, pięć rzeczywistych przekroczeń granicy miasta/lasu, zapis i bezpieczna strefa oraz powrót po omdleniu/NPC. Łącznie siedem różnych adekwatnych scenariuszy przeglądarkowych PASS w tej wersji. Brak nierozwiązanego FAIL; nie powtarzano niepowiązanej ekonomii/questów, których reguł nie zmieniono. Procesy testów zakończone; zachowano wcześniejszy preview 5175. Instrukcja testera aktualna: trzy kroki 0.1.13 w docs/TESTER.md; widok i czytelność na fizycznym telefonie REVIEW. Zmiany przygotowane na main.
+
+## Rozpoczęcie T12
+
+Właściciel zaakceptował T11 słowami „T11 jest okay”. Status DONE na podstawie wcześniejszych kontroli i akceptacji użytkownika; bez dopisywania pomiaru FPS/modelu telefonu. T12 IN_PROGRESS: serwer Colyseus 0.18, wspólna symulacja dwóch klientów i walidowany OnlineGateway. T13/T14 pozostają TODO; sesja gościnna testowa, bez importu offline i bez obietnicy trwałości po rozłączeniu/restarcie.
+
+
+## T12 — DONE, 11 października 2026, 0.1.14
+
+- Jeden wspólny świat Node/Colyseus (`@colyseus/core` 0.18.18, `@colyseus/ws-transport` 0.18.4, `@colyseus/sdk` 0.18.5). OnlineGateway korzysta z wersji API sprawdzonej w deklaracjach i źródłach zainstalowanych, przypiętych pakietów; strona dokumentacji serwera zwróciła HTTP 403. Nie przenoszono API innej wersji. Stan domeny działa także przez dotychczasowy LocalGateway.
+- Ruch, kolizje graczy, AI, wspólne HP potworów, zasięgi, obrażenia, nagrody i pojedynczy łup rozstrzyga serwer. Prywatne zasoby mają osobni właściciele sesji; pozostali otrzymują wyłącznie publiczną pozycję, nick, profesję, wygląd, poziom i HP. Nie otrzymują many/plecaka/stashu. Publiczne postacie animują chód i akcje, mają małe HP/nick i kolory zdrowia; własne paski lub łuki pozostają prywatne.
+- Walidowane join/komendy/snapshoty, numer kolejności i limit 30 komend/s (burst 30, błędne wiadomości też zużywają limit); transport 120 wiadomości/s oraz 4096 bajtów wejścia. Jedna sesja mieści 8 osób, nadmiar jest odrzucany bez tworzenia kolejnego ukrytego świata. To ustawiony limit testowy, bez pomiaru obciążenia.
+- Menu wybiera offline lub online test. `npm run dev:online` uruchamia bezpośrednio Node dla backendu i Vite, czeka na health, udostępnia jeden adres LAN. Brak `spawn npm` i dodatkowych launcherów dzieci, również dla ścieżki Windows. Zweryfikowano start, SDK przez proxy, health oraz zwolnienie własnych portów po zatrzymaniu; także niestandardowy backend na 2568 z automatycznym proxy. Faktyczny Windows i fizyczny telefon nie były uruchamiane w chmurze.
+- Online nie importuje localStorage. Przycisk zapisu jest wyłączony, offline eksport/wznowienie zachowane. Menu/utrata połączenia kończy postać testową, ponowne wejście daje świeży poziom 1; ostatnie wyjście zwalnia pokój. Brak automatycznej symulacji offline przy awarii, bez kont, trwałości i reconnectu (T13/T14/T15). Quest, handel NPC, depo i stash działają tylko w pamięci bieżącej sesji. Market graczy nadal odłożony zgodnie z wyborem właściciela.
+- Czysta instalacja: `npm ci --cache /workspace/eldoria/.npm-cache --no-audit --no-fund` — PASS (325 pakietów). `npm run typecheck`, `npm run lint`, `npm test` — PASS (**120 testów / 20 plików**). `npm run validate:content` — PASS (5 map, assety i eksporty). `npm run build` — PASS; zachowany ostrzegawczy raport rozmiaru bundla Phaser, bez błędu kompilacji.
+- Nowe testy domeny: osobne legalne spawny/zasoby, prywatność pakietu, fałszywe HP/złoto/teleport/ID, zajęte pola, wspólna walka, jedna nagroda i ponawiane zebranie łupu, najbliższy gracz/cooldown potwora/zmiana celu po wyjściu, odejście i świeża postać. Testy rzeczywistych socketów: ten sam pokój i ruch u obu klientów, odrzucenie podrobionych i powtórzonych komend, limit komend, błędny join, pojemność 8, wyjście i ponowne dołączenie.
+- E2E produkcyjnego Vite preview: **10 różnych scenariuszy PASS w kilku przebiegach**, 2 desktopowe SKIP dotyczące wyłącznie dotyku. `online.spec.ts`: dwie przeglądarki, ruch/walka/zdarzenia, prywatne łuki i publiczne HP, nietknięty offline zapis z 999 złota, powrót offline oraz świeże zasoby gościa — desktop i mobilny Chromium PASS. Mobilny wariant używa dotyku joysticka i dwóch palców podczas czaru; konsola/zasoby bez błędów. Faktycznie zamknięty WebSocket wraca do menu — oba projekty PASS. Regresja `health-display`, `joystick`, `world` (5 przejść przez granicę świata), `client` (jednoczesny dotyk) — PASS w odpowiednich projektach.
+- Początkowe FAIL rozwiązywały błędne ustawienie trasy przez innego gracza/potwora, test łupu spoza zasięgu oraz sterowanie CDP: aktywna karta, dozwolony kod zamknięcia socketu i wskazanie zwalnianego drugiego palca. Nie usuwano kolizji, cooldownu ani asercji współdzielenia. Wszystkie wskazane scenariusze mają końcowy PASS; nie deklarujemy jednego pełnego przebiegu całego katalogu e2e.
+- Instrukcja: `docs/ONLINE.md` (4 kroki dla komputera i telefonu), aktualne README/TESTER/ROADMAP. Zrzuty dwóch postaci: `docs/screenshots/online-desktop.png`, `online-mobile.png`, sprawdzone wizualnie. W chmurze zachowany starszy proces preview na 5175; zatrzymywano wyłącznie własne serwery. Zapisano zaktualizowany `start_skill` konfiguracji chmury; `install_script` zachowany i wykonany. Zapis draftu potwierdzony; nie oznacza publikacji ani weryfikacji w nowej instancji.
+- **Następne: T13 — konta i PostgreSQL**, potem T14 — trwała gospodarka i T15 — reconnect. Fizyczny telefon, FPS, Android APK, publiczne wdrożenie i test obciążenia — NIE WYKONANO. M3 jako całość nadal nieukończone; tester może teraz grać dwoma urządzeniami w jednej sieci i ocenić pierwszą sesję online.

@@ -18,7 +18,9 @@ export const appearanceSchema=z.object({hair:outfitColor,body:outfitColor,legs:o
 export type Appearance=z.infer<typeof appearanceSchema>;
 export function defaultAppearance():Appearance {return {hair:null,body:null,legs:null,feet:null};}
 export const itemIdSchema=z.enum(['sword','bow','wand','tunic','potion','skin','chitin']);
-export const lootSettingsSchema=z.object({enabled:z.boolean(),gold:z.boolean(),itemIds:z.array(itemIdSchema).max(7).refine(ids=>new Set(ids).size===ids.length)}).strict();
+export const lootBagSchema=z.enum(['main','supplies','materials']);
+export type LootBag=z.infer<typeof lootBagSchema>;
+export const lootSettingsSchema=z.object({enabled:z.boolean(),gold:z.boolean(),destinations:z.partialRecord(itemIdSchema,lootBagSchema).optional(),itemIds:z.array(itemIdSchema).max(7).refine(ids=>new Set(ids).size===ids.length)}).strict();
 export type LootSettings=z.infer<typeof lootSettingsSchema>;
 export function defaultLootSettings():LootSettings {return {enabled:true,gold:true,itemIds:[...itemIdSchema.options]};}
 export const commandSchema = z.discriminatedUnion('type', [
@@ -47,7 +49,7 @@ export const commandSchema = z.discriminatedUnion('type', [
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export const nameSchema = z.string().trim().min(3, 'Imię: 3–16 znaków').max(16, 'Imię: 3–16 znaków');
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 export const guestJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),name:nameSchema,profession:professionSchema}).strict();
 export const onlineJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),characterId:z.uuid()}).strict();
 export const credentialsSchema=z.object({email:z.email().max(254).trim().toLowerCase(),password:z.string().min(10).max(128)}).strict();

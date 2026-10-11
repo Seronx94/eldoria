@@ -189,7 +189,7 @@ export class Simulation {
     if (command.type === 'Loot') {
       const loot = s.loot.find(l => l.mapId === s.mapId && (command.lootId === undefined || command.lootId === l.id) && distance(l, s.player) <= 1);
       if (!loot) { this.notify('Podejdź obok sakiewki, aby odebrać łup.'); return; }
-      const inventory = addItems(s.inventory, loot.items);
+      const inventory = addItems(s.inventory, loot.items,undefined,'main');
       if (!inventory) { this.notify('Pełny plecak — łup pozostaje na ziemi.'); return; }
       if(s.gold+loot.gold>depotRules.maxGold){this.notify('Limit złota — łup pozostaje na ziemi.');return;}
       s.inventory = inventory; s.gold += loot.gold; s.loot = s.loot.filter(l => l.id !== loot.id);
@@ -415,7 +415,7 @@ export class Simulation {
       if(settings.gold&&loot.gold>0&&s.gold+loot.gold<=depotRules.maxGold){s.gold+=loot.gold;loot.gold=0;changed=true;}
       const remaining:Stack[]=[];
       for(const stack of loot.items){
-        const inventory=settings.itemIds.includes(stack.itemId)?addItems(s.inventory,[stack]):null;
+        const inventory=settings.itemIds.includes(stack.itemId)?addItems(s.inventory,[stack],undefined,settings.destinations?.[stack.itemId]??'main'):null;
         if(inventory){s.inventory=inventory;changed=true;}else remaining.push(stack);
       }
       loot.items=remaining;

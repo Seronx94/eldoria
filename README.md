@@ -1,6 +1,6 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.15 — konta i zapis postaci (T13)**. Grywalne Vareon i Mroczny Las, trzy profesje, NPC, zadania, handel, depo oraz skille. Grafika pozostaje autorskim zestawem roboczym. Wspólny świat obsługuje osiem postaci. Projekt Androida wymaga lokalnego Android SDK; konta są obecnie testowane w przeglądarce web/LAN.
+Status implementacji: **0.1.16 — katalog łupu i przegrody plecaka**. Grywalne Vareon i Mroczny Las, trzy profesje, NPC, zadania, handel, depo oraz skille. Grafika pozostaje autorskim zestawem roboczym. Wspólny świat obsługuje osiem postaci. Projekt Androida wymaga lokalnego Android SDK; konta są obecnie testowane w przeglądarce web/LAN.
 
 ## Zagraj w bieżącą wersję
 
@@ -200,3 +200,5 @@ AGENTS.md określa pracę, ROADMAP.md bramki wydania, TASKS.md kolejkę. Paramet
 - Colyseus: https://docs.colyseus.io/ oraz https://docs.colyseus.io/server
 - Capacitor: https://capacitorjs.com/docs oraz https://capacitorjs.com/docs/getting-started/environment-setup
 Dokumentacja sprawdzona podczas przygotowania specyfikacji; API wybranych wersji trzeba ponownie sprawdzić podczas implementacji.
+
+Automatyczny łup: **Plecak → Automatyczne zbieranie łupu**. Katalog obejmuje wszystkie siedem obecnych przedmiotów, z ikonami i wyszukiwaniem. Zaznacz przedmiot i wybierz jego przegrodę: Główny, Zapasy lub Materiały. Wszystkie przegrody dzielą 20 pól; wybór w sekcji Plecak pokazuje ich zawartość. Złoto trafia do sakiewki. Filtr i przydziały zapisują się z postacią; starsze zapisy trafiają do Głównego. Zapisy z przegrodami wymagają 0.1.16+. Online klient i serwer muszą być z tej samej wersji (protokół 3); po aktualizacji uruchom ponownie serwer.

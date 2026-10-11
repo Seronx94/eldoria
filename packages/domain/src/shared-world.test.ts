@@ -1,3 +1,4 @@
+import {PROTOCOL_VERSION} from '@eldoria/protocol';
 import {describe,it,expect} from 'vitest';
 import {importMap,rules} from '@eldoria/content';
 import {SharedWorld,onlinePacketSchema} from './index';
@@ -8,8 +9,8 @@ describe('authoritative shared world',()=>{
   const t=setup(),a=t.world.snapshot('alice'),b=t.world.snapshot('bob');expect(a.player).not.toEqual(b.player);expect(a.creatures).toEqual(b.creatures);
   expect(a.players).toHaveLength(1);expect(a.players[0]).toMatchObject({id:'bob',name:'Bobby',profession:'archer'});
   expect(a.players[0]).not.toHaveProperty('mana');expect(a.players[0]).not.toHaveProperty('inventory');expect(a.players[0]).not.toHaveProperty('stash');
-  expect(onlinePacketSchema.safeParse({protocolVersion:2,snapshot:a}).success).toBe(true);
-  expect(onlinePacketSchema.safeParse({protocolVersion:2,snapshot:{...a,players:[{...a.players[0],mana:50}]}}).success).toBe(false);
+  expect(onlinePacketSchema.safeParse({protocolVersion:PROTOCOL_VERSION,snapshot:a}).success).toBe(true);
+  expect(onlinePacketSchema.safeParse({protocolVersion:PROTOCOL_VERSION,snapshot:{...a,players:[{...a.players[0],mana:50}]}}).success).toBe(false);
  });
  it('does not trust HP, gold, actor ID, teleport coordinates or invalid directions; occupied players block movement',()=>{
   const t=setup(),before=t.world.snapshot('alice');

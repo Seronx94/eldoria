@@ -20,6 +20,22 @@ describe('automatic filtered loot',()=>{
   const resumed=t.restore(sim.exportSave());expect(resumed.snapshot().lootSettings).toEqual(data.lootSettings);
   t.advance();resumed.send({type:'Move',direction:'right'});resumed.send({type:'Loot'});expect(resumed.snapshot().loot).toEqual([]);expect(countItem(resumed.snapshot().inventory,'chitin')).toBe(1);
  });
+ it('routes loot into selected bags without merging elsewhere, preserves filters and save state',()=>{
+  const t=setup(),data=t.sim.exportSave();data.inventory=[{itemId:'skin',quantity:98}];
+  data.lootSettings={enabled:true,gold:true,itemIds:['skin'],destinations:{skin:'materials'}};
+  data.loot=[{id:'bags',mapId:'eldoria',x:32,y:59,gold:0,items:[{itemId:'skin',quantity:2},{itemId:'chitin',quantity:1}]}];
+  const sim=t.restore(data);sim.send({type:'Move',direction:'up'});
+  expect(sim.snapshot().inventory).toEqual([{itemId:'skin',quantity:98},{itemId:'skin',quantity:2,bag:'materials'}]);
+  expect(sim.snapshot().loot[0]!.items).toEqual([{itemId:'chitin',quantity:1}]);
+  const resumed=t.restore(sim.exportSave());expect(resumed.snapshot().inventory).toEqual(sim.snapshot().inventory);expect(resumed.snapshot().lootSettings).toEqual(data.lootSettings);
+  resumed.send({type:'SetLootSettings',settings:{...data.lootSettings,destinations:{skin:'stash'}}});expect(resumed.snapshot().lootSettings).toEqual(data.lootSettings);
+ });
+ it('selected bags share capacity; room in a different stack cannot bypass a full destination',()=>{
+  const t=setup(undefined,[...Array.from({length:19},()=>({itemId:'tunic' as const,quantity:1})),{itemId:'skin',quantity:98}]);const data=t.sim.exportSave();
+  data.lootSettings={enabled:true,gold:true,itemIds:['skin'],destinations:{skin:'materials'}};
+  data.loot=[{id:'full-bags',mapId:'eldoria',x:32,y:59,gold:0,items:[{itemId:'skin',quantity:1}]}];
+  const sim=t.restore(data);sim.send({type:'Move',direction:'up'});expect(sim.snapshot().inventory).toEqual(data.inventory);expect(sim.snapshot().loot).toHaveLength(1);
+ });
  it('full bag keeps items on the ground while gold is collected; disabled and distant drops are untouched',()=>{
   const t=setup(undefined,Array.from({length:20},()=>({itemId:'tunic' as const,quantity:1})));const data=t.sim.exportSave();
   data.loot=[{id:'near',mapId:'eldoria',x:32,y:59,gold:2,items:[{itemId:'skin',quantity:1}]},{id:'far',mapId:'eldoria',x:32,y:55,gold:3,items:[]}];

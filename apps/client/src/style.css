@@ -895,3 +895,15 @@ button:disabled { opacity:.5; cursor:default; }
  .toolbar-text {display:none;}.toolbar-icon {display:inline;font-size:28px;color:#d1b778;}
 }
 @media(max-width:440px) {#skills-list {grid-template-columns:1fr;}}
+
+/* Loot catalogue: one readable row per item, with an actual destination. */
+#loot-filter { display:flex; flex-direction:column; gap:6px; }
+.loot-row { display:grid; grid-template-columns:minmax(0,1fr) 130px; align-items:center; gap:12px; padding:6px; background:#0d202b; border:1px solid #354953; }
+.loot-row[hidden] { display:none; }
+#auto-loot .loot-row label { justify-content:flex-start; margin:0; }
+#auto-loot input[type="checkbox"] { flex:0 0 24px; margin:0; }
+#auto-loot .loot-search { display:flex; flex-wrap:wrap; justify-content:flex-start; }
+#auto-loot input[type="search"] { width:100%; height:48px; }
+.loot-row select, #bag-view { min-height:48px; width:100%; }
+.loot-bulk { display:flex; gap:8px; flex-wrap:wrap; }
+@media(max-width:480px) { .loot-row { grid-template-columns:1fr; } }

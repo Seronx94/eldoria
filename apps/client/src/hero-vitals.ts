@@ -22,10 +22,11 @@ export class HeroVitals {
         g.fillStyle(color!).fillRect(Math.round(x)-22,Math.round(y+offset!),Math.round(44*value!),4);
       }
     }else{
-      for(const [start,value,color]of [[Math.PI*.65,hp,health.color],[-Math.PI*.35,mana,0x569bff]]){
-        const end=start!+Math.PI*.7;
+      // Mirror the mana fill: both meters drain from the top toward the feet.
+      for(const [start,value,color,reverse]of [[Math.PI*.65,hp,health.color,false],[-Math.PI*.35,mana,0x569bff,true]] as const){
+        const end=start+Math.PI*.7;
         g.lineStyle(7,0x0c1920,.9).beginPath().arc(Math.round(x),Math.round(y-24),28,start!,end).strokePath();
-        if(value!>0)g.lineStyle(5,color!).beginPath().arc(Math.round(x),Math.round(y-24),28,start!,start!+Math.PI*.7*value!).strokePath();
+        if(value!>0)g.lineStyle(5,color!).beginPath().arc(Math.round(x),Math.round(y-24),28,reverse?end-Math.PI*.7*value:start,reverse?end:start+Math.PI*.7*value).strokePath();
       }
     }
   }

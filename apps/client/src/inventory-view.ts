@@ -40,11 +40,13 @@ export function renderInventory(s:Snapshot,send:(command:Command)=>void):void {
       });details.append(action);
     }
   };
+  const view=document.querySelector<HTMLSelectElement>('#bag-view')!.value;
+  const visible=s.inventory.filter(stack=>view==='all'||(stack.bag??'main')===view);
   for(let i=0;i<20;i++){
-    const stack=s.inventory[i],cell=document.createElement('button');cell.className='bag-slot';
+    const stack=visible[i],cell=document.createElement('button');cell.className='bag-slot';
     cell.disabled=!stack;cell.setAttribute('aria-label',stack?`${items[stack.itemId].name} ×${stack.quantity}`:`Puste pole ${i+1}`);
     if(stack){
-      cell.dataset.item=stack.itemId;cell.title=`${items[stack.itemId].name} ×${stack.quantity}`;
+      cell.dataset.item=stack.itemId;cell.title=`${items[stack.itemId].name} ×${stack.quantity} · ${stack.bag==='materials'?'Materiały':stack.bag==='supplies'?'Zapasy':'Główny'}`;
       const icon=document.createElement('span');icon.className='item-icon';icon.innerHTML=itemIcon(stack.itemId);
       const count=document.createElement('small');count.className='item-count';count.textContent=String(stack.quantity);
       const text=document.createElement('span');text.className='item-accessible';text.textContent=items[stack.itemId].name;

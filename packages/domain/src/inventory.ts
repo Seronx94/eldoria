@@ -1,23 +1,24 @@
 import { z } from 'zod';
+import {lootBagSchema,type LootBag} from '@eldoria/protocol';
 import { items, inventoryRules,depotRules, type ItemId } from '@eldoria/content';
 const itemId = z.enum(['sword','bow','wand','tunic', 'potion', 'skin', 'chitin']);
-export const stackSchema = z.object({ itemId, quantity: z.number().int().min(1).max(99) }).strict();
+export const stackSchema = z.object({ itemId, quantity: z.number().int().min(1).max(99), bag:lootBagSchema.optional() }).strict();
 export type Stack = z.infer<typeof stackSchema>;
 const listSchema = (slots:number)=>z.array(stackSchema).max(slots).refine(stacks => stacks.every(s => s.quantity <= items[s.itemId].stack), 'Przekroczony limit stosu');
 export const inventorySchema=listSchema(inventoryRules.slots);
 export const stashSchema=listSchema(depotRules.slots);
-export function addItems(inventory: Stack[], additions: Stack[],capacity:number=inventoryRules.slots): Stack[] | null {
+export function addItems(inventory: Stack[], additions: Stack[],capacity:number=inventoryRules.slots,destination?:LootBag): Stack[] | null {
   const bag = structuredClone(listSchema(capacity).parse(inventory));
   for (const entry of z.array(stackSchema).parse(additions)) {
     let left = entry.quantity;
     const limit = items[entry.itemId].stack;
-    for (const stack of bag) if (stack.itemId === entry.itemId) {
+    for (const stack of bag) if (stack.itemId === entry.itemId && (destination===undefined||(stack.bag??'main')===destination)) {
       const quantity = Math.min(limit - stack.quantity, left);
       stack.quantity += quantity; left -= quantity;
     }
     while (left > 0) {
       if (bag.length >= capacity) return null;
-      const quantity = Math.min(left, limit); bag.push({ itemId: entry.itemId, quantity }); left -= quantity;
+      const quantity = Math.min(left, limit); bag.push({ itemId: entry.itemId, quantity,...(destination&&destination!=='main'?{bag:destination}:{}) }); left -= quantity;
     }
   }
   return bag;

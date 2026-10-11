@@ -601,13 +601,34 @@ element('#reset-outfit').addEventListener('click',()=>gateway?.send({type:'SetAp
 const lootEnabled=element<HTMLInputElement>('#auto-loot-enabled'),lootGold=element<HTMLInputElement>('#auto-loot-gold');
 const lootFilter=element('#loot-filter');
 for(const [id,item]of Object.entries(items)){
-  const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.dataset.lootItem=id;input.setAttribute('aria-label',`Zbieraj: ${item.name}`);label.append(input,document.createTextNode(item.name));lootFilter.append(label);
+  const row=document.createElement('div');row.className='loot-row';row.dataset.name=item.name.toLocaleLowerCase('pl');
+  const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.dataset.lootItem=id;input.setAttribute('aria-label',`Zbieraj: ${item.name}`);
+  const icon=document.createElement('span');icon.className='item-icon';icon.innerHTML=itemIcon(id as keyof typeof items);label.append(input,icon,document.createTextNode(item.name));
+  const select=document.createElement('select');select.dataset.lootDestination=id;select.setAttribute('aria-label',`Plecak dla: ${item.name}`);
+  for(const [value,name]of [['main','Główny'],['supplies','Zapasy'],['materials','Materiały']]){const option=document.createElement('option');option.value=value!;option.textContent=name!;select.append(option);}
+  row.append(label,select);lootFilter.append(row);
 }
+function filterLootCatalog():void {
+  const query=element<HTMLInputElement>('#loot-search').value.trim().toLocaleLowerCase('pl');let visible=0;
+  for(const row of lootFilter.querySelectorAll<HTMLElement>('.loot-row')){row.hidden=!row.dataset.name!.includes(query);if(!row.hidden)visible++;}
+  element('#loot-count').textContent=`${visible} / ${Object.keys(items).length} przedmiotów w katalogu`;
+}
+element('#loot-search').addEventListener('input',filterLootCatalog);filterLootCatalog();
+function sendLootSettings():void {
+  const destinations=Object.fromEntries(Array.from(lootFilter.querySelectorAll<HTMLSelectElement>('select')).map(select=>[select.dataset.lootDestination,select.value]));
+  gateway?.send({type:'SetLootSettings',settings:{enabled:lootEnabled.checked,gold:lootGold.checked,destinations,itemIds:Array.from(lootFilter.querySelectorAll<HTMLInputElement>('input:checked')).map(input=>input.dataset.lootItem)}});
+}
+for(const [id,checked]of [['loot-select-all',true],['loot-clear-all',false]] as const)element(`#${id}`).addEventListener('click',()=>{
+  for(const row of lootFilter.querySelectorAll<HTMLElement>('.loot-row:not([hidden])'))row.querySelector<HTMLInputElement>('input')!.checked=checked;
+  sendLootSettings();
+});
 function renderLootSettings(s:Snapshot):void {
   lootEnabled.checked=s.lootSettings.enabled;lootGold.checked=s.lootSettings.gold;
   for(const input of lootFilter.querySelectorAll<HTMLInputElement>('input'))input.checked=s.lootSettings.itemIds.includes(input.dataset.lootItem as keyof typeof items);
+  for(const select of lootFilter.querySelectorAll<HTMLSelectElement>('select'))select.value=s.lootSettings.destinations?.[select.dataset.lootDestination as keyof typeof items]??'main';
 }
-element('#auto-loot').addEventListener('change',()=>gateway?.send({type:'SetLootSettings',settings:{enabled:lootEnabled.checked,gold:lootGold.checked,itemIds:Array.from(lootFilter.querySelectorAll<HTMLInputElement>('input:checked')).map(input=>input.dataset.lootItem)}}));
+element('#auto-loot').addEventListener('change',event=>{if((event.target as HTMLElement).id!=='loot-search')sendLootSettings();});
+element('#bag-view').addEventListener('change',()=>{if(snapshot)renderInventory(snapshot,command=>gateway?.send(command));});
 function renderBag(s: Snapshot): void {
   renderLoadout(s);renderAppearance(s);renderLootSettings(s);
   element('#city-guide').hidden=!adventure;cityGuide?.update(s.mapId,s.player);

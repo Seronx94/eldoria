@@ -1,4 +1,4 @@
-# Eldoria 0.1.15 — konta i zapis postaci
+# Eldoria 0.1.16 — konta i zapis postaci
 
 Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Dostępny jest multiplayer z kontami i zapisem postaci opisany w [ONLINE.md](ONLINE.md), z trzema postaciami bezpłatnymi i pięcioma premium. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
 
@@ -44,7 +44,7 @@ Online ma już konta i innych graczy. Drugi gracz widzi twój nick, lvl i mały 
 
 1. Archerem lub Magiem zaznacz potwora dotykiem. Strzała/pocisk i czar mają lecieć w niego. Odejdź poza zasięg: dostaniesz komunikat bez zużycia many. Ponowny dotyk usuwa cel; bez zaznaczenia działa automatyczny wybór.
 2. Sprawdź nick, HP i manę nad postacią. W menu wybierz łuki, wróć do gry i ponownie uruchom stronę — wybór ma pozostać.
-3. Pokonaj przeciwnika i przejdź obok łupu. W plecaku wyłącz zbieranie skóry lub chityny: materiał ma pozostać na ziemi, a złoto nadal się zbierać. Ręczne Łup pomija filtr.
+3. Pokonaj przeciwnika i przejdź obok łupu. W plecaku otwórz Automatyczne zbieranie łupu, wyszukaj skórę i wybierz dla niej Materiały. Po zebraniu sprawdź ją w przegrodzie Materiały, potem wyjdź/wznów i sprawdź zachowanie przydziału. Trzy przegrody mają wspólny limit 20 pól. Wyłącz zbieranie skóry lub chityny: materiał ma pozostać na ziemi, a złoto nadal się zbierać. Ręczne Łup pomija filtr.
 4. W planie Vareon wybierz Depo i przejdź do gospody na południowym zachodzie. Podejdź do skrzynki, otwórz dotykiem/F, odłóż materiał i pobierz jedną sztukę. Zamknij, wznow grę i sprawdź stash. Market graczy będzie dopiero online.
 5. U Borina sprawdź ikonę, nazwę i cenę. Kup miksturę i sprzedaj materiał; sprawdź saldo oraz czy wygodnie trafiasz w przyciski na telefonie.
 

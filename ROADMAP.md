@@ -48,3 +48,7 @@ Na życzenie testera w M2: odczyt ruchu z klatkami gry, ikonowy plecak i osobne 
 ## Cel, łup i depo 0.1.12
 
 T07f realizuje wybór testera: celowanie broni/czarów w zasięgu, nick i dwa warianty pasków, autołup z filtrem, depo w gospodzie, stash i ikonowy handel NPC. Market ma być rynkiem między graczami, zgodnie z odpowiedzią właściciela; pozostaje na etap M3, po serwerze, kontach i trwałej gospodarce. Nie dodajemy lokalnego sklepu pod nazwą marketu. Stash jest obecnie zapisem offline; danych i waluty offline nie przenosimy do rynku online.
+
+## Widoczność zdrowia 0.1.13
+
+W ramach T07f pełne HP/mana i łuki pozostają widokiem właściciela. Osobny widok publiczny przyjmuje tylko nazwę/HP; teraz obsługuje potwory, z kolorami zdrowia i etykietami po zaznaczeniu lub zranieniu. Dla M3 wymagana będzie także kontrola danych po stronie serwera: prywatne zasoby właściciela i publiczne HP innych graczy. Sam podział renderowania offline nie jest kontrolą dostępu ani testem kont online.

@@ -1,4 +1,4 @@
-# Eldoria 0.1.12 — cel, autołup i depo
+# Eldoria 0.1.13 — prywatne paski i kolory HP
 
 Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Nie ma multiplayer. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
 
@@ -27,6 +27,14 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 ```
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Po zbudowaniu i zainstalowaniu APK komputer i LAN nie są potrzebne — patrz [instrukcja Androida](ANDROID.md).
+
+## Trzy kroki testu 0.1.13
+
+1. Sprawdź własny nick oraz HP i manę. W menu wybierz łuki: niebieska mana ma nadal występować tylko przy Twoim bohaterze. Zapisany wybór pozostaje po wznowieniu.
+2. Zaznacz zdrowego potwora — dostanie mały pasek HP i zieloną nazwę. Zdejmij cel: etykieta zdrowego potwora znika. Zrań go: etykieta zostaje także bez zaznaczenia, ale nie pokazuje many ani bocznych łuków.
+3. Podczas walki z wilkiem sprawdź kolory jego nazwy/HP: zielony powyżej połowy, żółty do połowy, czerwony przy jednej czwartej. Po pokonaniu nazwa i pasek znikają. To samo kolorowanie działa dla Twojego nicku i HP; pilnuj mikstur.
+
+Gra pozostaje offline, bez kont i innych graczy. Widok publiczny działa teraz dla potworów; test prywatności danych między graczami będzie możliwy po uruchomieniu serwera. Testy chmurowe nie zastępują oceny czytelności/FPS na fizycznym telefonie.
 
 ## Pięć kroków testu 0.1.12
 

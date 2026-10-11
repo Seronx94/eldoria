@@ -91,3 +91,7 @@ Ikony tuniki, skóry i chityny w `apps/client/src/inventory-view.ts` oraz dodatk
 ## Depo i paski postaci 0.1.12
 
 Drewniana skrzynka depo w main.ts oraz nick/paski/łuki w hero-vitals.ts są autorskimi rysunkami proceduralnymi przygotowanymi przez Codexa dla Eldorii, do użycia i modyfikacji w projekcie. Stash i handel NPC korzystają z istniejących własnych ikon itemIcon. Bez importowania materiałów Tibii/Kakele. Screenshoty w docs/screenshots to nieedytowane przechwycenia własnej gry w Chromium.
+
+## Etykiety zdrowia 0.1.13
+
+PublicVitals i health-display to własne rysowanie małego HP oraz kolory nicków dla Eldorii przez Codexa, na zasadach pozostałego wkładu projektu. Referencja testera służy sposobowi prezentacji; nie kopiowano grafiki ani materiałów innych gier.

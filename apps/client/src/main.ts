@@ -10,6 +10,8 @@ import { OfflineStorage } from './storage';
 import {VirtualJoystick} from './virtual-joystick';
 import {renderActionIcons,actionIcon} from './action-icons';
 import {renderInventory,itemIcon} from './inventory-view';
+import {PublicVitals} from './public-vitals';
+import {healthDisplay} from './health-display';
 import {HeroVitals,loadVitalsStyle,type VitalsStyle} from './hero-vitals';
 import {DepotView} from './depot-view';
 import {creatureFacing,creatureFrames} from './creature-facing';
@@ -136,6 +138,7 @@ class Menu extends Phaser.Scene {
 }
 class World extends Phaser.Scene {
   private vitals!:HeroVitals;
+  private publicVitals=new Map<string,PublicVitals>();
   private hero!: Phaser.GameObjects.Sprite;
   private appearance!:HeroAppearance;
   private objects: Phaser.GameObjects.GameObject[] = [];
@@ -179,6 +182,7 @@ class World extends Phaser.Scene {
     this.movingTween?.stop(); this.movingUntil = 0; this.actionUntil = 0;
     for (const view of this.creatureViews.values()) view.tween?.stop();
     this.creatureViews.clear();
+    for(const vitals of this.publicVitals.values())vitals.destroy();this.publicVitals.clear();
     this.hero.anims.stop(); this.hero.setTexture('outfit',0);
     for (const object of this.objects) object.destroy();
     this.objects = []; this.creatureSprites.clear(); this.bars.clear();
@@ -265,7 +269,7 @@ class World extends Phaser.Scene {
     this.resize();
     const newWorld = this.epoch !== worldEpoch;
     if (newWorld) { this.epoch = worldEpoch; this.lastCombatId = 0; }
-    if (!playing) { this.vitals.hide();this.effects.clear(); ui.hud.dataset.effects = '0'; return; }
+    if (!playing) { this.vitals.hide();for(const vitals of this.publicVitals.values())vitals.hide();this.effects.clear(); ui.hud.dataset.effects = '0'; return; }
     this.appearance.update(s,colorful);
     const changedMap = this.mapId !== s.mapId;
     if (newWorld || changedMap || this.colorful !== colorful) this.renderMap(maps.find(m => m.id === s.mapId)!);
@@ -292,7 +296,7 @@ class World extends Phaser.Scene {
     } else if (this.time.now < this.movingUntil) this.hero.play(`hero-walk-${s.direction}`, true);
     else { this.hero.anims.stop(); this.hero.setFrame(['down', 'left', 'right', 'up'].indexOf(s.direction) * 3); }
     ui.hud.dataset.heroFrame=String(this.hero.frame.name);ui.hud.dataset.heroNick=s.name;
-    ui.hud.dataset.heroHp=String(s.hp/s.maxHp);ui.hud.dataset.heroMana=String(s.mana/s.maxMana);
+    ui.hud.dataset.heroHp=String(s.hp/s.maxHp);ui.hud.dataset.heroNameColor=healthDisplay(s.hp,s.maxHp).css;ui.hud.dataset.heroMana=String(s.mana/s.maxMana);
     ui.hud.dataset.heroPosition=`${this.hero.x.toFixed(3)},${this.hero.y.toFixed(3)}`;
     this.bars.clear();
     if(s.guardMs>0)this.bars.lineStyle(2,0x98c7ef,.6+Math.sin(this.time.now/180)*.2).strokeEllipse(this.hero.x,this.hero.y-10,34,28);
@@ -305,6 +309,7 @@ class World extends Phaser.Scene {
       if (!sprite) {
         sprite = this.add.sprite(creature.x * 32 + 16, creature.y * 32 + 32, art(creature.kind)).setOrigin(.5, 1).setInteractive({ useHandCursor: true });
         sprite.on('pointerdown', () => { if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send(snapshot?.selectedId===creature.id?{type:'ClearTarget'}:{ type: 'Select', targetId: creature.id }); });
+        this.publicVitals.set(creature.id,new PublicVitals(this));
         this.creatureSprites.set(creature.id, sprite); this.objects.push(sprite);
       }
       const revived = !sprite.visible && creature.hp > 0;
@@ -312,7 +317,7 @@ class World extends Phaser.Scene {
       let view = this.creatureViews.get(creature.id);
       const creaturePosition = `${creature.x},${creature.y}`;
       if (!view) { view = {position:creaturePosition,until:0,facing:'down'}; this.creatureViews.set(creature.id,view); }
-      if (creature.hp === 0) { view.tween?.stop(); sprite.anims.stop(); view.until = 0; continue; }
+      if (creature.hp === 0) { this.publicVitals.get(creature.id)!.hide();view.tween?.stop(); sprite.anims.stop(); view.until = 0; continue; }
       if (revived) { view.tween?.stop(); sprite.setPosition(creature.x*32+16,creature.y*32+32); view.position = creaturePosition; view.until = 0; }
       if (view.position !== creaturePosition) {
         const [oldX,oldY] = view.position.split(',').map(Number);
@@ -326,8 +331,7 @@ class World extends Phaser.Scene {
       sprite.setDepth(sprite.y);
       const selected = creature.id === s.selectedId;
       if (selected) this.bars.lineStyle(1, 0xefd18a).strokeEllipse(sprite.x, sprite.y - 3, 28, 13);
-      this.bars.fillStyle(0x263c35).fillRect(sprite.x - 12, sprite.y - 30, 24, 3);
-      this.bars.fillStyle(selected ? 0xdac083 : 0x9ba582).fillRect(sprite.x - 12, sprite.y - 30, 24 * creature.hp / monsters[creature.kind].hp, 3);
+      this.publicVitals.get(creature.id)!.draw(monsters[creature.kind].name,creature.hp,monsters[creature.kind].hp,sprite.x,sprite.y,selected);
     }
     // Read-only diagnostics of the actual rendered frames, useful when checking directional art.
     ui.hud.dataset.creaturePoses=JSON.stringify(s.creatures.filter(c=>c.hp>0).map(c=>{
@@ -335,7 +339,7 @@ class World extends Phaser.Scene {
       const camera=this.cameras.main;
       // This unrotated camera zooms around the viewport centre.
       const screen={x:camera.x+camera.width/2+(sprite.x-camera.scrollX-camera.width/2)*camera.zoom,y:camera.y+camera.height/2+(sprite.y-16-camera.scrollY-camera.height/2)*camera.zoom};
-      return {id:c.id,x:c.x,y:c.y,screenX:screen.x,screenY:screen.y,facing:view.facing,frame:Number(sprite.frame.name),flip:sprite.flipX,animation:sprite.anims.isPlaying?sprite.anims.currentAnim?.key:null};
+      return {id:c.id,x:c.x,y:c.y,screenX:screen.x,screenY:screen.y,vitalsVisible:this.publicVitals.get(c.id)!.presentation.visible,vitalsColor:this.publicVitals.get(c.id)!.presentation.color,facing:view.facing,frame:Number(sprite.frame.name),flip:sprite.flipX,animation:sprite.anims.isPlaying?sprite.anims.currentAnim?.key:null};
     }));
     for (const event of s.combatEvents) {
       if (event.id <= this.lastCombatId) continue;

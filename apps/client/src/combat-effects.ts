@@ -82,8 +82,87 @@ export class CombatEffects {
         g.lineStyle(3,0xe5f4ee).lineBetween(sx+Math.cos(swing)*8,sy+Math.sin(swing)*8,sx+Math.cos(swing)*25,sy+Math.sin(swing)*25);g.fillStyle(0xe6b75b).fillRect(sx+Math.cos(swing)*7-2,sy+Math.sin(swing)*7-2,4,4);
       }else for(let claw=0;claw<3;claw++)g.lineStyle(2,0xffb28e,1-p).lineBetween(tx-7+claw*5,ty-10,tx-12+claw*5,ty+4);
     },event.effect);
+    if(event.kind==='spell')this.spectacle(event,sx,sy,tx,ty);
     for(const hit of event.hits)this.showHit(hit.damage,resolveTarget(hit.targetId),hit.to,event.kind==='monster');
     if(event.healing>0)this.number(sx,sy-18,`+${event.healing}`,'#a7f2ac');
+  }
+  /** Layered, bounded pixel particles: cast, travel and impact stay cosmetic. */
+  private spectacle(event:CombatEvent,sx:number,sy:number,tx:number,ty:number):void {
+    const id=event.effect;
+    const colors:Record<string,number>={spark:0xffcd66,fireball:0xff773c,frost:0x72dcff,heal:0x83f0ae,guard:0x8dbbff,spin:0xffe3a0,'blade-wave':0xffd46d,'power-arrow':0xffee90,volley:0xdbeaba};
+    const color=colors[id]??0xffdf90;
+    const flight=Math.min(420,150+Math.hypot(tx-sx,ty-sy));
+    const atImpact=['fireball','spark','blade-wave','power-arrow','volley'].includes(id);
+    const delay=atImpact?flight:0,duration=delay+850;
+    const cx=atImpact?tx:sx,cy=atImpact?ty:sy+12;
+    this.add(duration,(g,age)=>{
+      // A ring with rotating glyphs and rising motes accompanies every profession spell.
+      const cast=Math.min(1,age/500),fade=Math.max(0,1-age/650);
+      g.lineStyle(2,color,fade*.8).strokeEllipse(sx,sy+17,42+cast*18,18+cast*8);
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4+cast*1.5,x=Math.round(sx+Math.cos(a)*24),y=Math.round(sy+17+Math.sin(a)*11);
+        g.fillStyle(color,fade).fillRect(x-1,y-2,3,5);
+        g.fillStyle(0xfff9dc,fade).fillRect(x,Math.round(y-cast*30),2,2);
+      }
+      if(age<delay)return;
+      const p=(age-delay)/850,alpha=Math.min(1,(1-p)*1.5);
+      const r=(id==='frost'?event.radius*32:id==='fireball'||id==='volley'?Math.max(24,event.radius*32):30);
+      if(id==='fireball'){
+        g.lineStyle(4,0xffa24f,alpha).strokeEllipse(cx,cy+8,12+p*r*2,8+p*r);
+        for(let i=0;i<9;i++){
+          const a=i*2.4,spread=Math.sqrt(i/8)*r,x=Math.round(cx+Math.cos(a)*spread),y=Math.round(cy+Math.sin(a)*spread*.65);
+          const phase=Math.max(0,Math.sin(Math.min(1,p*1.7-i*.035)*Math.PI)),h=phase*(22+i%3*7);
+          g.fillStyle(0xa53235,alpha*.5).fillRect(x-7,y-h-3,14,h+9);
+          g.fillStyle(0xff7134,alpha).fillTriangle(x-7,y+3,x+7,y+3,x+(i%2?3:-3),y-h);
+          g.fillStyle(0xffdd71,alpha).fillTriangle(x-3,y+2,x+4,y+2,x,y-h*.7);
+          g.fillStyle(0xfff4bf,alpha).fillRect(x-1,y-h*.35,3,5);
+        }
+      }else if(id==='frost'){
+        g.lineStyle(3,color,alpha).strokeEllipse(cx,cy,r*2*Math.min(1,p*3),r*Math.min(1,p*3));
+        for(let i=0;i<12;i++){
+          const a=i*Math.PI/6,x=Math.round(cx+Math.cos(a)*r*.8),y=Math.round(cy+Math.sin(a)*r*.55),h=Math.sin(p*Math.PI)*(18+i%3*6);
+          g.fillStyle(0x277da7,alpha).fillTriangle(x-7,y,x+7,y,x,y-h);
+          g.fillStyle(0xc7faff,alpha).fillTriangle(x,y,x+7,y,x,y-h);
+          g.lineStyle(1,0xf3ffff,alpha).lineBetween(x,y,x,y-h);
+        }
+      }else if(id==='guard'){
+        for(let i=0;i<3;i++){
+          const a=p*Math.PI*2+i*Math.PI*2/3,x=cx+Math.cos(a)*24,y=cy-12+Math.sin(a)*10;
+          g.fillStyle(0x31578c,alpha*.6).fillPoints([{x:x-7,y:y-9},{x:x+7,y:y-9},{x:x+7,y},{x,y:y+9},{x:x-7,y}],true);
+          g.lineStyle(2,color,alpha).strokePoints([{x:x-7,y:y-9},{x:x+7,y:y-9},{x:x+7,y},{x,y:y+9},{x:x-7,y}],true);
+          g.lineStyle(1,0xffffff,alpha).lineBetween(x-3,y-3,x+3,y-3).lineBetween(x,y-6,x,y+2);
+        }
+      }else if(id==='heal'){
+        for(let i=0;i<14;i++){
+          const a=p*7+i*Math.PI/7,x=Math.round(cx+Math.cos(a)*22),y=Math.round(cy+9-p*52+i%4*5);
+          g.fillStyle(i%2?0xc6ffac:color,alpha).fillTriangle(x-4,y,x,y-5,x+4,y);
+          if(i%3===0)g.lineStyle(2,0xfff7bd,alpha).lineBetween(x-3,y-8,x+3,y-8).lineBetween(x,y-11,x,y-5);
+        }
+      }else if(id==='spin'||id==='blade-wave'){
+        for(let i=0;i<3;i++){
+          const a=p*Math.PI*4+i*Math.PI*2/3;
+          g.lineStyle(5,color,alpha*.6).beginPath().arc(cx,cy,24+p*10,a,a+1.4).strokePath();
+          g.lineStyle(2,0xf6ffff,alpha).beginPath().arc(cx,cy,29+p*10,a,a+1.2).strokePath();
+        }
+      }else if(id==='volley'){
+        for(let i=0;i<12;i++){
+          const progress=Math.min(1,Math.max(0,p*2.2-i*.07)),x=Math.round(cx+Math.cos(i*2.4)*r*.8),base=cy+Math.sin(i*2.4)*r*.55,y=base-70*(1-progress);
+          if(progress<1){g.lineStyle(2,0xffe6ae,alpha).lineBetween(x,y-17,x,y);g.fillStyle(0xebffff,alpha).fillTriangle(x-4,y-5,x+4,y-5,x,y+2);}
+          else {g.lineStyle(1,color,alpha).strokeEllipse(x,base,12+(p*8),6+p*4);}
+        }
+      }else{
+        // Impact star and branching rays distinguish concentrated magic and precision shots.
+        for(let i=0;i<8;i++){
+          const a=i*Math.PI/4,x=Math.round(cx+Math.cos(a)*(6+p*r)),y=Math.round(cy+Math.sin(a)*(6+p*r));
+          g.lineStyle(id==='spark'?2:3,color,alpha).strokePoints([{x:cx,y:cy},{x:(cx+x)/2+Math.sin(i*4+p*12)*5,y:(cy+y)/2},{x,y}]);
+          g.fillStyle(0xfff7e2,alpha).fillRect(x-2,y-2,4,4);
+        }
+      }
+      for(let i=0;i<16;i++){
+        const a=i*2.4,spread=(8+p*r)*(i%3+1)/3,x=Math.round(cx+Math.cos(a)*spread),y=Math.round(cy+Math.sin(a)*spread*.65-p*20);
+        g.fillStyle(i%3?color:0xffffff,alpha).fillRect(x,y,i%3?2:3,i%3?2:3);
+      }
+    },id);
   }
   private showHit(damage:number,target:Sprite|undefined,to:{x:number;y:number},monster:boolean):void {
     if(damage<=0)return;

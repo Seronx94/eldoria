@@ -13,7 +13,7 @@ async function observeEffects(page:Page):Promise<void>{
 }
 async function importArena(page:Page,live=false):Promise<void>{
   const data=JSON.parse(await page.evaluate(()=>localStorage.getItem('eldoria.offline.v1')!)) as SaveData;
-  data.player={x:32,y:60};data.hp=80;data.mana=50;data.loot=[];
+  data.player={x:32,y:60};data.level=5;data.hp=80;data.mana=50;data.loot=[];
   for(const c of data.maps[0]!.creatures){
     if(live&&c.id==='rat-1')Object.assign(c,{x:32,y:54,hp:30,state:'idle',moveIn:400,attackIn:1200});
     else Object.assign(c,{hp:0,state:'dead',respawnIn:20000});

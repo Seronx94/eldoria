@@ -8,7 +8,8 @@ import { TownView, townAssetKeys } from './town-view';
 import { CombatEffects } from './combat-effects';
 import { OfflineStorage } from './storage';
 import {VirtualJoystick} from './virtual-joystick';
-import {renderActionIcons} from './action-icons';
+import {renderActionIcons,actionIcon} from './action-icons';
+import {renderInventory} from './inventory-view';
 import {creatureFacing,creatureFrames} from './creature-facing';
 import {ActionBar,actionName} from './action-bar';
 import {HeroAppearance} from './hero-appearance';
@@ -71,13 +72,16 @@ const joystick = new VirtualJoystick(element('#joystick'), () => playing && ui.c
 });
 function resetInput(): void { pointerDirections.clear(); heldKeys.clear(); attackPointers.clear(); attackKeys.clear(); joystick.reset(); }
 function direction(): Direction | undefined { return [...pointerDirections.values()].at(-1) ?? [...heldKeys.values()].at(-1); }
+let nextMovementAt=0;
 function movement(): void {
   const d = direction();
   if (!ui.complete.hidden || bagDialog.open || npcDialog.open) return;
-  if (d && playing && !document.hidden && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({ type: 'Move', direction: d });
+  if (d && playing && performance.now()>=nextMovementAt && !document.hidden && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) {
+    gateway?.send({ type: 'Move', direction: d });
+    nextMovementAt=performance.now()+rules.stepMs;
+  }
 }
 const movementTimer = window.setInterval(() => {
-  movement();
   if ((attackKeys.size || attackPointers.size > 0) && playing && !document.hidden && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({type:'Attack'});
 }, rules.tickMs);
 
@@ -233,6 +237,7 @@ class World extends Phaser.Scene {
     this.playerPosition = '';
   }
   update(): void {
+    movement();
     const s = snapshot;
     if (!s) return;
     this.resize();
@@ -253,8 +258,8 @@ class World extends Phaser.Scene {
       const x = s.player.x * 32 + 16, y = s.player.y * 32 + 32;
       if (first) { this.movingUntil=0; this.hero.setPosition(x, y); this.cameras.main.centerOn(x, y); }
       else {
-        this.movingTween = this.tweens.add({ targets: this.hero, x, y, duration: rules.stepMs, ease: 'Linear' });
-        this.movingUntil = this.time.now + rules.stepMs;
+        this.movingTween = this.tweens.add({ targets: this.hero, x, y, duration: rules.stepMs+20, ease: 'Linear' });
+        this.movingUntil = this.time.now + rules.stepMs+20;
       }
     }
     this.hero.setDepth(this.hero.y);
@@ -264,6 +269,7 @@ class World extends Phaser.Scene {
     } else if (this.time.now < this.movingUntil) this.hero.play(`hero-walk-${s.direction}`, true);
     else { this.hero.anims.stop(); this.hero.setFrame(['down', 'left', 'right', 'up'].indexOf(s.direction) * 3); }
     ui.hud.dataset.heroFrame=String(this.hero.frame.name);
+    ui.hud.dataset.heroPosition=`${this.hero.x.toFixed(3)},${this.hero.y.toFixed(3)}`;
     this.bars.clear();
     if(s.guardMs>0)this.bars.lineStyle(2,0x98c7ef,.6+Math.sin(this.time.now/180)*.2).strokeEllipse(this.hero.x,this.hero.y-10,34,28);
     for (const loot of s.loot.filter(l => l.mapId === s.mapId)) {
@@ -472,19 +478,29 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => { if (adventure) saveNow(); clearInterval(movementTimer); gateway?.disconnect(); game.destroy(true); });
 
 let loadoutProfession='';
+let spellbookSignature='';
 function renderLoadout(s:Snapshot):void {
   const container=element('#loadout-slots');
-  if(loadoutProfession!==s.profession){
-    loadoutProfession=s.profession;container.replaceChildren();
+  if(loadoutProfession!==`${s.profession}:${s.level}`){
+    loadoutProfession=`${s.profession}:${s.level}`;container.replaceChildren();
     element('#profession-description').textContent=`${professions[s.profession].name} · ${professions[s.profession].attackName}, zasięg ${professions[s.profession].range}. Czary tej profesji mają własny koszt many i odnowienie.`;
     for(let index=0;index<4;index++){
       const label=document.createElement('label');label.textContent=`Pozycja ${index+1}`;
       const select=document.createElement('select');select.id=`action-choice-${index+1}`;
-      for(const id of ['attack',...professions[s.profession].spells,'potion'] as ActionId[]){const option=document.createElement('option');option.value=id;option.textContent=actionName(s,id)+(id==='attack'||id==='potion'?'':` · ${spells[id].mana} many, ${spells[id].cooldown/1000} s`);select.append(option);}
+      for(const id of ['attack',...professions[s.profession].spells,'potion'] as ActionId[]){const option=document.createElement('option');option.value=id;option.textContent=actionName(s,id)+(id==='attack'||id==='potion'?'':` · poz. ${spells[id].level} · ${spells[id].mana} many, ${spells[id].cooldown/1000} s`);option.disabled=id!=='attack'&&id!=='potion'&&s.level<spells[id].level;select.append(option);}
       select.addEventListener('change',()=>gateway?.send({type:'SetActionSlot',slot:index,actionId:select.value}));label.append(select);container.append(label);
     }
   }
   for(let index=0;index<4;index++)element<HTMLSelectElement>(`#action-choice-${index+1}`).value=s.actionSlots[index]!;
+  if(spellbookSignature===`${s.profession}:${s.level}`)return;
+  spellbookSignature=`${s.profession}:${s.level}`;
+  const book=element('#spellbook');book.replaceChildren();
+  for(const id of professions[s.profession].spells){
+    const spell=spells[id],card=document.createElement('div');card.className='spell-card';card.classList.toggle('locked',s.level<spell.level);
+    const icon=document.createElement('span');icon.className='item-icon';icon.innerHTML=actionIcon(id);
+    const text=document.createElement('span');text.textContent=`${spell.name} · poziom ${spell.level} · ${spell.mana} many · ${spell.cooldown/1000} s${s.level<spell.level?' · Zablokowany':' · Dostępny'}`;
+    card.append(icon,text);book.append(card);
+  }
 }
 function renderAppearance(s:Snapshot):void {
   element('#appearance-profession').textContent=professions[s.profession].name;
@@ -514,29 +530,7 @@ function renderBag(s: Snapshot): void {
     note.textContent = s.exploration.found.includes(l.id) ? `✓ ${l.name}: ${l.text}` : `◇ ${l.name} — jeszcze nieodkryte`;
     chronicle.append(note);
   }
-  const equipment = element('#equipment'); equipment.replaceChildren();
-  for (const slot of ['weapon', 'armor'] as const) {
-    const row = document.createElement('div'); row.className = 'equipment-row';
-    const label = document.createElement('span'); const id = s.equipment[slot];
-    label.textContent = `${slot === 'weapon' ? 'Broń' : 'Pancerz'}: ${id ? items[id].name : 'brak'}`;
-    const button = document.createElement('button'); button.textContent = 'Zdejmij'; button.disabled = !id;
-    button.addEventListener('click', () => gateway?.send({ type: 'Unequip', slot }));
-    row.append(label, button); equipment.append(row);
-  }
-  element('#bag-gold').textContent = `${s.gold} złota · ${s.inventory.length}/20 pól · ${s.exp} EXP`;
-  const slots = element('#bag-slots'); slots.replaceChildren();
-  for (let i = 0; i < 20; i++) {
-    const cell = document.createElement('div'); cell.className = 'bag-slot';
-    const stack = s.inventory[i];
-    if (stack) {
-      const label = document.createElement('span'); label.textContent = `${items[stack.itemId].name} ×${stack.quantity}`; cell.append(label);
-      if (['sword','bow','wand','tunic'].includes(stack.itemId)) {
-        const button = document.createElement('button'); button.textContent = 'Załóż';
-        button.addEventListener('click', () => gateway?.send({ type: 'Equip', itemId: stack.itemId })); cell.append(button);
-      }
-    } else cell.textContent = '·';
-    slots.append(cell);
-  }
+  renderInventory(s,command=>gateway?.send(command));
 }
 function toggleBag(): void {
   resetInput();

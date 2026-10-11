@@ -1,4 +1,4 @@
-# Eldoria 0.1.10 — stroje, kolory i Android
+# Eldoria 0.1.11 — chód, plecak i poziomy czarów
 
 Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Nie ma multiplayer. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
 
@@ -28,6 +28,17 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Po zbudowaniu i zainstalowaniu APK komputer i LAN nie są potrzebne — patrz [instrukcja Androida](ANDROID.md).
 
+## Cztery kroki testu 0.1.11
+
+1. Przytrzymaj joystick i przejdź dłuższy odcinek ulicy. Postać ma płynnie przesuwać się między kratkami; sprawdź też zmianę kierunku, zatrzymanie i ruch przy ścianie. Podaj model telefonu, jeśli nadal widzisz szarpanie.
+2. Otwórz **Plecak**. Kliknij broń w wyposażeniu, następnie jej ikonę w siatce i **Załóż**. Wybierz miksturę przy niepełnym HP i **Użyj mikstury**. Sprawdź licznik, pusty slot i opis materiału; ekwipunek pozostaje po wznowieniu.
+3. Na poziomie 1 działa pierwszy czar własnej profesji. Dwie pozostałe ikony pokazują **POZ. 3** i **POZ. 5**. Spis czarów jest w **Profesja i cztery akcje**. Zdobywaj EXP przez walkę/zadania; po awansie czar odblokowuje się automatycznie. Nie używaj starego klienta do oceny nowych progów.
+4. Po odblokowaniu sprawdź płomienie/krąg lodu Maga, wir/tarcze Knighta albo deszcz strzał/leczenie Archera. Porównaj czytelność celów podczas walki, sterowanie drugim palcem oraz odnowienia. Zapisz, odśwież i sprawdź zachowanie poziomu i przypisań.
+
+Poziomy 1/3/5 są pierwszym balansem do oceny. Gra nadal jest offline; drzewka rozwoju i nowe sloty sprzętu będą osobnym etapem. Testy Chromium nie zastępują pomiaru płynności na fizycznym telefonie.
+
+Podglądy **0.1.11**: [nowy plecak](screenshots/backpack-rpg-mobile.png), [Lodowy krąg](screenshots/spell-frost-mobile.png), [Żelazna osłona](screenshots/spell-guard-mobile.png). Rzeczywiste zrzuty produkcji w emulacji Chromium. Plecak pokazuje poprawny import testowy z kilkoma stosami dla porównania ikon; zrzutów nie edytowano.
+
 ## Cztery kroki testu wyglądu 0.1.10
 
 1. Wyeksportuj ważną przygodę. W nowych przygodach porównaj profesje: Knight zachowuje wygląd, Archer ma łuk/kołczan i zieleń, Mag niebieski kapelusz/szatę oraz różdżkę. Przejdź w cztery strony i użyj broni/czarów w lesie.
@@ -41,7 +52,7 @@ Podglądy strojów **0.1.10**: [Knight](screenshots/outfit-knight-mobile.png), [
 
 1. W menu wyeksportuj swój ważny zapis, potem wybierz **Knight**, **Archer** lub **Mag** i rozpocznij nową przygodę. Wznawianie starej przygody zachowuje jej profesję; starszy zapis otrzymuje Knighta. Każda profesja zaczyna z odpowiednią bronią i trzema własnymi umiejętnościami.
 2. Wyjdź północną bramą do lasu. Przytrzymaj miecz/łuk/różdżkę, bez zaznaczania potwora: Knight uderza obok, Archer do pięciu kratek, Mag do czterech. Broń nie zużywa many; ściany blokują strzały. Sprawdź zatrzymanie po puszczeniu i po powrocie do miasta.
-3. Dotknij każdego z trzech czarów. Knight ma falę ostrza, wir i czterosekundową osłonę; Archer precyzyjny strzał, deszcz strzał i leczenie; Mag Iskrę, kulę ognia i lodowy krąg. Obserwuj odrębne animacje, koszty i odnowienia. Leczenie przy pełnym HP nie zużywa many; lód na razie nie spowalnia. Czary w mieście są zablokowane.
+3. Dotknij każdego z trzech czarów. Knight ma falę ostrza, wir i czterosekundową osłonę; Archer precyzyjny strzał, deszcz strzał i leczenie; Mag Iskrę, kulę ognia i lodowy krąg. Pierwszy czar działa od poziomu 1, drugi od 3, trzeci od 5. Obserwuj odrębne animacje, koszty i odnowienia. Leczenie przy pełnym HP nie zużywa many; lód na razie nie spowalnia. Czary w mieście są zablokowane.
 4. Otwórz **Plecak → Profesja i cztery akcje** i zmień kolejność albo przypisz miksturę. Po lewej na telefonie trzymaj joystick, drugim palcem użyj jednej z czterech ikon po prawej (2×2). Przypisz broń również do czwartego miejsca i przytrzymaj. Po puszczeniu, obrocie lub otwarciu plecaka ruch i atak mają się zatrzymać. Na komputerze: 1–4 odpowiadają pozycjom, Spacja zawsze używa broni, E pierwszego czaru.
 5. Zapisz, odśwież i wznów: profesja, broń, ustawienie przycisków oraz pozostałe odnowienia powinny zostać. Sprawdź każdą profesję jako osobną nową postać; eksport pozwala potem przywrócić wcześniejszą. Zgłoś wygodę pod kciukiem, czytelność efektów, model telefonu i zbyt silne/słabe czary.
 

@@ -213,7 +213,8 @@ export class Simulation {
     const profile=professions[s.profession],casting=command.type==='Cast';
     const spellId=casting?(command.spellId??profile.spells[0]!):undefined;
     const spell=spellId?spells[spellId]:undefined;
-    if(spell&&(spell.profession!==s.profession||s.level<spell.level)){this.notify('Ta umiejętność nie jest dostępna dla Twojej profesji.');return;}
+    if(spell&&spell.profession!==s.profession){this.notify('Ta umiejętność należy do innej profesji.');return;}
+    if(spell&&s.level<spell.level){this.notify(`${spell.name}: wymagany poziom ${spell.level}.`);return;}
     if(!casting&&s.equipment.weapon!==profile.weapon){this.notify('Załóż broń swojej profesji w plecaku.');return;}
     if(now-(spellId?this.lastSpells.get(spellId)??-Infinity:this.lastAttack)<(spell?.cooldown??profile.attackMs))return;
     if(spell&&s.mana<spell.mana){this.notify('Za mało many.');return;}
@@ -239,7 +240,7 @@ export class Simulation {
     const targets=spell&&(spell.mode==='area'||spell.mode==='self-area')?s.creatures.filter(c=>c.hp>0&&combatAllowedAt(this.map(),c)&&distance(c,to)<=spell.radius&&distance(c,s.player)<=range+spell.radius&&this.lineOfSight(s.player,c)):(target?[target]:[]);
     const hits=targets.map(c=>({targetId:c.id,to:{x:c.x,y:c.y},damage:this.hit(c,spell?.damage??profile.damage,now)}));
     this.combat(kind,'player',hits[0]?.targetId??null,s.player,to,hits[0]?.damage??0,{effect,abilityId:spellId??'attack',radius:spell?.radius??0,hits});
-    if(!hits.length)this.notify(casting?`${spell!.name} w kierunku patrzenia (${spell!.mana} many).`:`${profile.attackName}: atak bez trafienia. Podejdź w zasięg.`);
+    if(!hits.length)this.notify(casting?`${spell!.name} ${spell!.mode==='self-area'?'wokół postaci':'w kierunku patrzenia'} (${spell!.mana} many).`:`${profile.attackName}: atak bez trafienia. Podejdź w zasięg.`);
     else if(targets.every(c=>c.hp>0))this.notify(`${spell?.name??profile.attackName}: ${hits.reduce((n,h)=>n+h.damage,0)} obrażeń.`);
   }
   private hit(target:Creature,power:number,now:number):number {

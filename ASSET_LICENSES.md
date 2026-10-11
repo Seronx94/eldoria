@@ -83,3 +83,7 @@ Nowe ikony broni i dziewięciu umiejętności są autorskimi SVG w apps/client/s
 `npm run assets:import-professions` mechanicznie wycina komórki, normalizuje alfa, przycina puste marginesy i dopasowuje nearest-neighbour do 32×44, wyrównując stopy do dołu klatki 32×48. Wymaga ImageMagick 7 wyłącznie przy odtwarzaniu assetów. Arkusze `assets/source/styles/professions/{archer,mage}.png` oraz identyczne eksporty runtime mają 96×192 (12 klatek). Knight korzysta z niezmienionego źródła wanderer.png. Kolorowanie i podgląd to własny kod outfit-colors.ts/hero-appearance.ts; oryginalne pliki PNG pozostają niezmienione.
 
 Projekt Androida wygenerowano oficjalnym szablonem `@capacitor/cli` 8.5.3 (Ionic, licencja MIT). Natywna ikona i ekran startowy są roboczymi zasobami tego szablonu, do zastąpienia przed wydaniem; nie są nową autorską grafiką Eldorii. Źródło: https://github.com/ionic-team/capacitor, plik LICENSE. Biblioteki npm zachowują własne licencje w pakietach.
+
+## Plecak i efekty 0.1.11
+
+Ikony tuniki, skóry i chityny w `apps/client/src/inventory-view.ts` oraz dodatkowe warstwy czarów w `combat-effects.ts` są własnymi rysunkami SVG/proceduralnymi, przygotowanymi dla Eldorii przez Codexa. Broń i mikstura korzystają z wcześniejszych autorskich ikon Eldorii. Bez importu materiałów ze screenów Tibii/Kakele; do użycia i modyfikacji w projekcie na zasadach wcześniejszego wkładu Codexa.

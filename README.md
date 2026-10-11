@@ -1,18 +1,22 @@
 # Eldoria — specyfikacja projektu
 
-Status implementacji: **0.1.10 — osobne stroje profesji, kolory postaci i projekt Androida**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; to przygoda offline. Projekt Androida jest przygotowany; kompilacja i test fizycznego APK wymagają Android SDK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
+Status implementacji: **0.1.11 — płynniejszy chód, plecak z ikonami i czary od poziomu**. Vareon, Mroczny Las, NPC, zadanie, handel i zapis lokalny są zaimplementowane. Grafika pozostaje robocza; to przygoda offline. Projekt Androida jest przygotowany; kompilacja i test fizycznego APK wymagają Android SDK. Specyfikacja poniżej pozostaje docelowym wymaganiem (wersja 1.0, 9 października 2026).
 
 ## Zagraj w bieżącą wersję
 
-W **0.1.10** przed nową przygodą wybierz **Knight, Archer albo Mag**. Każda profesja ma własną broń, trzy startowe umiejętności i osobne animacje. Podstawowy miecz trafia z sąsiedniej kratki, łuk do pięciu, różdżka do czterech; wszystkie odnawiają się co 0,8 s i nie zużywają many ani amunicji. Atak można przytrzymać bez wybierania celu. Zasięgi liczone są po kratkach (Manhattan), ściany i strefa miasta blokują walkę.
+W **0.1.11** przed nową przygodą wybierz **Knight, Archer albo Mag**. Każda profesja ma własną broń, trzy umiejętności odblokowywane na poziomach 1, 3 i 5 i osobne animacje. Podstawowy miecz trafia z sąsiedniej kratki, łuk do pięciu, różdżka do czterech; wszystkie odnawiają się co 0,8 s i nie zużywają many ani amunicji. Atak można przytrzymać bez wybierania celu. Zasięgi liczone są po kratkach (Manhattan), ściany i strefa miasta blokują walkę.
 
-| Profesja | Umiejętności startowe | Mana / odnowienie |
+| Profesja | Umiejętności i wymagany poziom | Mana / odnowienie |
 |---|---|---|
-| Knight | Iskra ostrza — fala cięcia; Wir ostrzy — sąsiednie cele; Żelazna osłona — +4 obrony przez 4 s | 8 / 1,5 s; 12 / 3 s; 10 / 6 s |
-| Archer | Precyzyjny strzał — do 6 kratek; Deszcz strzał — obszar wokół trafienia; Oddech lasu — do 24 HP | 8 / 1,5 s; 14 / 3,5 s; 12 / 5 s |
-| Mag | Iskra — pocisk; Kula ognia — wybuch obszarowy; Lodowy krąg — cele do 2 kratek wokół postaci | 8 / 1,5 s; 16 / 3,5 s; 14 / 3,5 s |
+| Knight | Iskra ostrza (poz. 1) — fala cięcia; Wir ostrzy (poz. 3) — sąsiednie cele; Żelazna osłona (poz. 5) — +4 obrony przez 4 s | 8 / 1,5 s; 12 / 3 s; 10 / 6 s |
+| Archer | Precyzyjny strzał (poz. 1) — do 6 kratek; Deszcz strzał (poz. 3) — obszar wokół trafienia; Oddech lasu (poz. 5) — do 24 HP | 8 / 1,5 s; 14 / 3,5 s; 12 / 5 s |
+| Mag | Iskra (poz. 1) — pocisk; Kula ognia (poz. 3) — wybuch obszarowy; Lodowy krąg (poz. 5) — cele do 2 kratek wokół postaci | 8 / 1,5 s; 16 / 3,5 s; 14 / 3,5 s |
 
 Po lewej na telefonie jest joystick, po prawej **cztery duże przyciski w układzie 2×2**. W **Plecak → Profesja i cztery akcje** przypisz do każdej pozycji atak, własny czar albo miksturę. Ikony, koszt many i pozostałe odnowienie odpowiadają wybranej akcji. Przypisanie tego samego czaru kilka razy nie skraca odnowienia. Na komputerze działają **1–4** (pozycje), **Spacja** (broń), **E** (pierwszy czar profesji) oraz dotychczasowe skróty ruchu i interakcji. Przytrzymuje się tylko atak bronią; czar uruchamia pojedyncze dotknięcie. Wszystkie efekty wynikają z potwierdzonej symulacji: lot strzały/pocisku, zamach, wir, osłona, leczenie, wybuch i lód. Knight zachowuje dotychczasowy wygląd. Archer ma zielony strój, łuk i kołczan; Mag niebieską szatę, kapelusz i różdżkę. Każdy ma osobny chód w czterech kierunkach. Drzewka rozwoju pozostają kolejnym etapem. Lodowy krąg zadaje obrażenia, jeszcze nie spowalnia.
+
+Chód jest interpolowany między kratkami, a wejście jest odczytywane z klatkami gry. Kolizje i tempo symulacji pozostają oparte na kratkach. Plecak ma 20 pól z własnymi ikonami i licznikami; wybierz przedmiot, a następnie **Załóż** lub **Użyj mikstury**. Kliknięcie wyposażonej broni/pancerza zdejmuje przedmiot do plecaka. Materiały sprzedaje się u Borina. Dostępne są dwa rzeczywiste sloty wyposażenia: broń i pancerz.
+
+Czary odblokowują się automatycznie po awansie — nie trzeba ich kupować. Niedostępna ikona pokazuje wymagany poziom, a **Plecak → Profesja i cztery akcje** zawiera spis trzech czarów z progami i kosztami. Stare przypisania są zachowane, ale używanie czarów podlega nowym progom. Drzewka pozostają planem na później. Animacje mają kręgi rzucania, rozbłyski, płomienie, kryształy, tarcze i deszcz strzał; obrażenia i cooldowny nadal rozstrzyga domena.
 
 Starszy zapis automatycznie otrzymuje Knighta, zachowując zasoby, zadania, wyposażenie i odnowienie dawnej Iskry. Wznowienie zachowuje zapisaną profesję, niezależnie od wyboru w menu. Zapisy z kolorami wymagają klienta **0.1.10+**. Starsze poprawne zapisy dostają oryginalne kolory swojej profesji. Jedna przeglądarka przechowuje jedną przygodę: przed sprawdzaniem innej profesji wyeksportuj ważny zapis. Rozpoczęcie tworzy nową postać; drzewka punktów i zmianę profesji w istniejącej postaci zaplanujemy po testach tej wersji.
 

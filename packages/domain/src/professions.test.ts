@@ -3,10 +3,10 @@ import {importMap,professions,spells,defaultActions} from '@eldoria/content';
 import type {Profession} from '@eldoria/protocol';
 import grove from '../../../apps/client/public/assets/grove.json';
 import {Simulation,type Spawn} from './index';
-function setup(profession:Profession,spawns:Spawn[]=[],hp=100,mana=50){
+function setup(profession:Profession,spawns:Spawn[]=[],hp=100,mana=50,level=1){
   let now=0;const map=importMap(grove);map.id='forest';map.monsterSpawns=spawns;
   const data=new Simulation([map],'Tester',{now:()=>now},spawns,undefined,profession).exportSave();
-  data.hp=hp;data.mana=mana;for(const c of data.maps[0]!.creatures){c.moveIn=400;c.attackIn=1200;}
+  data.level=level;data.hp=hp;data.mana=mana;for(const c of data.maps[0]!.creatures){c.moveIn=400;c.attackIn=1200;}
   const sim=Simulation.restore([map],data,{now:()=>now});
   return {sim,map,advance(ms:number){now+=ms;sim.tick();},restore(input:unknown){return Simulation.restore([map],input,{now:()=>now});}};
 }
@@ -28,7 +28,7 @@ describe('profession combat and validated actions',()=>{
     expect(t.sim.snapshot()).toMatchObject({mana:50,combatEvents:[],actionSlots:defaultActions('knight')});
   });
   it('applies each cooldown separately and cannot reset it by rebinding or restoring',()=>{
-    const t=setup('mage');t.sim.send({type:'Cast',spellId:'spark'});t.sim.send({type:'Cast',spellId:'fireball'});
+    const t=setup('mage',[],100,50,3);t.sim.send({type:'Cast',spellId:'spark'});t.sim.send({type:'Cast',spellId:'fireball'});
     expect(t.sim.snapshot().mana).toBe(26);expect(t.sim.snapshot().combatEvents).toHaveLength(2);
     t.sim.send({type:'SetActionSlot',slot:0,actionId:'fireball'});t.sim.send({type:'Cast',spellId:'fireball'});expect(t.sim.snapshot().mana).toBe(26);
     const resumed=t.restore(t.sim.exportSave());resumed.send({type:'Cast',spellId:'fireball'});expect(resumed.snapshot().mana).toBe(26);expect(resumed.snapshot().combatEvents).toEqual([]);
@@ -36,30 +36,30 @@ describe('profession combat and validated actions',()=>{
     t.advance(1500);t.sim.send({type:'Cast',spellId:'spark'});expect(t.sim.snapshot().mana).toBe(18);expect(t.sim.snapshot().spellCooldowns.fireball).toBe(2000);
   });
   it('spins through neighbouring enemies and grants each kill and loot exactly once',()=>{
-    const t=setup('knight',[{id:'a',kind:'rat',x:13,y:10},{id:'b',kind:'rat',x:12,y:11},{id:'c',kind:'rat',x:14,y:11}]);
+    const t=setup('knight',[{id:'a',kind:'rat',x:13,y:10},{id:'b',kind:'rat',x:12,y:11},{id:'c',kind:'rat',x:14,y:11}],100,50,3);
     t.sim.send({type:'Cast',spellId:'spin'});expect(t.sim.snapshot().combatEvents.at(-1)?.hits).toHaveLength(3);
     t.advance(3000);t.sim.send({type:'Cast',spellId:'spin'});expect(t.sim.snapshot()).toMatchObject({kills:3,exp:30});expect(t.sim.snapshot().loot).toHaveLength(3);
     t.sim.send({type:'Cast',spellId:'spin'});expect(t.sim.snapshot().kills).toBe(3);expect(new Set(t.sim.snapshot().loot.map(l=>l.id)).size).toBe(3);
   });
   it.each([['archer','volley'],['mage','fireball']] as const)('%s %s hits around the chosen impact, with one mana payment', (profession,spellId)=>{
-    const t=setup(profession,[{id:'center',kind:'wolf',x:16,y:11},{id:'near',kind:'wolf',x:16,y:10},{id:'far',kind:'wolf',x:17,y:10}]);
+    const t=setup(profession,[{id:'center',kind:'wolf',x:16,y:11},{id:'near',kind:'wolf',x:16,y:10},{id:'far',kind:'wolf',x:17,y:10}],100,50,3);
     t.sim.send({type:'Select',targetId:'center'});t.sim.send({type:'Cast',spellId});
     const s=t.sim.snapshot();expect(s.combatEvents.at(-1)?.hits.map(h=>h.targetId)).toEqual(['center','near']);
     expect(s.creatures.find(c=>c.id==='far')!.hp).toBe(70);expect(s.mana).toBe(50-spells[spellId].mana);
   });
   it('frost hits in two tiles around the mage, stopping at walls and the safe region',()=>{
-    const t=setup('mage',[{id:'near',kind:'rat',x:14,y:11},{id:'behind-wall',kind:'rat',x:13,y:9}]);t.map.collision[10*t.map.width+13]=1;
+    const t=setup('mage',[{id:'near',kind:'rat',x:14,y:11},{id:'behind-wall',kind:'rat',x:13,y:9}],100,50,5);t.map.collision[10*t.map.width+13]=1;
     t.sim.send({type:'Cast',spellId:'frost'});expect(t.sim.snapshot().creatures.map(c=>c.hp)).toEqual([14,30]);
     t.map.combatAllowed=false;const mana=t.sim.snapshot().mana;t.sim.send({type:'Cast',spellId:'spark'});expect(t.sim.snapshot().mana).toBe(mana);
   });
   it('guard reduces damage for four seconds, persists remaining time and expires',()=>{
-    const t=setup('knight',[{id:'wolf',kind:'wolf',x:13,y:10}]);t.sim.send({type:'Cast',spellId:'guard'});t.advance(1200);
+    const t=setup('knight',[{id:'wolf',kind:'wolf',x:13,y:10}],100,50,5);t.sim.send({type:'Cast',spellId:'guard'});t.advance(1200);
     expect(t.sim.snapshot().hp).toBe(97);expect(t.sim.exportSave().guardIn).toBe(2800);
     const resumed=t.restore(t.sim.exportSave());expect(resumed.snapshot().guardMs).toBe(2800);
     t.advance(3000.5);expect(t.sim.exportSave().guardIn).toBe(0);expect(t.sim.snapshot().hp).toBe(90);
   });
   it('mend heals only missing HP and cannot consume mana or heal repeatedly at full HP',()=>{
-    const t=setup('archer',[],90);t.sim.send({type:'Cast',spellId:'mend'});expect(t.sim.snapshot()).toMatchObject({hp:100,mana:38});
+    const t=setup('archer',[],130,50,5);t.sim.send({type:'Cast',spellId:'mend'});expect(t.sim.snapshot()).toMatchObject({hp:140,mana:38});
     expect(t.sim.snapshot().combatEvents.at(-1)).toMatchObject({effect:'heal',healing:10});
     t.advance(5000);const mana=t.sim.snapshot().mana;t.sim.send({type:'Cast',spellId:'mend'});expect(t.sim.snapshot().mana).toBe(mana);
   });
@@ -67,6 +67,34 @@ describe('profession combat and validated actions',()=>{
     const t=setup('archer',[],100,7);t.sim.send({type:'Cast',spellId:'power-shot'});t.sim.send({type:'Unequip',slot:'weapon'});t.sim.send({type:'Attack'});
     expect(t.sim.snapshot()).toMatchObject({mana:7,combatEvents:[]});
     t.sim.send({type:'Equip',itemId:'bow'});t.sim.send({type:'Attack'});expect(t.sim.snapshot().combatEvents.at(-1)?.effect).toBe('arrow');
+  });
+  it.each(['knight','archer','mage'] as const)('%s unlocks each skill at its exact level, including restored old action slots',p=>{
+    for(const id of professions[p].spells){
+      const spell=spells[id];
+      if(spell.level===1)continue;
+      const t=setup(p,[],90,50,spell.level-1);
+      const before=t.sim.exportSave();t.sim.send({type:'Cast',spellId:id});
+      expect(t.sim.snapshot().message).toContain(`poziom ${spell.level}`);
+      expect(t.sim.snapshot()).toMatchObject({hp:90,mana:50,combatEvents:[]});
+      expect(t.sim.exportSave().spellCooldowns).toEqual(before.spellCooldowns);
+      const save=t.sim.exportSave();save.level=spell.level;
+      const unlocked=t.restore(save);unlocked.send({type:'Cast',spellId:id});
+      expect(unlocked.snapshot().combatEvents.at(-1)?.abilityId).toBe(id);
+      expect(unlocked.snapshot().mana).toBe(50-spell.mana);
+      // Same-cast replay cannot consume a second mana payment or grant another event.
+      unlocked.send({type:'Cast',spellId:id});expect(unlocked.snapshot().combatEvents).toHaveLength(1);
+    }
+  });
+  it.each([[2,'spin'],[4,'guard']] as const)('EXP advancement from level %s immediately unlocks %s', (level,id)=>{
+    const t=setup('knight',[{id:'rat',kind:'rat',x:13,y:10}],100,50,level);
+    const data=t.sim.exportSave();data.exp=100*level-1;
+    const sim=t.restore(data);sim.send({type:'Cast',spellId:id});
+    expect(sim.snapshot().combatEvents).toEqual([]);
+    sim.send({type:'Cast',spellId:'blade-wave'});sim.send({type:'Attack'});
+    expect(sim.snapshot()).toMatchObject({level:level+1,exp:9,kills:1});
+    const mana=sim.snapshot().mana;sim.send({type:'Cast',spellId:id});
+    expect(sim.snapshot().combatEvents.at(-1)?.abilityId).toBe(id);
+    expect(sim.snapshot().mana).toBe(mana-spells[id].mana);
   });
   it('migrates legacy saves to Knight without losing progress and rejects incompatible gear, skills and cooldowns',()=>{
     const t=setup('knight'),data=t.sim.exportSave();const {profession:_,actionSlots:_a,spellCooldowns:_s,guardIn:_g,...legacy}=data;

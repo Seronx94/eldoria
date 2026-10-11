@@ -40,3 +40,7 @@ Otwarty PvP, domki, aukcje, gildie, crafting, rozbudowane drzewka, dziesiątki m
 ## Wygląd i przygotowanie Androida 0.1.10
 
 Na polecenie właściciela T07d dodaje własne stroje Archera i Maga, zachowuje Knighta oraz wprowadza kosmetyczne kolory z podglądem/zapisem. T17a przygotowuje wcześniej wrapper offline Capacitor 8 i instrukcję APK, bez wymagania ukończenia online. Nie zastępuje T17/M4: kompilacja Android SDK, fizyczna instalacja, tło/powrót, safe-area, udostępnianie zapisu i profilowanie wymagają oddzielnej weryfikacji na telefonie. SDK nie jest dostępne w środowisku chmurowym; binarnego APK nie deklarujemy jako wykonanego. Drzewka T07c i cały etap online pozostają przyszłą pracą.
+
+## Sterowanie, plecak i poziomy czarów 0.1.11
+
+Na życzenie testera w M2: odczyt ruchu z klatkami gry, ikonowy plecak i osobne sloty broni/pancerza oraz dodatkowe warstwy dziewięciu animacji. Każda profesja automatycznie odblokowuje czary na poziomach 1, 3 i 5; progi waliduje domena także po wznowieniu starszego zapisu. T07e czeka na ocenę płynności/wyglądu i balansu na telefonie; T07c (drzewka) i online pozostają kolejnymi etapami.

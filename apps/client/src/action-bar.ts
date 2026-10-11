@@ -19,11 +19,13 @@ export class ActionBar {
       }
       const cooldown=id==='attack'?s.attackCooldown:id==='potion'?0:s.spellCooldowns[id];
       const lackMana=id!=='attack'&&id!=='potion'&&s.mana<spells[id].mana;
+      const locked=id!=='attack'&&id!=='potion'&&s.level<spells[id].level;
+      button.disabled=locked;button.classList.toggle('locked',locked);
       const small=button.querySelector('small')!;
-      const caption=cooldown>0?`${(cooldown/1000).toFixed(1)} s`:`${index+1}${id==='attack'?' · ATAK':id==='potion'?` · ${s.potions} SZT.`:` · ${spells[id].mana} MANY`}`;
+      const caption=locked?`POZ. ${spells[id as keyof typeof spells].level}`:cooldown>0?`${(cooldown/1000).toFixed(1)} s`:`${index+1}${id==='attack'?' · ATAK':id==='potion'?` · ${s.potions} SZT.`:` · ${spells[id].mana} MANY`}`;
       if(small.textContent!==caption)small.textContent=caption;
       button.classList.toggle('cooling',cooldown>0);button.classList.toggle('no-mana',lackMana);
-      button.title=lackMana?'Za mało many':`${actionName(s,id)}${id==='attack'?` · zasięg ${professions[s.profession].range}`:id==='potion'?'':` · zasięg ${spells[id].range} · odnowienie ${spells[id].cooldown/1000} s`}`;
+      button.title=locked?`${actionName(s,id)} · wymagany poziom ${spells[id as keyof typeof spells].level}`:lackMana?'Za mało many':`${actionName(s,id)}${id==='attack'?` · zasięg ${professions[s.profession].range}`:id==='potion'?'':` · zasięg ${spells[id].range} · odnowienie ${spells[id].cooldown/1000} s`}`;
     }
     this.signature=signature;
   }

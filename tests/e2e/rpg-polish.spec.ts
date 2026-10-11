@@ -1,3 +1,4 @@
+import {openMenu,saveOffline} from './menu-navigation';
 import {test,expect,type Page} from '@playwright/test';
 import type {SaveData} from '@eldoria/domain';
 import {professions} from '../../packages/content/src/professions';
@@ -5,7 +6,7 @@ async function arena(page:Page,level:number){
   const data=JSON.parse(await page.evaluate(()=>localStorage.getItem('eldoria.offline.v1')!)) as SaveData;
   data.level=level;data.exp=0;data.player={x:32,y:60};data.hp=80;data.mana=50;
   for(const c of data.maps[0]!.creatures)Object.assign(c,{hp:0,state:'dead',respawnIn:20000});
-  await page.locator('#menu-button').click();await page.locator('#import-save').setInputFiles({name:'level-arena.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
+  await openMenu(page);await page.locator('#import-save').setInputFiles({name:'level-arena.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
   await expect(page.locator('#hud')).toHaveAttribute('data-position','32,60');
 }
 for(const profession of ['knight','archer','mage'] as const){
@@ -26,7 +27,7 @@ for(const profession of ['knight','archer','mage'] as const){
     await page.locator('#item-details').getByRole('button',{name:'Załóż'}).click();await expect(page.locator('#equipment')).toContainText(professions[profession].attackName);
     await page.locator('#bag').evaluate(el=>el.scrollTop=0);await page.screenshot({path:info.outputPath(`${profession}-backpack.png`)});
     await page.locator('#loadout summary').click();await expect(page.locator('#spellbook .locked')).toHaveCount(2);
-    await page.locator('#close-bag').click();await page.locator('#save-button').click();await page.reload();await page.locator('#resume').click();await expect(buttons.nth(2)).toBeDisabled();
+    await page.locator('#close-bag').click();await saveOffline(page);await page.reload();await page.locator('#resume').click();await expect(buttons.nth(2)).toBeDisabled();
     await arena(page,3);await expect(buttons.nth(2)).toBeEnabled();await expect(buttons.nth(3)).toBeDisabled();await buttons.nth(2).click();
     await expect(page.locator('#hud')).toHaveAttribute('data-combat-effect',profession==='knight'?'spin':profession==='archer'?'volley':'fireball');
     await page.waitForTimeout(330);await page.screenshot({path:info.outputPath(`${profession}-impact.png`)});

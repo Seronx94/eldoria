@@ -26,10 +26,10 @@ export class RemotePlayers {
    if(position!==view.position){view.tween?.stop();if(view.position&&Math.hypot(view.sprite.x-x,view.sprite.y-y)<=64){view.tween=this.scene.tweens.add({targets:view.sprite,x,y,duration:rules.stepMs+20,ease:'Linear'});view.until=this.scene.time.now+rules.stepMs+20;}else view.sprite.setPosition(x,y);view.position=position;}
    view.sprite.setData('direction',p.direction).setDepth(view.sprite.y);
    if(this.scene.time.now>=view.actionUntil){if(this.scene.time.now<view.until)view.sprite.play(`remote-${p.id}-${p.direction}`,true);else{view.sprite.anims.stop();view.sprite.setFrame(['down','left','right','up'].indexOf(p.direction)*3);}}
-   view.vitals.draw(p.name,p.hp,p.maxHp,view.sprite.x,view.sprite.y,true,view.sprite.displayHeight);
+   view.vitals.draw(`${p.name} · lvl: ${p.level}`,p.hp,p.maxHp,view.sprite.x,view.sprite.y,true,view.sprite.displayHeight);
   }
  }
  clear():void {for(const [id,view]of this.views)this.remove(id,view);}
  private remove(id:string,view:View):void {view.tween?.stop();view.sprite.destroy();view.vitals.destroy();for(const d of ['down','left','right','up'])this.scene.anims.remove(`remote-${id}-${d}`);this.scene.textures.remove(`remote-${id}`);this.views.delete(id);}
- get poses():{id:string;x:number;y:number;headTop:number;hpVisible:boolean;nameColor:string;nameBottom:number;hpTop:number;hpBottom:number;centerX:number}[]{return [...this.views].map(([id,v])=>{const p=v.vitals.presentation;return {id,x:v.sprite.x,y:v.sprite.y,headTop:v.sprite.getBounds().top,hpVisible:p.visible,nameColor:p.color,nameBottom:p.nameBottom,hpTop:p.hpTop,hpBottom:p.hpBottom,centerX:p.centerX};});}
+ get poses():{id:string;x:number;y:number;headTop:number;hpVisible:boolean;nameColor:string;label:string;nameBottom:number;hpTop:number;hpBottom:number;centerX:number}[]{return [...this.views].map(([id,v])=>{const p=v.vitals.presentation;return {id,x:v.sprite.x,y:v.sprite.y,headTop:v.sprite.getBounds().top,hpVisible:p.visible,nameColor:p.color,label:p.label,nameBottom:p.nameBottom,hpTop:p.hpTop,hpBottom:p.hpBottom,centerX:p.centerX};});}
 }

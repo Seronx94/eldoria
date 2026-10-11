@@ -53,6 +53,11 @@ T07f realizuje wybór testera: celowanie broni/czarów w zasięgu, nick i dwa wa
 
 W ramach T07f pełne HP/mana i łuki pozostają widokiem właściciela. Osobny widok publiczny przyjmuje tylko nazwę/HP; teraz obsługuje potwory, z kolorami zdrowia i etykietami po zaznaczeniu lub zranieniu. Dla M3 wymagana będzie także kontrola danych po stronie serwera: prywatne zasoby właściciela i publiczne HP innych graczy. Sam podział renderowania offline nie jest kontrolą dostępu ani testem kont online.
 
-## Pierwsza sesja online 0.1.14
+## Pierwsza sesja online 0.1.14 — stan historyczny
 
 Właściciel zaakceptował T11 („T11 jest okay”). T12 dodaje Node/Colyseus 0.18, OnlineGateway i jeden wspólny świat gościnny do testów LAN. Dane i waluta offline nie są importowane. Pełne zasoby postaci trafiają do właściciela sesji; inne postacie otrzymują publiczne HP, bez many czy plecaka. Limit testowy 8 osób nie jest testem obciążenia. Następna zależność to T13: konta, jedna aktywna sesja i PostgreSQL; potem T14 trwała gospodarka i T15 reconnect. Wyjście lub utrata połączenia kończy bieżącą postać testową. Market graczy nadal czeka na trwałą gospodarkę. M3 jako całość nie jest ukończone.
+
+
+## Konta i zapis postaci 0.1.15
+
+T13 dodaje konta email/hasło, PostgreSQL, trzy postacie bezpłatne/pięć premium, wybór profesji, trwały checkpoint postaci i skilli, blokadę wylogowania w walce i piętnastominutową bezczynność. Mobilna góra to plecak i ustawienia; inni gracze pokazują nick, lvl i publiczny HP. Market graczy czeka nadal na T14 — transakcje i trwałą gospodarkę. T15 obejmie reconnect i regiony. Drzewka rozwoju profesji, reset hasła, weryfikacja emaila i płatności wymagają dalszych etapów. M3 jako całość pozostaje nieukończone.

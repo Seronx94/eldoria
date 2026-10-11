@@ -14,6 +14,8 @@ export async function walkInWorld(page:Page,x:number,y:number):Promise<void> {
     for(const [key,dx,dy]of [['w',0,-1],['s',0,1],['a',-1,0],['d',1,0]] as const)queue.push({x:p.x+dx,y:p.y+dy,keys:[...p.keys,key]});
   }
   expect(route,'Reachable city destination').toBeDefined();
-  for(const key of route!){await page.waitForTimeout(230);await page.keyboard.press(key);}
+  let stepX=position[0]!,stepY=position[1]!;
+  await page.bringToFront();
+  for(const key of route!){await page.waitForTimeout(230);await page.keyboard.press(key);if(key==='w')stepY--;else if(key==='s')stepY++;else if(key==='a')stepX--;else stepX++;await expect(page.locator('#hud')).toHaveAttribute('data-position',`${stepX},${stepY}`);}
   await expect(page.locator('#hud')).toHaveAttribute('data-position',`${x},${y}`);
 }

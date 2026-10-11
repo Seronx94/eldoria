@@ -1,3 +1,4 @@
+import {saveOffline} from './menu-navigation';
 import {test,expect} from '@playwright/test';
 import {walkInTown} from './town-navigation';
 test('Vareon: located services, doors, roofs, plan, market, resize and old save migration',async({page},info)=>{
@@ -22,7 +23,7 @@ test('Vareon: located services, doors, roofs, plan, market, resize and old save 
   await page.waitForTimeout(350);await page.screenshot({path:info.outputPath('shop.png')});
   await page.locator('#interact').click();await expect(page.locator('#npc-name')).toHaveText('Borin');await page.locator('#close-npc').click();
   const original=page.viewportSize()!;await page.setViewportSize({width:390,height:844});await expect(page.locator('#rotate')).toBeVisible();await page.setViewportSize(original);await expect(page.locator('#hud')).toHaveAttribute('data-building','shop');
-  await page.locator('#save-button').click();
+  await saveOffline(page);
   // Install the legacy fixture after pagehide has saved the current adventure.
   await page.addInitScript(()=>{const key='eldoria.offline.v1';const save=JSON.parse(localStorage.getItem(key)!);delete save.cityRevision;save.mapId='vareon';save.maps=[{mapId:'vareon',creatures:[]}];save.loot=[];save.player={x:7,y:23};save.gold=17;localStorage.setItem(key,JSON.stringify(save));});
   await page.reload();await page.locator('#resume').click();await expect(page.locator('#hud')).toHaveAttribute('data-position','32,76');await expect(page.locator('#rewards')).toContainText('17 złota');

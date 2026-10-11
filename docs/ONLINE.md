@@ -1,33 +1,51 @@
-# Online T12 — sesja gościnna 0.1.14
+# Eldoria online 0.1.15 — konta i postacie
 
-To pierwsza wspólna mapa do testów: Vareon, las, ruch innych graczy, wspólne potwory, zdarzenia walki i łup. Serwer oblicza kolizje, zasięgi, cooldowny, obrażenia i nagrody. Nie ma PvP ani dzielenia EXP drużyny; nagrodę za zabójstwo dostaje osoba z ostatnim trafieniem, łup na ziemi może zebrać jedna pobliska osoba. Questy, NPC, czary profesji i depo działają w pamięci sesji. Market nie jest jeszcze dostępny.
+Serwer rozstrzyga ruch, kolizje, zasięgi, cooldowny, obrażenia i nagrody. Wspólny świat mieści osiem postaci, bez PvP i współdzielenia EXP drużyny. Nagrodę dostaje ostatni atakujący, pobliski łup może zebrać jedna osoba. Offline nigdy nie importuje salda, wyposażenia ani stashu na konto.
 
 ## Komputer i telefon w jednej sieci
 
-Z aktualnego katalogu `eldoria-main`, w Node.js 24:
+Wymagane: Node.js 24 i uruchomiony Docker Desktop (Linux containers / Compose). W katalogu `eldoria-main`:
 
 ```sh
 npm ci
+npm run db:up
 npm run dev:online
 ```
 
-Polecenie uruchamia backend, sprawdza jego gotowość i uruchamia Vite dla LAN. Używa bezpośrednio Node, więc nie wymaga `spawn npm` na Windowsie. Wypisany adres `http://ADRES_KOMPUTERA:5173` otwórz na komputerze i telefonie w tej samej sieci Wi-Fi. Pozostaw terminal uruchomiony. W menu na obu urządzeniach wybierz **Online — wspólna sesja testowa**, różne nicki oraz dowolne profesje. Nie uruchamiaj osobnego serwera na drugim komputerze — gracze mają wejść na ten sam adres pierwszego komputera.
+Launcher uruchamia backend, sprawdza jego gotowość i uruchamia Vite dla LAN bez `spawn npm` na Windows. Otwórz wypisany adres `http://ADRES_KOMPUTERA:5173` na obu urządzeniach w tej samej sieci Wi-Fi. Pozostaw terminal i Docker uruchomione. Dopuść Node w Zaporze Windows w sieci prywatnej, jeśli telefon nie otwiera strony. Backend i PostgreSQL domyślnie nasłuchują wyłącznie lokalnie; nie przekierowuj portów routera. Publiczne wdrożenie wymaga osobnego etapu i HTTPS.
 
-Jeśli telefon nie otwiera strony, sprawdź ten adres na komputerze i dopuść Node w Zaporze Windows w sieci prywatnej. Ruch HTTP/WebSocket idzie przez port 5173; backend domyślnie nasłuchuje lokalnie na 2567. Ctrl+C kończy serwery. To lokalny test; publiczne wdrożenie jest osobnym etapem.
+Na stronie startowej wpisz email i hasło (10–128 znaków), kliknij **Załóż konto**, utwórz postać Knight/Archer/Mag i wybierz **Graj**. Nick ma 3–16 znaków i jest unikalny. Konto bezpłatne mieści trzy postacie, premium pięć. Nie ma jeszcze weryfikacji emaila, resetu hasła, płatności ani kasowania postaci. Nie używaj hasła z innych serwisów podczas lokalnego testu.
 
-## Cztery kroki testu
+## Pięć kroków testu
 
-1. Wejdź dwiema postaciami. Obie widzą drugą postać, jej nick i małe HP. Własne HP/mana lub łuki wybierz w menu **przed wejściem**; drugi gracz nie widzi twojej many ani łuków.
-2. Odsuń jedną postać od drzwi. Przejdź drugą przez miasto i północną bramę. Sprawdź płynność jej ruchu na drugim ekranie; zajęta kratka blokuje wejście.
-3. Walczcie ze szczurem w lesie. Sprawdź wspólne obrażenia, śmierć, animacje i pojedynczy łup. Wybrane czary i broń zachowują wymagania profesji, poziomu, odległości oraz widoczności. Graj również joystickiem i drugim palcem używaj akcji.
-4. Wyjdź jedną postacią przez Menu: znika z drugiego ekranu. Ponowne wejście tworzy nową postać poziomu 1. Przełącz na zapis offline: jego poprzedni postęp pozostaje. Zgłoś oba urządzenia, nicki i opis ewentualnego błędu.
+1. Załóż konto i utwórz po jednej postaci każdej profesji. Czwartej na bezpłatnym koncie nie da się utworzyć. Wejdź wybraną postacią.
+2. Przejdź kilka kratek, otwórz plecak i obejrzyj skille. Wyjdź przez Ustawienia, ponownie wybierz tę samą postać: pozycja i postęp powinny pozostać. Nie można wejść na tę samą postać jednocześnie na dwóch urządzeniach.
+3. Na drugim koncie dołącz inną postacią. Widać jej nick, `lvl:` i mały HP; mana i łuki należą wyłącznie do właściciela. Na telefonie są tylko plecak i zębatka w rogu. Zmień własne HP/manę w Ustawieniach podczas gry.
+4. Walcz w lesie. Skille rosną od trafień mieczem/łukiem i zużytej many. Spróbuj wyjść: gra blokuje wylogowanie przez 60 sekund od ostatniego trafienia. Wróć do bezpiecznego miasta i poczekaj na koniec walki, potem wyjdź.
+5. Zaloguj się ponownie i sprawdź zapis. Pozostaw postać bez dotykania/klawiatury na 15 minut: sesja wygaśnie. Przy utracie połączenia w walce postać pozostaje narażona na potwory aż walka ustanie. Zgłoś urządzenie, nick, miejsce i czynności poprzedzające błąd.
 
-**Postęp online jest nietrwały.** Menu/rozłączenie kończy postać, restart serwera usuwa cały świat, a opuszczenie ostatniego gracza zwalnia pokój. Konto i zapis serwerowy są T13/T14; odzyskanie sesji to T15. Nick nie jest kontem ani potwierdzoną tożsamością. Offline złoto, import JSON i lokalny stash nie trafiają online. Nie ma automatycznej zamiany online na offline przy awarii.
+## Baza i aktualizacje
 
-## Dla rozwoju
+`db:up` tworzy losowe dane dostępu w ignorowanym folderze `.eldoria-local` oraz PostgreSQL 17.6 w trwałym wolumenie `eldoria-local_postgres`. **Przy rozpakowywaniu nowego ZIP skopiuj `.eldoria-local` ze starego folderu.** Nie pokazuj ani nie commituj `server.env`. Jeśli wolumen istnieje, a pliku brakuje, skrypt przerywa bez usuwania bazy. `npm run db:down` zatrzymuje bazę, zachowując dane. Ctrl+C zatrzymuje serwery gry.
 
-`npm run dev:server` uruchamia sam backend; `npm run dev` uruchamia klienta. `GET /health` backendu zwraca `status: ok`, `protocolVersion: 1`, `mode: guest-test`. Domyślny klient łączy się przez `/online` na swoim originie, także w Vite preview. Port/host backendu można ustawić zmiennymi procesu `ELDORIA_SERVER_PORT` / `ELDORIA_SERVER_HOST`; launcher dostosowuje proxy do portu. Bez launchera ustaw również `ELDORIA_PROXY_TARGET`. Osobno hostowany klient wymaga adresu `VITE_ONLINE_URL` przy budowie. `npm run dev:online` jest wariantem dla web/LAN; istniejący APK pozostaje offline bez skonfigurowanego dostępnego endpointu online.
+Migracje wykonują się automatycznie i idempotentnie przy starcie backendu. Zewnętrzna baza wymaga serwerowej zmiennej `DATABASE_URL`; przy takim wariancie pomiń `db:up`. Nigdy nie dodawaj sekretów do `VITE_*`. Hasła mają scrypt z losową solą, sesje losowy token w HttpOnly/SameSite cookie, w bazie tylko jego skrót. HTTPS publicznego serwera wymaga secure cookie (`ELDORIA_SECURE_COOKIE=1`) i osobnego przygotowania wdrożenia.
 
-Jedna sesja mieści maksymalnie 8 gości. Symulacja 20 Hz, spersonalizowane pełne snapshoty 10 Hz, publiczne postacie w promieniu 20 kratek. Klient wysyła walidowaną intencję ze swoim numerem kolejności; ID gracza nadaje transport. Odrzucane są dodatkowe pola HP/złota/pozycji, duplikaty, błędne komendy i nadmiar ponad 30 komend/s (burst 30). Limit wejściowej wiadomości WebSocket: 4096 bajtów; dodatkowy limit transportu: 120 wiadomości/s. To zabezpieczenia prototypu, bez kompletnej ochrony publicznego serwera i bez testu obciążenia M5.
+Uprawnienie premium administrator nadaje lokalnie:
 
-Walidacja: `npm run typecheck`, `npm run lint`, `npm test`, `npm run validate:content`, `npm run build`, `npm run test:e2e -- online.spec.ts`. Playwright uruchamia wymagany backend i klienta; testy jednostkowe uruchamiają dodatkowy serwer na losowym lokalnym porcie. Automatyczne mobilne Chromium nie zastępuje testu na fizycznym telefonie.
+```sh
+npm run account:tier -- email@example.com premium
+```
+
+Powrót do bezpłatnego konta (`free`) jest blokowany, jeśli istnieje więcej niż trzy postacie. Przeglądarka nie może sama zmienić uprawnienia. To narzędzie administracyjne, bez mechanizmu zakupów.
+
+## Granice trwałości i rozwoju
+
+Checkpoint co pięć sekund oraz zapis przed potwierdzeniem bezpiecznego wyjścia obejmują postać, skille, plecak, stash, ustawienia łupu i zadania. Restart przywraca postacie, ale resetuje potwory i łup na ziemi. Awaria może utracić ostatnie pięć sekund zmian postaci. **T14 nadal TODO:** transakcje gospodarki, idempotentne wypłaty i zapis przed ACK każdej operacji ekonomicznej. **T15 nadal TODO:** automatyczny reconnect i transfer regionów. Błąd połączenia wraca do menu, bez symulacji offline.
+
+Sesja ma absolutny limit siedmiu dni oraz 15 minut bezczynności. Samo pobieranie widoku konta nie przedłuża sesji. Aktywność użytkownika lub prawidłowe komendy ją przedłużają. Wylogowanie podczas walki jest blokowane; wymuszone rozłączenie pozostawia postać w świecie do ustania walki. Nie jest to ochrona przed śmiercią po utracie sieci.
+
+Symulacja 20 Hz, snapshoty 10 Hz, publiczne postacie w promieniu 20 kratek. Komendy mają kolejność i walidację; odrzucane są fałszywe HP/złoto/pozycja, duplikaty i nadmiar ponad 30 komend/s (burst 30). Wiadomości mają limit 4096 bajtów i transport 120/s. Nie jest to test obciążenia MMORPG.
+
+`npm run dev:server` uruchamia sam backend, `npm run dev` klienta. Health backendu: `GET /health`, `status: ok`, `protocolVersion: 2`, `mode: accounts`. Vite proxy obsługuje `/api` i `/online` na jednym originie, także w preview. Osobny host/native APK wymaga dodatkowego przygotowania endpointów i cookies; dotychczasowa instrukcja APK obejmuje offline.
+
+Kontrole: `npm run typecheck`, `npm run lint`, `npm test`, `npm run validate:content`, `npm run build`, `npm run test:e2e -- accounts.spec.ts online.spec.ts`. Przed testami uruchom bazę. Integracje korzystają z izolowanych schematów i usuwają tylko własne dane. Przy braku bazy testy PostgreSQL są pomijane — nie stanowi to weryfikacji kont. Playwright sprawdza desktop i emulowany telefon, bez testu fizycznego urządzenia.

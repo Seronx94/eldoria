@@ -1,9 +1,11 @@
-import { inventoryRules,depotOnMap,depotRules,combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items,onlineRules, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
-import { commandSchema, nameSchema,defaultLootSettings,type LootSettings,defaultAppearance,type Appearance,professionSchema, type Command, type Direction,type Profession,type SpellId,type ActionId,type Weapon } from '@eldoria/protocol';
+import { combatRules,skillRequired,skillPower,inventoryRules,depotOnMap,depotRules,combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items,onlineRules, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { commandSchema,defaultSkills,type Skills, nameSchema,defaultLootSettings,type LootSettings,defaultAppearance,type Appearance,professionSchema, type Command, type Direction,type Profession,type SpellId,type ActionId,type Weapon } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 import { saveSchema, type SaveData } from './save';
 export { saveSchema, type SaveData } from './save';
+import {characterProgressSchema,type CharacterProgress} from './character-progress';
+export {characterProgressSchema,type CharacterProgress} from './character-progress';
 export interface Loot extends Point { id: string; mapId: string; gold: number; items: Stack[] }
 export interface Point { x: number; y: number }
 export interface Creature extends Point {
@@ -18,6 +20,7 @@ export interface CombatEvent {
   sourceId: string; targetId: string | null; direction: Direction; from: Point; to: Point; damage: number;
 }
 export interface Snapshot {
+  skills:Skills;combatMs:number;
   appearance:Appearance;profession:Profession;actionSlots:[ActionId,ActionId,ActionId,ActionId];
   stash:Stack[];lootSettings:LootSettings;depotOpen:boolean;
   attackCooldown:number;spellCooldowns:Record<SpellId,number>;guardMs:number;
@@ -48,6 +51,7 @@ const distance = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.
 export class Simulation {
   private state: Snapshot;
   private combatSequence = 0;
+  private combatUntil=0;
   private patrolDue = new Map<string, number>();
   private creatureMaps = new Map<string, Creature[]>();
   private lastMove = -Infinity;
@@ -63,7 +67,7 @@ export class Simulation {
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
     profession=professionSchema.parse(profession);
-    this.state = { stash:[],lootSettings:defaultLootSettings(),depotOpen:false,appearance:defaultAppearance(),profession:'knight',actionSlots:defaultActions('knight'),attackCooldown:0,spellCooldowns:emptySpellCooldowns(),guardMs:0,exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Przytrzymaj atak podstawowy i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    this.state = {skills:defaultSkills(),combatMs:0, stash:[],lootSettings:defaultLootSettings(),depotOpen:false,appearance:defaultAppearance(),profession:'knight',actionSlots:defaultActions('knight'),attackCooldown:0,spellCooldowns:emptySpellCooldowns(),guardMs:0,exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Przytrzymaj atak podstawowy i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
     this.state.profession=profession;this.state.actionSlots=defaultActions(profession);this.state.equipment.weapon=professions[profession].weapon;
     if(online){this.creatureMaps=online.world.creatures;this.patrolDue=online.world.patrol;}
     this.spawnCreatures();
@@ -76,6 +80,7 @@ export class Simulation {
   private map(): WorldMap { return this.maps.find(m => m.id === this.state.mapId)!; }
   private notify(message: string): void { this.state.message = message; this.state.eventId++; }
   private combat(kind: CombatEvent['kind'], sourceId: string, targetId: string | null, from: Point, to: Point, damage: number,extra:Partial<Pick<CombatEvent,'effect'|'abilityId'|'hits'|'radius'|'healing'>>={}): void {
+    if(damage>0)this.combatUntil=this.time+combatRules.logoutLockMs;
     const id=this.online?++this.online.world.sequence:++this.combatSequence;
     const actorId=this.online?.id??'player';
     this.syncShared();
@@ -104,7 +109,7 @@ export class Simulation {
   private spellCooldowns():Record<SpellId,number> {
     const result=emptySpellCooldowns();for(const id of Object.keys(spells) as SpellId[])result[id]=this.remaining(this.lastSpells.get(id)??-Infinity,spells[id].cooldown);return result;
   }
-  snapshot(): Snapshot { this.syncShared();return {...structuredClone(this.state),attackCooldown:this.remaining(this.lastAttack,professions[this.state.profession].attackMs),spellCooldowns:this.spellCooldowns(),guardMs:Math.max(0,this.guardUntil-this.time)}; }
+  snapshot(): Snapshot { this.syncShared();return {...structuredClone(this.state),combatMs:Math.min(combatRules.logoutLockMs,Math.max(0,Math.ceil(this.combatUntil-this.time))),attackCooldown:this.remaining(this.lastAttack,professions[this.state.profession].attackMs),spellCooldowns:this.spellCooldowns(),guardMs:Math.min(professionRules.guardMs,Math.max(0,this.guardUntil-this.time))}; }
   send(input: unknown): void {
     const parsed = commandSchema.safeParse(input);
     if (!parsed.success) { this.notify('Nieprawidłowa komenda.'); return; }
@@ -264,7 +269,7 @@ export class Simulation {
     if(locked&&((!casting&&profile.range>1)||spell?.mode==='target'||spell?.mode==='area')){
       if(!combatAllowedAt(this.map(),locked)||distance(locked,s.player)>(spell?.range??profile.range)||!this.lineOfSight(s.player,locked)){this.notify('Wybrany cel poza zasięgiem albo za przeszkodą.');return;}
     }
-    if(spellId&&spell){s.mana-=spell.mana;this.lastSpells.set(spellId,now);if(spellId===profile.spells[0])this.lastSpell=now;}else this.lastAttack=now;
+    if(spellId&&spell){this.train('magic',spell.mana);s.mana-=spell.mana;this.lastSpells.set(spellId,now);if(spellId===profile.spells[0])this.lastSpell=now;}else this.lastAttack=now;
     const effect=spell?.effect??profile.effect;
     const kind=casting?'spell':profile.range===1?'melee':'ranged';
     if(spell?.mode==='guard'||spell?.mode==='heal'){
@@ -283,10 +288,17 @@ export class Simulation {
       else for(let i=0;i<range;i++){const v=vectors[s.direction],next={x:to.x+v.x,y:to.y+v.y};if(!this.walkable(next)||!combatAllowedAt(this.map(),next))break;to=next;}
     }
     const targets=spell&&(spell.mode==='area'||spell.mode==='self-area')?s.creatures.filter(c=>c.hp>0&&combatAllowedAt(this.map(),c)&&distance(c,to)<=spell.radius&&distance(c,s.player)<=range+spell.radius&&this.lineOfSight(s.player,c)):(target?[target]:[]);
-    const hits=targets.map(c=>({targetId:c.id,to:{x:c.x,y:c.y},damage:this.hit(c,spell?.damage??profile.damage,now)}));
+    const attackSkill=s.profession==='knight'?'melee':s.profession==='archer'?'distance':'magic';
+    const hits=targets.map(c=>({targetId:c.id,to:{x:c.x,y:c.y},damage:this.hit(c,(spell?.damage??profile.damage)+skillPower(casting?'magic':attackSkill,s.skills[casting?'magic':attackSkill].level),now)}));
+    if(!casting&&hits.length&&s.profession!=='mage')this.train(attackSkill,1);
     this.combat(kind,'player',spell?.mode==='area'?target?.id??null:hits[0]?.targetId??null,s.player,to,hits[0]?.damage??0,{effect,abilityId:spellId??'attack',radius:spell?.radius??0,hits});
     if(!hits.length)this.notify(casting?`${spell!.name} ${spell!.mode==='self-area'?'wokół postaci':'w kierunku patrzenia'} (${spell!.mana} many).`:`${profile.attackName}: atak bez trafienia. Podejdź w zasięg.`);
     else if(targets.every(c=>c.hp>0))this.notify(`${spell?.name??profile.attackName}: ${hits.reduce((n,h)=>n+h.damage,0)} obrażeń.`);
+  }
+  private train(kind:keyof Skills,amount:number):void {
+    const skill=this.state.skills[kind];if(skill.level===100)return;skill.progress+=amount;
+    while(skill.level<100&&skill.progress>=skillRequired(kind,skill.level,this.state.profession)){skill.progress-=skillRequired(kind,skill.level,this.state.profession);skill.level++;}
+    if(skill.level===100)skill.progress=0;
   }
   private hit(target:Creature,power:number,now:number):number {
     const s=this.state,damage=Math.max(1,power-monsters[target.kind].defense);
@@ -322,11 +334,23 @@ export class Simulation {
     const remaining = (last: number, period: number) => Math.max(0, Math.ceil(period - (now-last)));
     return saveSchema.parse({
       version: 1, cityRevision: (this.maps.find(m=>m.id==='eldoria')??this.maps.find(m=>m.id==='vareon'))?.layoutRevision ?? 1, mode: 'offline',appearance:s.appearance, profession:s.profession,actionSlots:s.actionSlots,spellCooldowns:this.spellCooldowns(),guardIn:Math.min(professionRules.guardMs,Math.max(0,Math.ceil(this.guardUntil-now))), name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
-      level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, stash:s.stash,lootSettings:s.lootSettings, inventory: s.inventory, equipment: s.equipment,
+      skills:s.skills,combatIn:Math.min(combatRules.logoutLockMs,Math.max(0,Math.ceil(this.combatUntil-now))),level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, stash:s.stash,lootSettings:s.lootSettings, inventory: s.inventory, equipment: s.equipment,
       cooldowns: { move: remaining(this.lastMove,rules.stepMs), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
       maps: [...this.creatureMaps].map(([mapId, creatures]) => ({ mapId, creatures: creatures.map(c => ({ id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, attackIn:remaining(c.lastAttack,rules.monsterAttackMs), moveIn:remaining(c.lastMove,rules.stepMs*2), respawnIn: c.hp === 0 ? remaining(c.diedAt,rules.respawnMs) : 0 })) })),
       loot: s.loot, eventId: s.eventId,
     });
+  }
+  exportProgress():CharacterProgress {return characterProgressSchema.parse(this.exportSave());}
+  restoreProgress(input:unknown):void {
+    const data=characterProgressSchema.parse(input),m=this.maps.find(m=>m.id===data.mapId);
+    if(!m||data.player.x>=m.width||data.player.y>=m.height||m.collision[data.player.y*m.width+data.player.x])throw new Error('Nieprawidłowa pozycja postaci');
+    const s=this.state;
+    Object.assign(s,{name:data.name,profession:data.profession,skills:data.skills,appearance:data.appearance,actionSlots:data.actionSlots??defaultActions(data.profession),mapId:data.mapId,player:data.player,direction:data.direction,level:data.level,hp:data.hp,mana:data.mana,exp:data.exp,gold:data.gold,kills:data.kills,quest:data.quest,exploration:data.exploration,stash:data.stash,lootSettings:data.lootSettings,inventory:data.inventory,equipment:data.equipment,eventId:data.eventId,maxHp:rules.maxHp+(data.level-1)*10,maxMana:rules.maxMana+(data.level-1)*5,potions:countItem(data.inventory,'potion')});
+    this.spawnCreatures();s.player=this.freeArrival(m,data.player)??(()=>{throw new Error('Brak miejsca dla postaci');})();
+    this.combatUntil=this.time+data.combatIn;this.guardUntil=this.time+data.guardIn;
+    this.lastAttack=this.time+data.cooldowns.attack-professions[data.profession].attackMs;this.lastPotion=this.time+data.cooldowns.potion-rules.potionMs;
+    this.lastMove=this.time+data.cooldowns.move-rules.stepMs;this.lastMana=this.time+data.cooldowns.mana-rules.manaRegenMs;
+    for(const id of Object.keys(spells) as SpellId[])this.lastSpells.set(id,this.time+(data.spellCooldowns?.[id]??0)-spells[id].cooldown);
   }
   static restore(maps: WorldMap[], input: unknown, clock: Clock): Simulation {
     let data = saveSchema.parse(input);
@@ -370,9 +394,9 @@ export class Simulation {
       sim.creatureMaps.set(map.id,creatures);
     }
     if (new Set(data.loot.map(l => l.id)).size !== data.loot.length || data.loot.some(l => !walkable(l.mapId,l))) throw new Error('Nieprawidłowy łup');
-    sim.state = { ...sim.state, name:data.name,appearance:data.appearance,profession:data.profession,actionSlots:data.actionSlots, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, stash:data.stash,lootSettings:data.lootSettings, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:relocated ? 'Vareon przebudowano — wznowiono przy wartowni. Postęp i wyposażenie zachowano.' : 'Wznowiono przygodę offline.' };
+    sim.state = { ...sim.state,skills:data.skills, name:data.name,appearance:data.appearance,profession:data.profession,actionSlots:data.actionSlots, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, stash:data.stash,lootSettings:data.lootSettings, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:relocated ? 'Vareon przebudowano — wznowiono przy wartowni. Postęp i wyposażenie zachowano.' : 'Wznowiono przygodę offline.' };
     for(const id of Object.keys(spells) as SpellId[])sim.lastSpells.set(id,now+data.spellCooldowns[id]-spells[id].cooldown);
-    sim.guardUntil=now+data.guardIn;
+    sim.guardUntil=now+data.guardIn;sim.combatUntil=now+data.combatIn;
     sim.lastMove = now+data.cooldowns.move-rules.stepMs;
     sim.lastAttack = now+data.cooldowns.attack-rules.attackMs;
     sim.lastSpell = now+data.cooldowns.spell-rules.spellMs;
@@ -504,7 +528,7 @@ export class Simulation {
     }
   }
   private die(): void {
-    this.guardUntil=0;
+    this.guardUntil=0;this.combatUntil=0;
     const m = this.maps.find(m => m.id==='eldoria') ?? this.maps.find(m => !m.combatAllowed) ?? this.maps[0]!;
     this.state.mapId = m.id; this.state.player = this.online?(this.freeArrival(m,m.spawns.entry!)??{...m.spawns.entry!}):{ ...m.spawns.entry! };
     this.state.hp = this.state.maxHp; this.state.mana = this.state.maxMana; this.state.selectedId = null; this.state.dialog = null;
@@ -534,10 +558,11 @@ export class LocalGateway implements GameGateway {
 export class SharedWorld {
   private shared:SharedState={players:new Map(),creatures:new Map(),loot:[],events:[],sequence:0,lootSequence:0,patrol:new Map()};
   constructor(private maps:WorldMap[],private clock:Clock){}
-  join(id:string,name:string,profession:Profession):void {
+  join(id:string,name:string,profession:Profession,progress?:CharacterProgress):void {
     if(this.shared.players.has(id))throw new Error('Powtórzona sesja');
-    const sim=new Simulation(this.maps,name,this.clock,undefined,undefined,profession,{id,world:this.shared});this.shared.players.set(id,sim);
+    const sim=new Simulation(this.maps,name,this.clock,undefined,undefined,profession,{id,world:this.shared});if(progress)sim.restoreProgress(progress);this.shared.players.set(id,sim);
   }
+  progress(id:string):CharacterProgress {const sim=this.shared.players.get(id);if(!sim)throw new Error('Nie ma postaci');return sim.exportProgress();}
   leave(id:string):void {this.shared.players.delete(id);}
   send(id:string,command:unknown):void {this.shared.players.get(id)?.send(command);}
   tick():void {for(const sim of this.shared.players.values())sim.tick();}

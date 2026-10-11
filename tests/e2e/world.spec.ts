@@ -1,3 +1,4 @@
+import {openMenu} from './menu-navigation';
 import {test,expect} from '@playwright/test';
 test('continuous colorful world: walk through the gate, camera, safe border and saved position',async({page},info)=>{
   test.setTimeout(90000);
@@ -20,7 +21,7 @@ test('continuous colorful world: walk through the gate, camera, safe border and 
     await page.locator('#cast').click();await expect(page.locator('#message')).toContainText('Strefa bezpieczna');
     await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');
   }
-  await page.locator('#save-button').click();await page.reload();await page.locator('#resume').click();await expect(page.locator('#hud')).toHaveAttribute('data-position','32,64');
+  if(await page.locator('#save-button').isVisible())await page.locator('#save-button').click();else await openMenu(page);await page.reload();await page.locator('#resume').click();await expect(page.locator('#hud')).toHaveAttribute('data-position','32,64');
   expect(await page.locator('#game canvas').evaluate(c=>getComputedStyle(c).imageRendering)).toBe('pixelated');expect(errors).toEqual([]);
 });
 
@@ -33,7 +34,7 @@ test('world respawn: return to safe gatehouse, retain progress and resume NPC in
   data.player={x:39,y:38};data.hp=1;data.gold=17;data.quest={status:'active',kills:2};
   // Let the view display the forest before the saved wolf cooldown expires.
   data.maps[0]!.creatures.find(c=>c.id==='wolf-1')!.attackIn=1200;
-  await page.locator('#menu-button').click();
+  await openMenu(page);
   await page.locator('#import-save').setInputFiles({name:'before-faint.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
   await expect(page.locator('#hud')).toHaveAttribute('data-position','32,76');
   await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');await expect(page.locator('#hud')).toHaveAttribute('data-building','gatehouse');

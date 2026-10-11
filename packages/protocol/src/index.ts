@@ -3,6 +3,10 @@ export const directionSchema = z.enum(['down', 'left', 'right', 'up']);
 export type Direction = z.infer<typeof directionSchema>;
 export const professionSchema=z.enum(['knight','archer','mage']);
 export type Profession=z.infer<typeof professionSchema>;
+const skill=(minimum:number)=>z.object({level:z.number().int().min(minimum).max(100),progress:z.number().int().min(0).max(2000000)}).strict();
+export const skillsSchema=z.object({melee:skill(10),distance:skill(10),magic:skill(0)}).strict();
+export type Skills=z.infer<typeof skillsSchema>;
+export function defaultSkills():Skills {return {melee:{level:10,progress:0},distance:{level:10,progress:0},magic:{level:0,progress:0}};}
 export const weaponSchema=z.enum(['sword','bow','wand']);
 export type Weapon=z.infer<typeof weaponSchema>;
 export const spellSchema=z.enum(['blade-wave','spin','guard','power-shot','volley','mend','spark','fireball','frost']);
@@ -43,6 +47,13 @@ export const commandSchema = z.discriminatedUnion('type', [
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export const nameSchema = z.string().trim().min(3, 'Imię: 3–16 znaków').max(16, 'Imię: 3–16 znaków');
-export const PROTOCOL_VERSION = 1;
-export const onlineJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),name:nameSchema,profession:professionSchema}).strict();
+export const PROTOCOL_VERSION = 2;
+export const guestJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),name:nameSchema,profession:professionSchema}).strict();
+export const onlineJoinSchema=z.object({protocolVersion:z.literal(PROTOCOL_VERSION),characterId:z.uuid()}).strict();
+export const credentialsSchema=z.object({email:z.email().max(254).trim().toLowerCase(),password:z.string().min(10).max(128)}).strict();
+export const createCharacterSchema=z.object({name:nameSchema.regex(/^[\p{L}\p{N} _-]+$/u),profession:professionSchema}).strict();
+export const accountViewSchema=z.object({account:z.object({id:z.uuid(),email:z.email(),tier:z.enum(['free','premium']),characterLimit:z.union([z.literal(3),z.literal(5)])}).strict(),characters:z.array(z.object({id:z.uuid(),name:nameSchema,profession:professionSchema,level:z.number().int().min(1).max(100)}).strict()).max(5)}).strict();
+export type AccountView=z.infer<typeof accountViewSchema>;
+export const authStateSchema=z.union([accountViewSchema,z.object({account:z.null(),characters:z.tuple([])}).strict()]);
+export const exitResultSchema=z.object({allowed:z.boolean(),reason:z.string().max(500)}).strict();
 export const onlineCommandSchema=z.object({sequence:z.number().int().min(1).max(2147483647),command:commandSchema}).strict();

@@ -1,6 +1,6 @@
-# Eldoria 0.1.14 — wspólna sesja online
+# Eldoria 0.1.15 — konta i zapis postaci
 
-Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Dostępny jest testowy multiplayer gościnny opisany w [ONLINE.md](ONLINE.md), bez kont i trwałego zapisu. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
+Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Dostępny jest multiplayer z kontami i zapisem postaci opisany w [ONLINE.md](ONLINE.md), z trzema postaciami bezpłatnymi i pięcioma premium. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
 
 ## Uruchomienie na komputerze
 
@@ -28,11 +28,9 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Po zbudowaniu i zainstalowaniu APK komputer i LAN nie są potrzebne — patrz [instrukcja Androida](ANDROID.md).
 
-## Trzy kroki testu poprawionych nicków i pasków
+## Test nowej wersji online
 
-1. Uruchom `npm run dev:online` i dołącz dwoma urządzeniami lub kartami jako różne profesje. Sprawdź czytelność obu nicków na tle kostki i trawy.
-2. Przejdź obok drugiego gracza: jego mały pasek HP ma być nad głową, a nick nad paskiem. Podczas chodzenia oba elementy powinny podążać za postacią.
-3. W menu przełącz własne paski na łuki. Inny gracz nadal ma tylko mały pasek HP; mana i łuki należą wyłącznie do Twojego widoku. Powtórz w poziomie na telefonie.
+Uruchom Docker Desktop, następnie `npm run db:up` i `npm run dev:online`. Załóż konto na stronie startowej, stwórz postać i wybierz Graj. Pięć kroków testu, zapis i bezpieczne wylogowanie opisuje [ONLINE.md](ONLINE.md). Przy nowym ZIP zachowaj `.eldoria-local` ze starego katalogu gry. Na telefonie zębatka otwiera ustawienia pasków/łuków i wyjście; plecak zawiera skille. Wyjście podczas walki jest zablokowane przez 60 sekund od ostatniego trafienia.
 
 ## Poprzednie trzy kroki testu 0.1.13
 
@@ -40,7 +38,7 @@ Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Ko
 2. Zaznacz zdrowego potwora — dostanie mały pasek HP i zieloną nazwę. Zdejmij cel: etykieta zdrowego potwora znika. Zrań go: etykieta zostaje także bez zaznaczenia, ale nie pokazuje many ani bocznych łuków.
 3. Podczas walki z wilkiem sprawdź kolory jego nazwy/HP: zielony powyżej połowy, żółty do połowy, czerwony przy jednej czwartej. Po pokonaniu nazwa i pasek znikają. To samo kolorowanie działa dla Twojego nicku i HP; pilnuj mikstur.
 
-Gra pozostaje offline, bez kont i innych graczy. Widok publiczny działa teraz dla potworów; test prywatności danych między graczami będzie możliwy po uruchomieniu serwera. Testy chmurowe nie zastępują oceny czytelności/FPS na fizycznym telefonie.
+Online ma już konta i innych graczy. Drugi gracz widzi twój nick, lvl i mały HP; mana, łuki, plecak i stash pozostają prywatne. Offline jest osobnym zapisem urządzenia. Testy chmurowe nie zastępują oceny czytelności/FPS na fizycznym telefonie.
 
 ## Pięć kroków testu 0.1.12
 

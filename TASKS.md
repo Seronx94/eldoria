@@ -28,7 +28,7 @@ Bierz pierwszy gotowy wpis. Zależności muszą być DONE; wyjątek: po T02 REVI
 | T11 | M2 | DONE | Wydanie 0.1 i poprawki mobilne | T05–T10 |
 | T09a | M2 | DONE | Ślady dawnego szlaku — quest eksploracji i kronika (wybór testera) | T05, T06, T09, T10 |
 | T12 | M3 | DONE | Serwer i protokół | T11 |
-| T13 | M3 | TODO | Konta i PostgreSQL | T12 |
+| T13 | M3 | DONE | Konta i PostgreSQL | T12 |
 | T14 | M3 | TODO | Gospodarka i trwałość | T13 |
 | T15 | M3 | TODO | Regiony i reconnect | T14 |
 | T16 | M3 | TODO | Testy online i zabezpieczenia | T15 |
@@ -132,7 +132,7 @@ Pełny smoke test 0.1, UI dotykowe, audio ustawienia, aktualna instrukcja dla te
 ### T12 — DONE
 Node/Colyseus, OnlineGateway i serwer domeny. Dwa klienty widzą tę samą postać/potwora. Klient wysyła intencję, serwer oblicza skutek. Test fałszywego HP/złota, teleportu, niepoprawnego schematu i limitu komend. Nie implementuj protokołu na podstawie API innej wersji Colyseus.
 
-### T13 — TODO
+### T13 — DONE
 Konta, logowanie, haszowanie, tokeny i migracje PostgreSQL, compose dla lokalnego testu. Jedna aktywna sesja postaci; test błędnego logowania i wygaśnięcia tokenu. Offline zapis nie jest importowany. Sekrety poza repo.
 
 ### T14 — TODO
@@ -459,3 +459,28 @@ Uwagi testera: niewyraźny nick oraz pasek drugiego gracza nachodzący na głow�
 - Pierwszy przebieg produkcyjnego e2e: **8 PASS / 1 FAIL / 1 SKIP**. Pozycje etykiet przeszły, lecz desktopowy test walki oddawał strzały bez celu spoza zasięgu patrolującego szczura i nie zdobył EXP. Scenariusz zbliża się teraz do lasu, czeka na faktyczny zasięg i wybiera szczura przez interfejs. Zachowano asercje obrażeń/nagrody, współdzielenia zdarzeń i nietkniętego zapisu offline; AI działa normalnie. Log pierwszego przebiegu: .npm-cache/nameplates-e2e.log.
 - Końcowy przebieg produkcji: **9 PASS / 1 SKIP**, exit 0, 4,2 min (.npm-cache/nameplates-final-e2e.log). Desktop i mobilny Chromium: rzeczywiste granice tekstu/HP nad sprite'em, śledzenie ruchu drugiego gracza, prywatne paski/łuki, współdzielona walka, brak błędów konsoli/assetów, powrót po utracie socketu oraz pięć przejść przez granicę świata. Kolory HP/nicków PASS na obu viewportach; joystick/multitouch/resize PASS na mobile, jedyny SKIP to ten dotykowy test na desktopie.
 - Po ostatnim dopasowaniu odstępu podpowiedzi od mobilnego panelu ponowny build/validate:content PASS i **5 mobilnych scenariuszy PASS**, exit 0, 1,3 min (.npm-cache/nameplates-mobile-e2e.log). Obejrzane nieedytowane screenshoty: docs/screenshots/nameplates-desktop.png i nameplates-mobile.png. Nick właściciela nie jest zasłonięty podpowiedzią; publiczny HP nad głową, brak publicznej many/łuków. **REVIEW** dla oceny czytelności na urządzeniu testera; fizyczny telefon/FPS/APK nie były testowane. Następne zadanie projektu nadal T13.
+
+
+## T13 — konta, postacie, skille i mobilne ustawienia — 0.1.15
+
+- Konto email/hasło przed wyborem postaci, trzy postacie bezpłatne i pięć premium. Limit sprawdzany transakcyjnie w PostgreSQL, nie przez deklarację klienta. Uprawnienie premium przez administracyjne `account:tier`, bez płatności. Globalnie unikalne nicki; jedna aktywna dzierżawa danej postaci, ochrona przed cudzym ID i zapisem starej dzierżawy.
+- PostgreSQL 17.6 przypięty digestem, Compose, idempotentne migracje. `db:up` generuje ignorowany plik `.eldoria-local/server.env`; ponowne uruchomienie zachowuje konfigurację i wolumen. Brak pliku przy istniejącym wolumenie blokuje regenerację hasła bez usuwania danych. Windows/ZIP: zachować `.eldoria-local` przy aktualizacji.
+- Hasła: natywny scrypt N=131072/r=8/p=1, losowa sól, stałoczasowe porównanie, ograniczona współbieżność. Sesje: losowe tokeny, w DB SHA256, HttpOnly/SameSite cookie; ścisłe schematy, kontrola originu, ograniczenie prób logowania. Brak przechowywania tokenów/haseł w localStorage.
+- Checkpoint postaci, plecaka, stashu, questów, skilli i filtrów łupu co pięć sekund oraz zapis przed potwierdzeniem bezpiecznego wyjścia. Offline nie jest importowany. T14 nadal TODO: transakcje gospodarki i trwałość przed ACK każdej nagrody/zakupu. Łup na ziemi i potwory pozostają w pamięci wspólnego świata.
+- Potwierdzony wybór testera: blokada wylogowania podczas walki, 60 sekund od ostatniego rzeczywistego trafienia. Po rozłączeniu postać nadal może otrzymywać obrażenia, pozostaje w świecie do ustania walki. Wygaśnięcie sesji po 15 minutach bezczynności; widok konta nie przedłuża czasu, rzeczywista aktywność przedłuża. Limit absolutny siedem dni. T15 reconnect nadal TODO.
+- Melee fighting od trafień mieczem, Distance fighting od strzał, Magic level od faktycznie zużytej many. Odrzucone ataki/cooldowny nie trenują; różdżka nie daje Distance fighting. Progi/bonusy w content, różne tempo magii dla profesji, zapis i zgodność starych zapisów offline. Skille w plecaku.
+- Publiczne nicki mają `lvl:`, mały HP, bez many/łuków/inventory. Własne paski/łuki przełączane na żywo w Ustawieniach. Na telefonie duży nagłówek zastąpiony plecakiem i zębatką; kamera wykorzystuje zwolnione miejsce. Dialogi zatrzymują sterowanie.
+- W testach przeglądarkowych znaleziono i naprawiono: przekroczenie 60000 ms przez zaokrąglenie zegara zmiennoprzecinkowego, nadpisywanie komunikatu blokady wyjścia każdym snapshotem, wyścig odświeżania konta z wylogowaniem. Dodane testy granic czasu walki i osłony przy zegarze zmiennoprzecinkowym.
+- Kontrole kodu: typecheck PASS, lint PASS, **130 testów / 22 pliki PASS**, w tym pięć rzeczywistych testów integracyjnych PostgreSQL oraz socketów z autoryzacją. Testują limit równoległych tworzeń, premium pięć, złe hasła, brak dostępu do cudzej postaci, dzierżawy, zapis i wygaśnięcie sesji; rozłączenie w walce zachowuje aktora do ustania walki. Izolowane schematy usuwają tylko dane testów. `validate:content` i build PASS, pięć map. Frozen `npm ci` PASS.
+- Testy przeglądarkowe produkcyjnego builda i mobilna regresja zakończone; wyniki poniżej. Fizyczny telefon, FPS, Android SDK/APK, publiczne wdrożenie i obciążenie — NIE WYKONANO. Email verification, reset hasła, płatności i usuwanie postaci jeszcze niewdrożone.
+
+- Powtórzenie wszystkich testów po ostatnich poprawkach PASS: **130/130, 22 pliki**, exit 0, 9,7 s; typecheck/lint/build/validate:content PASS. Wcześniejsze równoległe obciążenie software-renderera z testami kryptografii spowodowało timeouty; kontrole powtórzone oddzielnie bez pomijania asercji.
+- Restart PostgreSQL (`db:down`, `db:up`) i backendu: prawdziwa przeglądarka ponownie zalogowała się na wcześniej zapisaną postać, przywrócone 31,76 i skille — PASS (.npm-cache/accounts-restart-smoke.log). Wykryta podczas zatrzymywania bazy obsługa błędów bezczynnych połączeń PG uzupełniona o listener; nie deklarować automatycznego reconnectu ani bezstratnego recovery po awarii.
+- Administracyjny `account:tier` z rzeczywistą bazą: premium limit pięć PASS; odmowa downgrade przy pięciu postaciach PASS; usunięto wyłącznie własne konto tego smoke testu.
+- Nieedytowane screenshoty obejrzane: docs/screenshots/accounts-mobile.png, settings-mobile.png, skills-mobile.png, skills-desktop.png. Skille widoczne po przewinięciu plecaka, telefon ma tylko dwie ikony w górnym rogu. Wygląd nadal REVIEW dla fizycznej oceny testera.
+
+- **T13 DONE** po zakończeniu kontroli. E2E: **16 różnych scenariuszy PASS** zebranych z udokumentowanych uruchomień: konta/limit/ponowne wejście/ustawienia/skille (desktop i mobile), wygaśnięcie sesji (oba widoki), dwie postacie ze wspólną walką/prywatnością/bezpiecznym wyjściem (oba), utrata socketu (oba), publiczne HP/kolory (oba), joystick oraz dwa palce (mobile), pięć przejść bramy z wznowieniem pozycji (oba), uszkodzony zapis/backup/import (oba). Dwa scenariusze dotyku pominięte wyłącznie w desktopie jako nieadekwatne; mobilne odpowiedniki PASS.
+- Końcowa powtórka wspólnej walki **2/2 PASS**, exit 0, 5,9 min (.npm-cache/accounts-combat-confirmed-e2e.log), obejmuje realne 60 sekund ustania walki, CDP dwa palce w mobile, EXP, wspólne zdarzenia, zapis postaci i nietknięty offline zapis. Test podchodzi do żywego celu w zasięgu, zatrzymuje się przed zajętym polem; druga postać najpierw zwalnia przejście. Wcześniejsze błędne założenia statycznej ścieżki i wymóg kliknięcia ukrytego mobilnego Zapisz naprawione bez wyłączania asercji gry.
+- Konta i backup po końcowych zmianach **4 scenariusze PASS** (oba widoki, .npm-cache/accounts-confirmed-e2e.log); idle i utrata socketu PASS (.npm-cache/accounts-production-e2e.log). Mobilne pięć przejść i desktop PASS (.npm-cache/accounts-final-e2e.log); pozostałe adekwatne regresje PASS (.npm-cache/accounts-regression.log). Pliki logów zachowują również opisane wcześniejsze niepowodzenia, nie oznaczają ich jako sukces.
+- Instrukcje chmury `install_script` i `start_skill` zapisane jako draft dla workflow z PostgreSQL i kontami, bez sekretów i zmiany pozostałych pól. Aktualna instancja sprawdzona; publikacja i odtworzenie wolumenu Dockera w nowym zadaniu NIE WERYFIKOWANE.
+- **Następne: T14 — transakcje gospodarki i zapis ekonomii przed ACK**; następnie T15 — reconnect. Tester: pięć kroków i uruchomienie w docs/ONLINE.md. Wersja grywalna web/LAN 0.1.15; fizyczny telefon/FPS/APK/publiczny serwer nie były testowane.

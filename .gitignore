@@ -1,4 +1,5 @@
 node_modules/
+.eldoria-local/
 dist/
 .env
 .env.*

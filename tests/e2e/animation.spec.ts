@@ -1,3 +1,4 @@
+import {openMenu} from './menu-navigation';
 import { test, expect } from '@playwright/test';
 test('animated combat: automatic melee, spark, pursuit, sword, cleanup and restart',async({page},info)=>{
   test.setTimeout(90000);
@@ -21,7 +22,7 @@ test('animated combat: automatic melee, spark, pursuit, sword, cleanup and resta
   for(let i=0;i<7;i++){await page.waitForTimeout(230);await page.keyboard.press('w');}
   await page.locator('#interact').click();await expect(page.locator('#hud')).toHaveAttribute('data-map','courtyard');
   await expect(page.locator('#hud')).toHaveAttribute('data-effects','0',{timeout:4000});
-  await page.locator('#menu-button').click();await page.getByRole('button',{name:/Rozpocznij/}).click();
+  await openMenu(page);await page.getByRole('button',{name:/Rozpocznij/}).click();
   await expect(page.locator('#objective')).toHaveText('0 / 3');await expect(page.locator('#hud')).toHaveAttribute('data-effects','0');
   await expect(page.locator('#hud')).not.toHaveAttribute('data-combat-id',/.+/);
   expect(errors).toEqual([]);

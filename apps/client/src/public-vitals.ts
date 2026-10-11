@@ -21,7 +21,7 @@ export class PublicVitals {
   this.graphics.fillStyle(0x0c1920,.9).fillRect(x-13,top,26,4);
   this.graphics.fillStyle(health.color).fillRect(x-12,top+1,Math.round(24*health.ratio),2);
  }
- get presentation():{visible:boolean;color:string;nameBottom:number;hpTop:number;hpBottom:number;centerX:number} {return {visible:this.name.visible&&this.graphics.visible,color:String(this.name.style.color),nameBottom:this.name.getBounds().bottom,hpTop:this.hpBounds.top,hpBottom:this.hpBounds.bottom,centerX:this.hpBounds.centerX};}
+ get presentation():{visible:boolean;color:string;label:string;nameBottom:number;hpTop:number;hpBottom:number;centerX:number} {return {visible:this.name.visible&&this.graphics.visible,color:String(this.name.style.color),label:this.name.text,nameBottom:this.name.getBounds().bottom,hpTop:this.hpBounds.top,hpBottom:this.hpBounds.bottom,centerX:this.hpBounds.centerX};}
  hide():void {this.graphics.setVisible(false);this.name.setVisible(false);}
  destroy():void {this.graphics.destroy();this.name.destroy();}
 }

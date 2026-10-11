@@ -7,6 +7,7 @@ export const rules = {
   patrolMs: 1600, patrolRadius: 2, sightRadius: 6, leashRadius: 10,
   respawnMs: 20000, manaRegenMs: 2000,
 } as const;
+export {combatRules,skillNames,skillRequired,skillPower} from './skills';
 export const monsters = {
   rat: { name: 'Szczur', hp: 30, damage: 4, defense: 0, exp: 10, gold: 1, aggressive: true },
   beetle: { name: 'Żuk', hp: 45, damage: 6, defense: 1, exp: 15, gold: 2, aggressive: true },

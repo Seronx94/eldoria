@@ -1,3 +1,4 @@
+import {openMenu} from './menu-navigation';
 import { test, expect, type Page } from '@playwright/test';
 async function start(page: Page, walk = false) {
   await page.goto('/');
@@ -88,7 +89,7 @@ test('menu, assets, real combat loop and restart', async ({ page }, testInfo) =>
   await expect(page.locator('#bag-gold')).toContainText('6 złota');
   await expect(page.locator('#bag-slots')).toContainText('Skóra wilka');
   await page.getByRole('button', { name: 'Zamknij' }).click();
-  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await openMenu(page);
   await page.getByRole('button', { name: 'Rozpocznij' }).click();
   await expect(page.locator('#objective')).toHaveText('0 / 3');
   expect(errors).toEqual([]);

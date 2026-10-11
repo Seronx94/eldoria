@@ -1,3 +1,4 @@
+import {openMenu} from './menu-navigation';
 import {test,expect} from '@playwright/test';
 test('free sword and spark: hold, release, blur, empty cast and roof visibility',async({page},info)=>{
   test.setTimeout(90000);
@@ -19,7 +20,7 @@ test('free sword and spark: hold, release, blur, empty cast and roof visibility'
   await page.screenshot({path:info.outputPath('approaching-roof.png')});
   for(let i=0;i<3;i++){await page.waitForTimeout(230);await page.keyboard.press('w');}
   await expect(hud).not.toHaveAttribute('data-roofs',/gatehouse/);expect((await hud.getAttribute('data-roofs'))!.split(',')).toHaveLength(6);
-  await page.locator('#menu-button').click();await page.locator('#mode').selectOption('trial');await page.locator('#walk-mode').check();await page.getByRole('button',{name:/Rozpocznij/}).click();
+  await openMenu(page);await page.locator('#mode').selectOption('trial');await page.locator('#walk-mode').check();await page.getByRole('button',{name:/Rozpocznij/}).click();
   for(let i=0;i<7;i++){await page.waitForTimeout(230);await page.keyboard.press('w');}
   await page.locator('#interact').click();await expect(hud).toHaveAttribute('data-map','grove');
   // No creature exists in the walk fixture: a swing still animates and does not create a reward.

@@ -1,3 +1,4 @@
+import {openMenu,saveOffline} from './menu-navigation';
 import {test,expect,type Page} from '@playwright/test';
 import {professions,spells} from '../../packages/content/src/professions';
 import type {Profession} from '@eldoria/protocol';
@@ -18,7 +19,7 @@ async function importArena(page:Page,live=false):Promise<void>{
     if(live&&c.id==='rat-1')Object.assign(c,{x:32,y:54,hp:30,state:'idle',moveIn:400,attackIn:1200});
     else Object.assign(c,{hp:0,state:'dead',respawnIn:20000});
   }
-  await page.locator('#menu-button').click();
+  await openMenu(page);
   await page.locator('#import-save').setInputFiles({name:'profession-arena.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
   await expect(page.locator('#hud')).toHaveAttribute('data-position','32,60');
 }
@@ -42,7 +43,7 @@ for(const profession of ['knight','archer','mage'] as Profession[]){
     await page.locator('#action-choice-1').selectOption(professions[profession].spells[2]!);
     await page.locator('#action-choice-4').selectOption('attack');
     await page.locator('#close-bag').click();await expect(page.locator('#spell-slot-3')).toHaveAttribute('data-action','attack');
-    await page.locator('#save-button').click();await page.reload();await page.locator('#resume').click();
+    await saveOffline(page);await page.reload();await page.locator('#resume').click();
     await expect(page.locator('#hud')).toHaveAttribute('data-profession',profession);await expect(page.locator('#spell-slot-3')).toHaveAttribute('data-action','attack');
     await expect(page.locator('#attack')).toHaveAttribute('data-action',professions[profession].spells[2]!);
     const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('eldoria.offline.v1')!));expect(saved.profession).toBe(profession);expect(saved.equipment.weapon).toBe(professions[profession].weapon);

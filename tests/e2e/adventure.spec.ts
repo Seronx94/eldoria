@@ -1,3 +1,4 @@
+import {openMenu,saveOffline} from './menu-navigation';
 import { test, expect, type Page } from '@playwright/test';
 import {walkInTown,walkInWorld} from './town-navigation';
 test.use({ actionTimeout:10000 });
@@ -64,7 +65,7 @@ test('five continuous journeys: one world, no gate command, one step per press',
   }
 });
 test('damaged save stays intact, backup recovery works and invalid import cannot replace it',async({page})=>{
-  await begin(page); await move(page,'A'); await page.getByRole('button',{name:'Zapisz',exact:true}).click();
+  await begin(page); await move(page,'A'); await saveOffline(page);
   await page.evaluate(()=>localStorage.setItem('eldoria.offline.v1','{damaged'));
   await page.reload(); await expect(page.locator('#save-menu-status')).toContainText('uszkodzony');
   expect(await page.evaluate(()=>localStorage.getItem('eldoria.offline.v1'))).toBe('{damaged');
@@ -73,7 +74,7 @@ test('damaged save stays intact, backup recovery works and invalid import cannot
   expect(await page.evaluate(()=>localStorage.getItem('eldoria.offline.v1'))).toBe('{damaged');
   await page.getByRole('button',{name:'Odzyskaj kopię zapisu'}).click(); await expect(page.locator('#hud')).toHaveAttribute('data-position','32,76');
   expect(await page.evaluate(()=>localStorage.getItem('eldoria.offline.v1.damaged'))).toBe('{damaged');
-  await page.getByRole('button',{name:'Menu',exact:true}).click();
+  await openMenu(page);
   const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Eksport zapisu'}).click()]);
   await page.locator('#import-save').setInputFiles((await download.path())!); await expect(page.locator('#hud')).toHaveAttribute('data-map','eldoria');
 });
@@ -81,7 +82,7 @@ test('damaged save stays intact, backup recovery works and invalid import cannot
 test('blocked storage reports an error while the active adventure can still be exported',async({page})=>{
   await page.addInitScript(()=>{ Storage.prototype.setItem=()=>{throw new DOMException('Full','QuotaExceededError');}; });
   await begin(page); await expect(page.locator('#save-status')).toContainText('brak miejsca');
-  await move(page,'A'); await page.getByRole('button',{name:'Menu',exact:true}).click();
+  await move(page,'A'); await openMenu(page);
   const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Eksport zapisu'}).click()]);
   expect(download.suggestedFilename()).toBe('eldoria-offline.json');
   await page.locator('#import-save').setInputFiles((await download.path())!);

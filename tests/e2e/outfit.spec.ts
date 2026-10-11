@@ -1,3 +1,4 @@
+import {openMenu} from './menu-navigation';
 import {test,expect,type Page} from '@playwright/test';
 import type {Profession} from '@eldoria/protocol';
 import {walkInWorld} from './town-navigation';
@@ -50,7 +51,7 @@ for(const profession of ['knight','archer','mage'] as Profession[]){
     const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('eldoria.offline.v1')!));expect(saved.appearance).toEqual(colors);expect(saved.profession).toBe(profession);
     await page.locator('#reset-outfit').click();await expect.poll(async()=>JSON.stringify(await preview(page))).toBe(JSON.stringify(original));
     await page.locator('#close-bag').click();await page.waitForTimeout(230);await page.keyboard.press('s');await page.waitForTimeout(300);
-    await page.screenshot({path:info.outputPath(`${profession}-original-world.png`)});await page.locator('#menu-button').click();
+    await page.screenshot({path:info.outputPath(`${profession}-original-world.png`)});await openMenu(page);
     const stored=await page.evaluate(()=>localStorage.getItem('eldoria.offline.v1')!);const bad=JSON.parse(stored);bad.appearance.hair='url(javascript:bad)';
     await page.locator('#import-save').setInputFiles({name:'invalid-appearance.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(bad))});
     await expect(page.locator('#save-menu-status')).toContainText('Import odrzucony');expect(await page.evaluate(()=>localStorage.getItem('eldoria.offline.v1'))).toBe(stored);expect(errors).toEqual([]);

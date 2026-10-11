@@ -12,6 +12,8 @@ import {renderActionIcons,actionIcon} from './action-icons';
 import {renderInventory,itemIcon} from './inventory-view';
 import {OnlineGateway} from './online-gateway';
 import {RemotePlayers} from './remote-players';
+import {AccountUI} from './account-ui';
+import {skillNames,skillRequired} from '@eldoria/content';
 import {PublicVitals} from './public-vitals';
 import {healthDisplay} from './health-display';
 import {HeroVitals,loadVitalsStyle,type VitalsStyle} from './hero-vitals';
@@ -72,6 +74,7 @@ const depotDialog=element<HTMLDialogElement>('#depot-dialog');
 const depotView=new DepotView(depotDialog,c=>gateway?.send(c));
 depotDialog.addEventListener('close',resetInput);
 const bagDialog = element<HTMLDialogElement>('#bag');
+const settingsDialog=element<HTMLDialogElement>('#settings-dialog');
 let completionDismissed = false;
 let bagSignature = '';
 const pointerDirections = new Map<number, Direction>();
@@ -80,7 +83,7 @@ const attackPointers = new Set<number>();
 const attackKeys=new Set<string>();
 const actionButtons=Array.from(document.querySelectorAll<HTMLButtonElement>('[data-slot]'));
 const actionBar=new ActionBar(actionButtons);
-const joystick = new VirtualJoystick(element('#joystick'), () => playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !depotDialog.open, (id, d) => {
+const joystick = new VirtualJoystick(element('#joystick'), () => playing && ui.complete.hidden && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open, (id, d) => {
   if (d) pointerDirections.set(id, d); else pointerDirections.delete(id);
   movement();
 });
@@ -89,14 +92,14 @@ function direction(): Direction | undefined { return [...pointerDirections.value
 let nextMovementAt=0;
 function movement(): void {
   const d = direction();
-  if (!ui.complete.hidden || bagDialog.open || npcDialog.open || depotDialog.open) return;
+  if (!ui.complete.hidden || settingsDialog.open || bagDialog.open || npcDialog.open || depotDialog.open) return;
   if (d && playing && performance.now()>=nextMovementAt && !document.hidden && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) {
     gateway?.send({ type: 'Move', direction: d });
     nextMovementAt=performance.now()+rules.stepMs;
   }
 }
 const movementTimer = window.setInterval(() => {
-  if ((attackKeys.size || attackPointers.size > 0) && playing && !document.hidden && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !depotDialog.open && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({type:'Attack'});
+  if ((attackKeys.size || attackPointers.size > 0) && playing && !document.hidden && ui.complete.hidden && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open && !(window.innerWidth <= 700 && window.innerHeight > window.innerWidth)) gateway?.send({type:'Attack'});
 }, rules.tickMs);
 
 class Boot extends Phaser.Scene {
@@ -176,7 +179,8 @@ class World extends Phaser.Scene {
   }
   private resize(): void {
     const w = this.scale.width, h = this.scale.height;
-    const top = playing ? (h <= 600 ? 60 : 76) : 0;
+    const compact=matchMedia('(pointer:coarse)').matches||h<=600;
+    const top = playing&&!compact?76:0;
     const bottom = playing ? (h <= 600 ? 104 : 168) : 0;
     this.cameras.main.setViewport(0, top, w, Math.max(1, h - top - bottom)).setZoom(w >= 1000 && h >= 600 ? 2 : 1).setRoundPixels(true);
   }
@@ -216,7 +220,7 @@ class World extends Phaser.Scene {
     if (colorful) for (const d of map.decorations.filter(d => d.kind === 'house')) this.objects.push(this.add.image((d.x+1)*32+16,d.y*32+32,art('barrel')).setOrigin(.5,1).setDepth(d.y*32+34));
     this.town.build(map);
     for (const n of map.npcs) {
-      const talk = () => { if (playing && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({ type:'Interact', npcId:n.id }); };
+      const talk = () => { if (playing && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({ type:'Interact', npcId:n.id }); };
       const sprite = this.add.sprite(n.x*32+16,n.y*32+32,colorful ? art(n.id) : 'wanderer',0).setOrigin(.5,1).setDepth(n.y*32+32).setInteractive({useHandCursor:true});
       if (!colorful) sprite.setTint(({mira:0xe2b779,oren:0x9cd6bc,borin:0xd3a4a2})[n.id]);
       sprite.on('pointerdown',talk); this.objects.push(sprite); this.town.registerInterior(sprite,n);
@@ -231,7 +235,7 @@ class World extends Phaser.Scene {
       sign.fillStyle(0xd3b66d).fillRect(l.x*32+4,l.y*32+2,24,12);
       sign.lineStyle(1,0x493821).strokeRect(l.x*32+4,l.y*32+2,24,12);
       sign.lineStyle(2,0x356e60).strokeTriangle(l.x*32+12,l.y*32+5,l.x*32+20,l.y*32+8,l.x*32+12,l.y*32+11);
-      const inspect = () => { if (playing && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({type:'Interact'}); };
+      const inspect = () => { if (playing && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({type:'Interact'}); };
       sign.setInteractive(new Phaser.Geom.Rectangle(l.x*32,l.y*32,32,32),Phaser.Geom.Rectangle.Contains).on('pointerdown',inspect);
       sign.input!.cursor = 'pointer'; this.objects.push(sign);
       const label = this.add.text(l.x*32+16,l.y*32-10,l.name,{fontFamily:'monospace',fontSize:'10px',color:'#ffe3a2',backgroundColor:'#213b32'}).setOrigin(.5).setDepth(l.y*32+34).setInteractive({useHandCursor:true});
@@ -239,7 +243,7 @@ class World extends Phaser.Scene {
     }
     for (const p of map.portals) {
       const enter = () => {
-        if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({ type: 'Interact' });
+        if (playing && ui.complete.hidden && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({ type: 'Interact' });
       };
       const glow = this.add.graphics().setDepth(-10);
       glow.setInteractive(new Phaser.Geom.Ellipse(p.x * 32 + 16, p.y * 32 + 16, 48, 48), Phaser.Geom.Ellipse.Contains);
@@ -260,7 +264,7 @@ class World extends Phaser.Scene {
       g.fillStyle(0x192832,.7).fillEllipse(x+16,y+29,30,10);g.fillStyle(0x523129).fillRect(x+2,y+8,28,22);
       g.fillStyle(0xb9894c).fillRect(x+4,y+10,24,17);g.fillStyle(0xd9b36b).fillRect(x+4,y+8,24,5);
       g.lineStyle(2,0x332a24).lineBetween(x+3,y+16,x+29,y+16);g.fillStyle(0xe9d087).fillRect(x+13,y+14,6,7);
-      g.setInteractive(new Phaser.Geom.Rectangle(x,y,32,32),Phaser.Geom.Rectangle.Contains).on('pointerdown',()=>{if(playing&&!bagDialog.open&&!npcDialog.open&&!depotDialog.open)gateway?.send({type:'OpenDepot'});});
+      g.setInteractive(new Phaser.Geom.Rectangle(x,y,32,32),Phaser.Geom.Rectangle.Contains).on('pointerdown',()=>{if(playing&&!settingsDialog.open && !bagDialog.open&&!npcDialog.open&&!depotDialog.open)gateway?.send({type:'OpenDepot'});});
       const label=this.add.text(x+16,y-4,'DEPO',{fontFamily:'monospace',fontSize:'9px',color:'#f6df9b',stroke:'#18222b',strokeThickness:2}).setOrigin(.5,1).setDepth(y+32);
       this.objects.push(g,label);
     }
@@ -313,7 +317,7 @@ class World extends Phaser.Scene {
       let sprite = this.creatureSprites.get(creature.id);
       if (!sprite) {
         sprite = this.add.sprite(creature.x * 32 + 16, creature.y * 32 + 32, art(creature.kind)).setOrigin(.5, 1).setInteractive({ useHandCursor: true });
-        sprite.on('pointerdown', () => { if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send(snapshot?.selectedId===creature.id?{type:'ClearTarget'}:{ type: 'Select', targetId: creature.id }); });
+        sprite.on('pointerdown', () => { if (playing && ui.complete.hidden && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send(snapshot?.selectedId===creature.id?{type:'ClearTarget'}:{ type: 'Select', targetId: creature.id }); });
         this.publicVitals.set(creature.id,new PublicVitals(this));
         this.creatureSprites.set(creature.id, sprite); this.objects.push(sprite);
       }
@@ -425,6 +429,10 @@ function updateUI(s: Snapshot): void {
   if (bagDialog.open) renderBag(s);
   renderNpc(s);depotView.update(s);if(s.depotOpen)resetInput();
   if (playing && adventure && !onlineMode) autosave(s);
+  element('#settings-character').textContent=`${s.name} · ${professions[s.profession].name} · lvl: ${s.level}`;
+  element('#combat-status').textContent=s.combatMs>0?`Walka: wylogowanie za ${Math.ceil(s.combatMs/1000)} s od ostatniego trafienia.`:'Poza walką — można bezpiecznie wyjść.';
+  ui.hud.dataset.combatMs=String(s.combatMs);ui.hud.dataset.skills=JSON.stringify(s.skills);
+  renderSkills(s);
   // Accessible state for UI tests; never used to decide simulation outcomes.
   ui.hud.dataset.position = `${s.player.x},${s.player.y}`;
   ui.hud.dataset.map = s.mapId;
@@ -444,7 +452,7 @@ function activateGateway(next:LocalGateway|OnlineGateway,isOnline:boolean):void 
   element<HTMLSelectElement>('#connection-mode').value=isOnline?'online':'offline';syncConnectionChoices();
   gateway=next;onlineMode=isOnline;snapshot=undefined;ui.hud.dataset.connection=isOnline?'connecting':'offline';element<HTMLButtonElement>('#save-button').disabled=isOnline;
   playing = true; ui.menu.hidden = true; ui.hud.hidden = false;
-  element('#save-status').textContent = isOnline?'Online · sesja testowa bez trwałego zapisu':adventure ? 'Przygoda offline · zapis lokalny' : 'Próba i spacer nie są zapisywane';
+  element('#save-status').textContent = isOnline?'Online · postać na koncie · checkpoint co 5 s':adventure ? 'Przygoda offline · zapis lokalny' : 'Próba i spacer nie są zapisywane';
   lastSavedSignature = ''; lastSaveTime = performance.now(); lastSavedMap = ''; lastSavedEconomy = '';
   unsubscribe = gateway.subscribe(updateUI); gateway.connect();
 }
@@ -452,12 +460,7 @@ function syncConnectionChoices():void {const online=element<HTMLSelectElement>('
 element('#connection-mode').addEventListener('change',syncConnectionChoices);
 function start(name: string): void {
   if(element<HTMLSelectElement>('#connection-mode').value==='online'){
-    adventure=true;walkingOnly=false;
-    const endpoint=import.meta.env.VITE_ONLINE_URL as string|undefined??`${location.protocol==='https:'?'wss':'ws'}://${location.host}/online`;
-    const next=new OnlineGateway(endpoint,name,professionSchema.parse(element<HTMLSelectElement>('#profession').value),(message,failed)=>{
-      if(gateway!==next)return;element('#save-status').textContent=message;ui.hud.dataset.connection=failed?'disconnected':message.startsWith('Łączenie')?'connecting':'online';
-      if(failed){playing=false;resetInput();ui.hud.hidden=true;ui.menu.hidden=false;ui.nameError.textContent=message;refreshSaveMenu();}
-    });activateGateway(next,true);return;
+    const id=accountUI?.character(name);if(!id){ui.nameError.textContent='Zaloguj się, stwórz postać i wybierz Graj w panelu konta.';return;}startOnline(id);return;
   }
   walkingOnly = element<HTMLInputElement>('#walk-mode').checked;
   adventure = !walkingOnly && element<HTMLSelectElement>('#mode').value === 'adventure';
@@ -470,22 +473,47 @@ element<HTMLFormElement>('#start-form').addEventListener('submit', event => {
   if (!result.success) { ui.nameError.textContent = 'Imię musi mieć od 3 do 16 znaków po usunięciu spacji.'; return; }
   ui.nameError.textContent = ''; ui.name.blur(); start(result.data);
 });
-element('#menu-button').addEventListener('click', () => {
-  if (adventure&&!onlineMode) saveNow();
-  playing = false; resetInput(); gateway?.disconnect(); unsubscribe?.();
-  ui.hud.hidden = true; ui.menu.hidden = false; refreshSaveMenu();
-});
+async function leaveGame():Promise<boolean> {
+  resetInput();
+  if(playing&&gateway instanceof OnlineGateway&&!await gateway.requestLogout())return false;
+  if(adventure&&!onlineMode)saveNow();stopGame();void accountUI?.refresh();return true;
+}
+function stopGame():void {playing=false;resetInput();gateway?.disconnect();unsubscribe?.();settingsDialog.close();bagDialog.close();npcDialog.close();depotDialog.close();ui.hud.hidden=true;ui.menu.hidden=false;refreshSaveMenu();}
+function startOnline(id:string):void {
+  adventure=true;walkingOnly=false;
+  const endpoint=import.meta.env.VITE_ONLINE_URL as string|undefined??`${location.protocol==='https:'?'wss':'ws'}://${location.host}/online`;
+  const next=new OnlineGateway(endpoint,id,(message,failed)=>{
+    if(gateway!==next)return;element('#save-status').textContent=message;element('#settings-status').textContent=message;
+    ui.hud.dataset.connection=failed?'disconnected':message.startsWith('Łączenie')?'connecting':'online';
+    if(failed){stopGame();ui.nameError.textContent=message;void accountUI?.refresh();}
+  });activateGateway(next,true);
+}
+element('#menu-button').addEventListener('click',()=>{void leaveGame();});
+element('#settings-leave').addEventListener('click',()=>{void leaveGame();});
+element('#settings-logout').addEventListener('click',()=>{void accountUI?.logout();});
+element('#settings-button').addEventListener('click',()=>{resetInput();element<HTMLSelectElement>('#settings-vitals-style').value=vitalsStyle;element<HTMLSelectElement>('#settings-graphics-style').value=graphicsChoice.value;element('#settings-status').textContent='';element('#settings-logout').hidden=!onlineMode;settingsDialog.showModal();});
+element('#close-settings').addEventListener('click',()=>settingsDialog.close());settingsDialog.addEventListener('close',resetInput);
+element('#settings-vitals-style').addEventListener('change',()=>{vitalsChoice.value=element<HTMLSelectElement>('#settings-vitals-style').value;vitalsChoice.dispatchEvent(new Event('change'));});
+element('#settings-graphics-style').addEventListener('change',()=>{graphicsChoice.value=element<HTMLSelectElement>('#settings-graphics-style').value;chooseGraphics();});
+element('#settings-appearance').addEventListener('click',()=>{settingsDialog.close();toggleBag();element<HTMLDetailsElement>('#appearance').open=true;});
+const accountUI=new AccountUI(startOnline,leaveGame,message=>{if(onlineMode&&playing)stopGame();ui.nameError.textContent=message;});
+let skillSignature='';
+function renderSkills(s:Snapshot):void {
+ const signature=JSON.stringify([s.profession,s.skills]);if(signature===skillSignature)return;skillSignature=signature;
+ const list=element('#skills-list');list.replaceChildren();for(const kind of ['melee','distance','magic'] as const){const skill=s.skills[kind],required=skillRequired(kind,skill.level,s.profession),card=document.createElement('div'),label=document.createElement('strong'),progress=document.createElement('progress'),detail=document.createElement('span');card.className='skill-card';label.textContent=`${skillNames[kind]}: ${skill.level}`;progress.max=required;progress.value=skill.progress;progress.setAttribute('aria-label',skillNames[kind]);detail.textContent=skill.level===100?'Maksymalny poziom':`${skill.progress} / ${required} · ${Math.floor(skill.progress/required*100)}%`;card.append(label,detail,progress);list.append(card);}
+}
+
 element('#continue').addEventListener('click', () => { completionDismissed = true; ui.complete.hidden = true; });
 element('#again').addEventListener('click', () => start(snapshot?.name ?? 'Wędrowiec'));
 function useAction(action:ActionId):void {
-  if(!playing||!ui.complete.hidden||bagDialog.open||npcDialog.open||depotDialog.open)return;
+  if(!playing||!ui.complete.hidden||settingsDialog.open || bagDialog.open||npcDialog.open||depotDialog.open)return;
   gateway?.send(action==='attack'?{type:'Attack'}:action==='potion'?{type:'UseItem'}:{type:'Cast',spellId:action});
 }
 for(const [index,button] of actionButtons.entries()){
   const act=()=>{if(snapshot)useAction(snapshot.actionSlots[index]!);};
   button.addEventListener('pointerdown',event=>{
     event.preventDefault();
-    if(snapshot?.actionSlots[index]==='attack'&&playing&&ui.complete.hidden&&!bagDialog.open&&!npcDialog.open && !depotDialog.open){attackPointers.add(event.pointerId);button.setPointerCapture(event.pointerId);}
+    if(snapshot?.actionSlots[index]==='attack'&&playing&&ui.complete.hidden&&!settingsDialog.open && !bagDialog.open&&!npcDialog.open && !depotDialog.open){attackPointers.add(event.pointerId);button.setPointerCapture(event.pointerId);}
     act();
   });
   for(const name of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(name,event=>attackPointers.delete((event as PointerEvent).pointerId));
@@ -493,7 +521,7 @@ for(const [index,button] of actionButtons.entries()){
 }
 for (const [id, type] of [['potion', 'UseItem'], ['interact', 'Interact'], ['loot', 'Loot']] as const) {
   const button = element(`#${id}`);
-  const act = () => { if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({ type }); };
+  const act = () => { if (playing && ui.complete.hidden && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) gateway?.send({ type }); };
   button.addEventListener('pointerdown', event => {
     event.preventDefault();
     act();
@@ -504,7 +532,7 @@ renderActionIcons();
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-direction]')) {
   button.addEventListener('pointerdown', event => {
     event.preventDefault(); const d = button.dataset.direction as Direction;
-    if (playing && ui.complete.hidden && !bagDialog.open && !npcDialog.open && !depotDialog.open) { pointerDirections.set(event.pointerId, d); button.setPointerCapture(event.pointerId); movement(); }
+    if (playing && ui.complete.hidden && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) { pointerDirections.set(event.pointerId, d); button.setPointerCapture(event.pointerId); movement(); }
   });
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(name, event => pointerDirections.delete((event as PointerEvent).pointerId));
 }
@@ -512,10 +540,10 @@ const keyDirections: Record<string, Direction> = { arrowup: 'up', arrowdown: 'do
 window.addEventListener('keydown', event => {
   if (!playing || event.target instanceof HTMLInputElement) return;
   const key = event.key.toLowerCase();
-  if(key==='escape'&&!bagDialog.open&&!npcDialog.open&&!depotDialog.open){gateway?.send({type:'ClearTarget'});return;}
-  if (key === 't' && !event.repeat && !bagDialog.open && !npcDialog.open && !depotDialog.open) { event.preventDefault(); cycleTarget(); return; }
+  if(key==='escape'&&!settingsDialog.open && !bagDialog.open&&!npcDialog.open&&!depotDialog.open){gateway?.send({type:'ClearTarget'});return;}
+  if (key === 't' && !event.repeat && !settingsDialog.open && !bagDialog.open && !npcDialog.open && !depotDialog.open) { event.preventDefault(); cycleTarget(); return; }
   if (key === 'i' && !event.repeat) { event.preventDefault(); toggleBag(); return; }
-  if (!ui.complete.hidden || bagDialog.open || npcDialog.open || depotDialog.open) return;
+  if (!ui.complete.hidden || settingsDialog.open || bagDialog.open || npcDialog.open || depotDialog.open) return;
   if(/^[1-4]$/.test(key)&&snapshot){event.preventDefault();const action=snapshot.actionSlots[Number(key)-1]!;if(action==='attack')attackKeys.add(key);if(!event.repeat)useAction(action);return;}
   const d = keyDirections[key];
   if (d) { event.preventDefault(); heldKeys.set(key, d); if (!event.repeat) movement(); return; }
@@ -600,7 +628,7 @@ function renderBag(s: Snapshot): void {
 }
 function toggleBag(): void {
   resetInput();
-  if (bagDialog.open) bagDialog.close();
+  if (settingsDialog.open || bagDialog.open) bagDialog.close();
   else if (snapshot && playing && !npcDialog.open && !depotDialog.open) { renderBag(snapshot); bagDialog.showModal(); }
 }
 for(const [id,action]of [['bag-button',toggleBag],['close-bag',()=>bagDialog.close()]] as const){
@@ -611,7 +639,7 @@ for(const [id,action]of [['bag-button',toggleBag],['close-bag',()=>bagDialog.clo
 bagDialog.addEventListener('close', resetInput);
 
 function cycleTarget(): void {
-  if (!playing || !snapshot || bagDialog.open || npcDialog.open || depotDialog.open || !ui.complete.hidden) return;
+  if (!playing || !snapshot || settingsDialog.open || bagDialog.open || npcDialog.open || depotDialog.open || !ui.complete.hidden) return;
   const living = snapshot.creatures.filter(c => c.hp > 0);
   const index = living.findIndex(c => c.id === snapshot?.selectedId);
   if(index===living.length-1&&index>=0){gateway?.send({type:'ClearTarget'});return;}
@@ -686,7 +714,7 @@ function saveNow(explicitRecovery = false): void {
   } catch { element('#save-status').textContent = 'Nie udało się zapisać. Wyeksportuj zapis lub zgłoś błąd.'; }
 }
 function persistentSignature(data: SaveData): string {
-  return JSON.stringify([data.cityRevision,data.stash,data.lootSettings,data.appearance,data.profession,data.actionSlots,data.name,data.mapId,data.player,data.direction,data.level,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
+  return JSON.stringify([data.cityRevision,data.stash,data.lootSettings,data.appearance,data.profession,data.actionSlots,data.name,data.mapId,data.player,data.direction,data.level,data.skills,data.hp,data.mana,data.exp,data.gold,data.kills,data.quest,data.exploration,data.inventory,data.equipment,data.loot,data.maps.map(m => [m.mapId,m.creatures.map(c => [c.id,c.x,c.y,c.hp,c.state])])]);
 }
 function autosave(s: Snapshot): void {
   if(!(gateway instanceof LocalGateway)||onlineMode)return;

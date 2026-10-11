@@ -1,3 +1,4 @@
+import {openMenu} from './menu-navigation';
 import { test, expect } from '@playwright/test';
 test('colorful art: native sprites, walking, NPC, portal, real combat and reversible comparison',async({page},info)=>{
   test.setTimeout(90000);
@@ -20,7 +21,7 @@ test('colorful art: native sprites, walking, NPC, portal, real combat and revers
   await page.locator('#cast').click();await page.keyboard.down('Space');
   await expect(page.locator('#objective')).toHaveText('1 / 5',{timeout:15000});await page.keyboard.up('Space');
   await page.locator('#loot').click(); expect(Number((await page.locator('#rewards').textContent())!.match(/(\d+) złota/)![1])).toBeGreaterThanOrEqual(1);
-  await page.locator('#menu-button').click();
+  await openMenu(page);
   await page.locator('#mode').selectOption('trial'); await page.locator('#walk-mode').check();
   await page.getByRole('button',{name:/Rozpocznij/}).click();
   for(let i=0;i<5;i++){await page.waitForTimeout(220);await page.keyboard.press('W');}
@@ -33,7 +34,7 @@ test('colorful art: native sprites, walking, NPC, portal, real combat and revers
     if(!await button.isVisible())continue;
     const box=await button.boundingBox(); expect(box?.width).toBeGreaterThanOrEqual(48);expect(box?.height).toBeGreaterThanOrEqual(48);
   }
-  await page.locator('#menu-button').click(); await page.locator('#graphics-style').selectOption('classic');
+  await openMenu(page); await page.locator('#graphics-style').selectOption('classic');
   await page.getByRole('button',{name:/Rozpocznij/}).click();
   for(let i=0;i<5;i++){await page.waitForTimeout(220);await page.keyboard.press('W');}
   await page.waitForTimeout(700); await page.screenshot({path:info.outputPath('classic-sample.png')});

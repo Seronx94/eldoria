@@ -1,3 +1,4 @@
+import {openMenu} from './menu-navigation';
 import {test,expect} from '@playwright/test';
 import type {SaveData} from '@eldoria/domain';
 type Pose={id:string;x:number;y:number;facing:string;frame:number;flip:boolean;animation:string|null};
@@ -22,7 +23,7 @@ for(const [kind,id,center] of [['rat','rat-1',{x:31,y:54}],['beetle','beetle-1',
         if(c.id===id){Object.assign(c,center,{state:'idle',moveIn:400,attackIn:1200});}
         else Object.assign(c,{hp:0,state:'dead',respawnIn:20000});
       }
-      await page.locator('#menu-button').click();await hud.evaluate(el=>{el.dataset.renderedPoses='[]';});
+      await openMenu(page);await hud.evaluate(el=>{el.dataset.renderedPoses='[]';});
       await page.locator('#import-save').setInputFiles({name:'direction.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
       await expect(hud).toHaveAttribute('data-position',`${data.player.x},${data.player.y}`);
       const samples=async()=> (JSON.parse((await hud.getAttribute('data-rendered-poses'))??'[]') as Pose[]).filter(p=>p.id===id&&p.animation===`colorful-${kind}-${direction}`&&(dx===0?p.x===center.x&&(p.y-center.y)*dy>0:p.y===center.y&&(p.x-center.x)*dx>0));

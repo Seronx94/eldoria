@@ -1,3 +1,4 @@
+import {openMenu,saveOffline} from './menu-navigation';
 import {test,expect,type Page} from '@playwright/test';
 import type {SaveData} from '@eldoria/domain';
 async function start(page:Page,profession='knight'){
@@ -6,7 +7,7 @@ async function start(page:Page,profession='knight'){
 async function fixture(page:Page,mutate:(data:SaveData)=>void){
  const data=JSON.parse(await page.evaluate(()=>localStorage.getItem('eldoria.offline.v1')!)) as SaveData;
  for(const c of data.maps[0]!.creatures)Object.assign(c,{hp:0,state:'dead',respawnIn:20000});
- mutate(data);await page.locator('#menu-button').click();await page.locator('#import-save').setInputFiles({name:'play.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
+ mutate(data);await openMenu(page);await page.locator('#import-save').setInputFiles({name:'play.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
 }
 function checkErrors(page:Page){const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});return errors;}
 test('nick, overhead bars and arcs are remembered; filtered auto loot survives reload',async({page},info)=>{
@@ -16,8 +17,8 @@ test('nick, overhead bars and arcs are remembered; filtered auto loot survives r
  await page.keyboard.press('ArrowUp');await expect(page.locator('#hud')).toHaveAttribute('data-position','32,59');
  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('eldoria.offline.v1')!).gold)).toBe(3);
  await page.screenshot({path:info.outputPath('hero-bars.png')});
- await page.locator('#menu-button').click();await page.locator('#vitals-style').selectOption('arcs');await page.locator('#resume').click();await expect(page.locator('#hud')).toHaveAttribute('data-vitals-style','arcs');
- await page.screenshot({path:info.outputPath('hero-arcs.png')});await page.locator('#save-button').click();await page.reload();await page.locator('#resume').click();
+ await openMenu(page);await page.locator('#vitals-style').selectOption('arcs');await page.locator('#resume').click();await expect(page.locator('#hud')).toHaveAttribute('data-vitals-style','arcs');
+ await page.screenshot({path:info.outputPath('hero-arcs.png')});await saveOffline(page);await page.reload();await page.locator('#resume').click();
  await expect(page.locator('#hud')).toHaveAttribute('data-vitals-style','arcs');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('eldoria.offline.v1')!));
  expect(saved.gold).toBe(3);expect(saved.inventory).toContainEqual({itemId:'skin',quantity:2});expect(saved.loot).toMatchObject([{gold:0,items:[{itemId:'chitin',quantity:1}]}]);expect(saved.lootSettings.itemIds).not.toContain('chitin');expect(errors).toEqual([]);
 });

@@ -44,3 +44,7 @@ Na polecenie właściciela T07d dodaje własne stroje Archera i Maga, zachowuje 
 ## Sterowanie, plecak i poziomy czarów 0.1.11
 
 Na życzenie testera w M2: odczyt ruchu z klatkami gry, ikonowy plecak i osobne sloty broni/pancerza oraz dodatkowe warstwy dziewięciu animacji. Każda profesja automatycznie odblokowuje czary na poziomach 1, 3 i 5; progi waliduje domena także po wznowieniu starszego zapisu. T07e czeka na ocenę płynności/wyglądu i balansu na telefonie; T07c (drzewka) i online pozostają kolejnymi etapami.
+
+## Cel, łup i depo 0.1.12
+
+T07f realizuje wybór testera: celowanie broni/czarów w zasięgu, nick i dwa warianty pasków, autołup z filtrem, depo w gospodzie, stash i ikonowy handel NPC. Market ma być rynkiem między graczami, zgodnie z odpowiedzią właściciela; pozostaje na etap M3, po serwerze, kontach i trwałej gospodarce. Nie dodajemy lokalnego sklepu pod nazwą marketu. Stash jest obecnie zapisem offline; danych i waluty offline nie przenosimy do rynku online.

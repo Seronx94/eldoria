@@ -1,12 +1,12 @@
 {
   "name": "@eldoria/client",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "type": "module",
   "dependencies": {
     "phaser": "3.90.0",
-    "@eldoria/domain": "0.1.11",
-    "@eldoria/content": "0.1.11",
-    "@eldoria/protocol": "0.1.11"
+    "@eldoria/domain": "0.1.12",
+    "@eldoria/content": "0.1.12",
+    "@eldoria/protocol": "0.1.12"
   }
 }

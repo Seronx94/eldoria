@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { importMap, validateMaps, landmarks, landmarksOnMap } from '@eldoria/content';
+import { importMap, validateMaps, landmarks, landmarksOnMap,depotOnMap } from '@eldoria/content';
 const source = resolve('assets/source');
 const output = resolve('apps/client/public/assets');
 for(const kind of ['rat','beetle','wolf'])for(const directory of [source,output]){
@@ -21,6 +21,7 @@ for (const directory of [source, output]) {
     const data = readFileSync(resolve(directory, directory === source ? name : name.replace('.tmj', '.json')), 'utf8');
     return importMap(JSON.parse(data));
   });
+  for(const map of maps){const depot=depotOnMap(map.id);if(depot&&(map.collision[depot.y*map.width+depot.x]!==0||!map.buildings.some(b=>b.purpose==='inn'&&depot.x>b.x&&depot.x<b.x+b.width-1&&depot.y>b.y&&depot.y<b.y+b.height-1)))throw new Error(`Depo poza dostępną gospodą: ${map.id}`);}
   validateMaps(maps, new Set(readdirSync(directory)));
   if (new Set(landmarks.map(l=>l.id)).size !== landmarks.length) throw new Error('Powtórzone ID odkrycia');
   for (const l of landmarks) {

@@ -1,4 +1,4 @@
-# Eldoria 0.1.11 — chód, plecak i poziomy czarów
+# Eldoria 0.1.12 — cel, autołup i depo
 
 Grywalna przygoda offline: Vareon i Mroczny Las w jednym świecie 64×112, Knight/Archer/Mag, 12 stworzeń, trzej NPC, dwa zadania, sklep i zapis. Kolorowy pixel art jest autorskim zestawem roboczym; audio pozostaje wyłączone. Nie ma multiplayer. Projekt Androida jest gotowy do lokalnego zbudowania APK; instrukcja: [ANDROID.md](ANDROID.md).
 
@@ -28,7 +28,18 @@ npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
 Otwórz na telefonie adres wypisany przez skrypt. Obróć telefon do poziomu. Komputer musi pozostać włączony, a zapora dopuszczać port 5173 w sieci lokalnej. Środowisko chmurowe nie jest urządzeniem w Twojej domowej sieci; sam adres z chmury nie daje publicznego dostępu. Po zbudowaniu i zainstalowaniu APK komputer i LAN nie są potrzebne — patrz [instrukcja Androida](ANDROID.md).
 
-## Cztery kroki testu 0.1.11
+## Pięć kroków testu 0.1.12
+
+1. Archerem lub Magiem zaznacz potwora dotykiem. Strzała/pocisk i czar mają lecieć w niego. Odejdź poza zasięg: dostaniesz komunikat bez zużycia many. Ponowny dotyk usuwa cel; bez zaznaczenia działa automatyczny wybór.
+2. Sprawdź nick, HP i manę nad postacią. W menu wybierz łuki, wróć do gry i ponownie uruchom stronę — wybór ma pozostać.
+3. Pokonaj przeciwnika i przejdź obok łupu. W plecaku wyłącz zbieranie skóry lub chityny: materiał ma pozostać na ziemi, a złoto nadal się zbierać. Ręczne Łup pomija filtr.
+4. W planie Vareon wybierz Depo i przejdź do gospody na południowym zachodzie. Podejdź do skrzynki, otwórz dotykiem/F, odłóż materiał i pobierz jedną sztukę. Zamknij, wznow grę i sprawdź stash. Market graczy będzie dopiero online.
+5. U Borina sprawdź ikonę, nazwę i cenę. Kup miksturę i sprzedaj materiał; sprawdź saldo oraz czy wygodnie trafiasz w przyciski na telefonie.
+
+Zgłoś model telefonu, problem i miejsce na mapie; dla utraty przedmiotu dołącz eksport zapisu. Testy Chromium emulują dotyk, ale nie zastępują fizycznego urządzenia ani pomiaru FPS.
+
+## Poprzednie kroki testu 0.1.11
+
 
 1. Przytrzymaj joystick i przejdź dłuższy odcinek ulicy. Postać ma płynnie przesuwać się między kratkami; sprawdź też zmianę kierunku, zatrzymanie i ruch przy ścianie. Podaj model telefonu, jeśli nadal widzisz szarpanie.
 2. Otwórz **Plecak**. Kliknij broń w wyposażeniu, następnie jej ikonę w siatce i **Załóż**. Wybierz miksturę przy niepełnym HP i **Użyj mikstury**. Sprawdź licznik, pusty slot i opis materiału; ekwipunek pozostaje po wznowieniu.

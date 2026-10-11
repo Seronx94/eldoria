@@ -1,5 +1,5 @@
-import { combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
-import { commandSchema, nameSchema,defaultAppearance,type Appearance,professionSchema, type Command, type Direction,type Profession,type SpellId,type ActionId,type Weapon } from '@eldoria/protocol';
+import { inventoryRules,depotOnMap,depotRules,combatAllowedAt, landmarksOnMap, legacyTownPositionAllowed, items, monsters, rules, npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual, type NpcId, type MonsterKind, type WorldMap } from '@eldoria/content';
+import { commandSchema, nameSchema,defaultLootSettings,type LootSettings,defaultAppearance,type Appearance,professionSchema, type Command, type Direction,type Profession,type SpellId,type ActionId,type Weapon } from '@eldoria/protocol';
 import { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 export { addItems, countItem, removeItem, inventorySchema, type Stack } from './inventory';
 import { saveSchema, type SaveData } from './save';
@@ -19,6 +19,7 @@ export interface CombatEvent {
 }
 export interface Snapshot {
   appearance:Appearance;profession:Profession;actionSlots:[ActionId,ActionId,ActionId,ActionId];
+  stash:Stack[];lootSettings:LootSettings;depotOpen:boolean;
   attackCooldown:number;spellCooldowns:Record<SpellId,number>;guardMs:number;
   exploration: SaveData['exploration'];
   combatEvents: CombatEvent[];
@@ -55,7 +56,7 @@ export class Simulation {
     if (!map?.spawns.entry) throw new Error('Brak mapy startowej');
     this.time = clock.now(); this.lastMana = this.time;
     profession=professionSchema.parse(profession);
-    this.state = { appearance:defaultAppearance(),profession:'knight',actionSlots:defaultActions('knight'),attackCooldown:0,spellCooldowns:emptySpellCooldowns(),guardMs:0,exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Przytrzymaj atak podstawowy i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
+    this.state = { stash:[],lootSettings:defaultLootSettings(),depotOpen:false,appearance:defaultAppearance(),profession:'knight',actionSlots:defaultActions('knight'),attackCooldown:0,spellCooldowns:emptySpellCooldowns(),guardMs:0,exploration: {status:'available',found:[]}, combatEvents: [], dialog: null, quest: { status: 'available', kills: 0 }, name: nameSchema.parse(name), mapId: map.id, player: { ...map.spawns.entry }, direction: 'down', hp: rules.maxHp, mana: rules.maxMana, maxHp: rules.maxHp, maxMana: rules.maxMana, level: 1, potions: countItem(initialInventory, 'potion'), inventory: inventorySchema.parse(initialInventory), equipment: { weapon: 'sword', armor: 'tunic' }, loot: [], exp: 0, gold: 0, kills: 0, defeatedKinds: [], selectedId: null, creatures: [], message: ['vareon','eldoria'].includes(map.id) ? 'Witaj w Vareon. Mira stoi obok — wybierz Rozmowa (F).' : map.combatAllowed ? 'Próba Wędrowca: szczur, żuk i wilk. Przytrzymaj atak podstawowy i zbierz łup.' : 'Dziedziniec jest bezpieczny. Idź w górę do świecącej bramy i wybierz Przejdź.', eventId: 0, complete: false };
     this.state.profession=profession;this.state.actionSlots=defaultActions(profession);this.state.equipment.weapon=professions[profession].weapon;
     this.spawnCreatures();
   }
@@ -95,6 +96,24 @@ export class Simulation {
   private command(command: Command): void {
     const now = this.time;
     const s = this.state;
+    if(command.type==='SetLootSettings'){s.lootSettings=command.settings;this.collectNearby();this.notify('Zmieniono automatyczne zbieranie.');return;}
+    if(command.type==='ClearTarget'){s.selectedId=null;return;}
+    if(command.type==='CloseDepot'){s.depotOpen=false;return;}
+    if(command.type==='OpenDepot'){
+      if(s.dialog||!this.nearDepot()){this.notify('Podejdź do skrzynki depo w gospodzie.');return;}
+      s.depotOpen=true;this.notify('Depo: przenoś przedmioty pomiędzy plecakiem i stashem.');return;
+    }
+    if(command.type==='StashTransfer'){
+      if(!s.depotOpen||s.dialog||!this.nearDepot()){this.notify('Otwórz depo przy skrzynce.');return;}
+      const depositing=command.direction==='deposit',source=depositing?s.inventory:s.stash,destination=depositing?s.stash:s.inventory;
+      const remainder=removeItem(source,command.itemId,command.quantity,depositing?inventoryRules.slots:depotRules.slots);
+      if(!remainder){this.notify('Nie masz tylu przedmiotów.');return;}
+      const added=addItems(destination,[{itemId:command.itemId,quantity:command.quantity}],depositing?depotRules.slots:inventoryRules.slots);
+      if(!added){this.notify(depositing?'Stash jest pełny.':'Plecak jest pełny.');return;}
+      s.inventory=depositing?remainder:added;s.stash=depositing?added:remainder;s.potions=countItem(s.inventory,'potion');
+      this.notify(depositing?'Odłożono do stashu.':'Pobrano ze stashu.');return;
+    }
+    if(s.depotOpen&&['Move','Attack','Cast','Select','UseItem','Loot','Interact','Equip','Unequip'].includes(command.type))return;
     if(command.type==='SetAppearance'){s.appearance={...command.appearance};this.notify('Zmieniono kolory postaci.');return;}
     if(command.type==='SetActionSlot'){
       if(!actionAllowed(s.profession,command.actionId)){this.notify('Ta umiejętność należy do innej profesji.');return;}
@@ -134,6 +153,7 @@ export class Simulation {
       } else if (command.type === 'Sell' && npc.id === 'borin') {
         const inventory = removeItem(s.inventory, command.itemId, command.quantity);
         if (!inventory) { this.notify('Nie masz tylu materiałów.'); return; }
+        if(s.gold+command.quantity*shopRules.materialPrice>depotRules.maxGold){this.notify('Limit złota — sprzedaż anulowana.');return;}
         s.inventory = inventory; s.gold += command.quantity * shopRules.materialPrice; this.notify('Sprzedano materiały.');
       } else this.notify('Ta opcja nie jest teraz dostępna.');
       return;
@@ -147,6 +167,7 @@ export class Simulation {
       if (!loot) { this.notify('Podejdź obok sakiewki, aby odebrać łup.'); return; }
       const inventory = addItems(s.inventory, loot.items);
       if (!inventory) { this.notify('Pełny plecak — łup pozostaje na ziemi.'); return; }
+      if(s.gold+loot.gold>depotRules.maxGold){this.notify('Limit złota — łup pozostaje na ziemi.');return;}
       s.inventory = inventory; s.gold += loot.gold; s.loot = s.loot.filter(l => l.id !== loot.id);
       s.potions = countItem(s.inventory, 'potion'); this.notify('Odebrano łup.'); return;
     }
@@ -174,9 +195,10 @@ export class Simulation {
       const v = vectors[command.direction];
       const next = { x: s.player.x + v.x, y: s.player.y + v.y };
       if (!this.walkable(next) || this.occupied(next)) { this.notify('Przejście zablokowane.'); return; }
-      s.player = next; this.lastMove = now; return;
+      s.player = next; this.lastMove = now; this.collectNearby();return;
     }
     if (command.type === 'Interact') {
+      if(!command.npcId&&this.nearDepot()){s.depotOpen=true;this.notify('Otwarto depo.');return;}
       const npc = this.map().npcs.find(n => (!command.npcId || n.id === command.npcId) && distance(n, s.player) <= 1);
       if (npc) { s.dialog = npc.id; this.notify(`${npcs[npc.id].name}: ${npcs[npc.id].role}`); return; }
       if (command.npcId) { this.notify('Podejdź obok NPC, aby porozmawiać.'); return; }
@@ -219,6 +241,10 @@ export class Simulation {
     if(now-(spellId?this.lastSpells.get(spellId)??-Infinity:this.lastAttack)<(spell?.cooldown??profile.attackMs))return;
     if(spell&&s.mana<spell.mana){this.notify('Za mało many.');return;}
     if(spell?.mode==='heal'&&s.hp===s.maxHp){this.notify('Masz pełne zdrowie — nie zużyto many.');return;}
+    const locked=s.creatures.find(c=>c.id===s.selectedId&&c.hp>0);
+    if(locked&&((!casting&&profile.range>1)||spell?.mode==='target'||spell?.mode==='area')){
+      if(!combatAllowedAt(this.map(),locked)||distance(locked,s.player)>(spell?.range??profile.range)||!this.lineOfSight(s.player,locked)){this.notify('Wybrany cel poza zasięgiem albo za przeszkodą.');return;}
+    }
     if(spellId&&spell){s.mana-=spell.mana;this.lastSpells.set(spellId,now);if(spellId===profile.spells[0])this.lastSpell=now;}else this.lastAttack=now;
     const effect=spell?.effect??profile.effect;
     const kind=casting?'spell':profile.range===1?'melee':'ranged';
@@ -239,7 +265,7 @@ export class Simulation {
     }
     const targets=spell&&(spell.mode==='area'||spell.mode==='self-area')?s.creatures.filter(c=>c.hp>0&&combatAllowedAt(this.map(),c)&&distance(c,to)<=spell.radius&&distance(c,s.player)<=range+spell.radius&&this.lineOfSight(s.player,c)):(target?[target]:[]);
     const hits=targets.map(c=>({targetId:c.id,to:{x:c.x,y:c.y},damage:this.hit(c,spell?.damage??profile.damage,now)}));
-    this.combat(kind,'player',hits[0]?.targetId??null,s.player,to,hits[0]?.damage??0,{effect,abilityId:spellId??'attack',radius:spell?.radius??0,hits});
+    this.combat(kind,'player',spell?.mode==='area'?target?.id??null:hits[0]?.targetId??null,s.player,to,hits[0]?.damage??0,{effect,abilityId:spellId??'attack',radius:spell?.radius??0,hits});
     if(!hits.length)this.notify(casting?`${spell!.name} ${spell!.mode==='self-area'?'wokół postaci':'w kierunku patrzenia'} (${spell!.mana} many).`:`${profile.attackName}: atak bez trafienia. Podejdź w zasięg.`);
     else if(targets.every(c=>c.hp>0))this.notify(`${spell?.name??profile.attackName}: ${hits.reduce((n,h)=>n+h.damage,0)} obrażeń.`);
   }
@@ -277,7 +303,7 @@ export class Simulation {
     const remaining = (last: number, period: number) => Math.max(0, Math.ceil(period - (now-last)));
     return saveSchema.parse({
       version: 1, cityRevision: (this.maps.find(m=>m.id==='eldoria')??this.maps.find(m=>m.id==='vareon'))?.layoutRevision ?? 1, mode: 'offline',appearance:s.appearance, profession:s.profession,actionSlots:s.actionSlots,spellCooldowns:this.spellCooldowns(),guardIn:Math.min(professionRules.guardMs,Math.max(0,Math.ceil(this.guardUntil-now))), name: s.name, mapId: s.mapId, player: s.player, direction: s.direction,
-      level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, inventory: s.inventory, equipment: s.equipment,
+      level: s.level, hp: s.hp, mana: s.mana, exp: s.exp, gold: s.gold, kills: s.kills, quest: s.quest, exploration: s.exploration, stash:s.stash,lootSettings:s.lootSettings, inventory: s.inventory, equipment: s.equipment,
       cooldowns: { move: remaining(this.lastMove,rules.stepMs), attack: remaining(this.lastAttack,rules.attackMs), spell: remaining(this.lastSpell,rules.spellMs), potion: remaining(this.lastPotion,rules.potionMs), mana: remaining(this.lastMana,rules.manaRegenMs) },
       maps: [...this.creatureMaps].map(([mapId, creatures]) => ({ mapId, creatures: creatures.map(c => ({ id:c.id, kind:c.kind, x:c.x, y:c.y, hp:c.hp, state:c.state, attackIn:remaining(c.lastAttack,rules.monsterAttackMs), moveIn:remaining(c.lastMove,rules.stepMs*2), respawnIn: c.hp === 0 ? remaining(c.diedAt,rules.respawnMs) : 0 })) })),
       loot: s.loot, eventId: s.eventId,
@@ -325,7 +351,7 @@ export class Simulation {
       sim.creatureMaps.set(map.id,creatures);
     }
     if (new Set(data.loot.map(l => l.id)).size !== data.loot.length || data.loot.some(l => !walkable(l.mapId,l))) throw new Error('Nieprawidłowy łup');
-    sim.state = { ...sim.state, name:data.name,appearance:data.appearance,profession:data.profession,actionSlots:data.actionSlots, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:relocated ? 'Vareon przebudowano — wznowiono przy wartowni. Postęp i wyposażenie zachowano.' : 'Wznowiono przygodę offline.' };
+    sim.state = { ...sim.state, name:data.name,appearance:data.appearance,profession:data.profession,actionSlots:data.actionSlots, mapId:data.mapId, player:data.player, direction:data.direction, level:data.level, hp:data.hp, mana:data.mana, maxHp:rules.maxHp+(data.level-1)*10, maxMana:rules.maxMana+(data.level-1)*5, exp:data.exp, gold:data.gold, kills:data.kills, quest:data.quest, exploration:data.exploration, stash:data.stash,lootSettings:data.lootSettings, inventory:data.inventory, potions:countItem(data.inventory,'potion'), equipment:data.equipment, loot:data.loot, eventId:data.eventId, selectedId:null, dialog:null, complete:false, creatures:sim.creatureMaps.get(data.mapId)!, message:relocated ? 'Vareon przebudowano — wznowiono przy wartowni. Postęp i wyposażenie zachowano.' : 'Wznowiono przygodę offline.' };
     for(const id of Object.keys(spells) as SpellId[])sim.lastSpells.set(id,now+data.spellCooldowns[id]-spells[id].cooldown);
     sim.guardUntil=now+data.guardIn;
     sim.lastMove = now+data.cooldowns.move-rules.stepMs;
@@ -334,6 +360,25 @@ export class Simulation {
     sim.lastPotion = now+data.cooldowns.potion-rules.potionMs;
     sim.lastMana = now+data.cooldowns.mana-rules.manaRegenMs;
     return sim;
+  }
+  private nearDepot():boolean {
+    const depot=depotOnMap(this.state.mapId);return !!depot&&distance(depot,this.state.player)<=depotRules.range;
+  }
+  private collectNearby():void {
+    const s=this.state,settings=s.lootSettings;if(!settings.enabled)return;
+    let changed=false;
+    for(const loot of s.loot){
+      if(loot.mapId!==s.mapId||Math.max(Math.abs(loot.x-s.player.x),Math.abs(loot.y-s.player.y))>rules.autoLootRange)continue;
+      if(settings.gold&&loot.gold>0&&s.gold+loot.gold<=depotRules.maxGold){s.gold+=loot.gold;loot.gold=0;changed=true;}
+      const remaining:Stack[]=[];
+      for(const stack of loot.items){
+        const inventory=settings.itemIds.includes(stack.itemId)?addItems(s.inventory,[stack]):null;
+        if(inventory){s.inventory=inventory;changed=true;}else remaining.push(stack);
+      }
+      loot.items=remaining;
+    }
+    s.loot=s.loot.filter(loot=>loot.gold>0||loot.items.length>0);s.potions=countItem(s.inventory,'potion');
+    if(changed)this.notify('Automatycznie zebrano łup.');
   }
   private gainExp(amount: number): void {
     const s = this.state; s.exp += amount;

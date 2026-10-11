@@ -1,5 +1,5 @@
 export const rules = {
-  tileSize: 32, stepMs: 200, tickMs: 50,
+  tileSize: 32, stepMs: 200, tickMs: 50,autoLootRange:1,
   maxHp: 100, maxMana: 50, playerDefense: 3,
   attackDamage: 12, attackMs: 800, meleeRange: 1,
   spellDamage: 18, spellMs: 1500, spellCost: 8, spellRange: 4,
@@ -20,3 +20,5 @@ export { npcs, questRules, explorationRules, landmarks, shopRules, sampleSpawns,
 
 export {legacyTownPositionAllowed} from './town';
 export {professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns,type CombatVisual} from './professions';
+
+export {depotRules,depotOnMap} from './depot';

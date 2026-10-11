@@ -87,3 +87,7 @@ Projekt Androida wygenerowano oficjalnym szablonem `@capacitor/cli` 8.5.3 (Ionic
 ## Plecak i efekty 0.1.11
 
 Ikony tuniki, skóry i chityny w `apps/client/src/inventory-view.ts` oraz dodatkowe warstwy czarów w `combat-effects.ts` są własnymi rysunkami SVG/proceduralnymi, przygotowanymi dla Eldorii przez Codexa. Broń i mikstura korzystają z wcześniejszych autorskich ikon Eldorii. Bez importu materiałów ze screenów Tibii/Kakele; do użycia i modyfikacji w projekcie na zasadach wcześniejszego wkładu Codexa.
+
+## Depo i paski postaci 0.1.12
+
+Drewniana skrzynka depo w main.ts oraz nick/paski/łuki w hero-vitals.ts są autorskimi rysunkami proceduralnymi przygotowanymi przez Codexa dla Eldorii, do użycia i modyfikacji w projekcie. Stash i handel NPC korzystają z istniejących własnych ikon itemIcon. Bez importowania materiałów Tibii/Kakele. Screenshoty w docs/screenshots to nieedytowane przechwycenia własnej gry w Chromium.

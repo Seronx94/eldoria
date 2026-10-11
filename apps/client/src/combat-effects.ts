@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import {projectileEndpoint} from './projectile-target';
 import type { CombatEvent } from '@eldoria/domain';
 type Sprite = Phaser.GameObjects.Sprite;
 interface Effect { root: Phaser.GameObjects.Container; born: number; duration: number; draw: (age: number) => void }
@@ -23,7 +24,9 @@ export class CombatEffects {
   play(event: CombatEvent, source: Sprite | undefined, target: Sprite | undefined,resolveTarget:(id:string)=>Sprite|undefined=()=>target): void {
     const sx=source?.x??event.from.x*32+16,sy=(source?.y??event.from.y*32+32)-18;
     const area=['fireball','volley','spin','frost'].includes(event.effect);
-    const tx=area?event.to.x*32+16:target?.x??event.to.x*32+16,ty=area?event.to.y*32+16:(target?.y??event.to.y*32+32)-16;
+    let tx=area?event.to.x*32+16:target?.x??event.to.x*32+16,ty=area?event.to.y*32+16:(target?.y??event.to.y*32+32)-16;
+    const initialImpact={x:tx,y:ty};
+    const impact=()=>projectileEndpoint(initialImpact,target?.active?{x:target.x,y:target.y-16}:undefined);
     const angle=event.targetId===null?({up:-Math.PI/2,down:Math.PI/2,left:Math.PI,right:0})[event.direction]:Math.atan2(ty-sy,tx-sx);
     const color=event.effect==='frost'?0x8eeaff:event.effect==='heal'?0x9bf09b:event.effect==='guard'?0x8abcec:event.effect==='bolt'?0xc6a2ff:event.effect==='blade-wave'?0xffdf8e:0xffb759;
     if(event.kind==='spell'&&!['spin','guard','heal','frost'].includes(event.effect))this.add(400,(g,age)=>{
@@ -34,6 +37,8 @@ export class CombatEffects {
     if(projectiles.includes(event.effect)){
       const flight=Math.min(420,150+Math.hypot(tx-sx,ty-sy)),burst=event.effect==='fireball'?380:220;
       this.add(flight+burst,(g,age)=>{
+        const endpoint=impact();tx=endpoint.x;ty=endpoint.y;
+        const angle=Math.atan2(ty-sy,tx-sx);
         if(age<flight){
           const p=age/flight,x=Math.round(sx+(tx-sx)*p),y=Math.round(sy+(ty-sy)*p);
           if(event.effect==='arrow'||event.effect==='power-arrow'){
@@ -82,19 +87,19 @@ export class CombatEffects {
         g.lineStyle(3,0xe5f4ee).lineBetween(sx+Math.cos(swing)*8,sy+Math.sin(swing)*8,sx+Math.cos(swing)*25,sy+Math.sin(swing)*25);g.fillStyle(0xe6b75b).fillRect(sx+Math.cos(swing)*7-2,sy+Math.sin(swing)*7-2,4,4);
       }else for(let claw=0;claw<3;claw++)g.lineStyle(2,0xffb28e,1-p).lineBetween(tx-7+claw*5,ty-10,tx-12+claw*5,ty+4);
     },event.effect);
-    if(event.kind==='spell')this.spectacle(event,sx,sy,tx,ty);
+    if(event.kind==='spell')this.spectacle(event,sx,sy,tx,ty,impact);
     for(const hit of event.hits)this.showHit(hit.damage,resolveTarget(hit.targetId),hit.to,event.kind==='monster');
     if(event.healing>0)this.number(sx,sy-18,`+${event.healing}`,'#a7f2ac');
   }
   /** Layered, bounded pixel particles: cast, travel and impact stay cosmetic. */
-  private spectacle(event:CombatEvent,sx:number,sy:number,tx:number,ty:number):void {
+  private spectacle(event:CombatEvent,sx:number,sy:number,tx:number,ty:number,impact:()=>{x:number;y:number}):void {
     const id=event.effect;
     const colors:Record<string,number>={spark:0xffcd66,fireball:0xff773c,frost:0x72dcff,heal:0x83f0ae,guard:0x8dbbff,spin:0xffe3a0,'blade-wave':0xffd46d,'power-arrow':0xffee90,volley:0xdbeaba};
     const color=colors[id]??0xffdf90;
     const flight=Math.min(420,150+Math.hypot(tx-sx,ty-sy));
     const atImpact=['fireball','spark','blade-wave','power-arrow','volley'].includes(id);
     const delay=atImpact?flight:0,duration=delay+850;
-    const cx=atImpact?tx:sx,cy=atImpact?ty:sy+12;
+    let cx=atImpact?tx:sx,cy=atImpact?ty:sy+12;
     this.add(duration,(g,age)=>{
       // A ring with rotating glyphs and rising motes accompanies every profession spell.
       const cast=Math.min(1,age/500),fade=Math.max(0,1-age/650);
@@ -105,6 +110,7 @@ export class CombatEffects {
         g.fillStyle(0xfff9dc,fade).fillRect(x,Math.round(y-cast*30),2,2);
       }
       if(age<delay)return;
+      if(atImpact&&id!=='volley'){const endpoint=impact();cx=endpoint.x;cy=endpoint.y;}
       const p=(age-delay)/850,alpha=Math.min(1,(1-p)*1.5);
       const r=(id==='frost'?event.radius*32:id==='fireball'||id==='volley'?Math.max(24,event.radius*32):30);
       if(id==='fireball'){

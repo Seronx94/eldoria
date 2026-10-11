@@ -70,9 +70,10 @@ describe('training combat', () => {
     t.simulation.send({ type: 'Select', targetId: 'rat' });
     t.simulation.send({ type: 'Attack' }); expect(t.simulation.snapshot().creatures[0]?.hp).toBe(30);
     t.maps[0]!.collision[10 * 28 + 13] = 1;
-    t.simulation.send({ type: 'Cast' }); expect(t.simulation.snapshot().mana).toBe(42);
+    t.simulation.send({ type: 'Cast' }); expect(t.simulation.snapshot().mana).toBe(50);
     expect(t.simulation.snapshot().creatures[0]?.hp).toBe(30);
-    expect(t.simulation.snapshot().combatEvents.at(-1)).toMatchObject({kind:'spell',targetId:null,damage:0});
+    expect(t.simulation.snapshot().combatEvents.some(e=>e.kind==='spell')).toBe(false);
+    expect(t.simulation.snapshot().message).toContain('przeszkodą');
   });
   it('uses mana, spell cooldown and timed regeneration', () => {
     const t = setup(); const sim = t.simulation;
@@ -162,7 +163,7 @@ describe('loot and equipment boundaries', () => {
       for (let i = 0; i < 7; i++) { t.advance(200); sim.send({ type: 'Move', direction: 'up' }); }
       sim.send({ type: 'Interact' });
     }
-    expect(sim.snapshot().creatures[0]!.hp).toBe(0); expect(sim.snapshot().loot).toHaveLength(1); expect(sim.snapshot().exp).toBe(10);
+    expect(sim.snapshot().creatures[0]!.hp).toBe(0); expect(sim.snapshot().loot).toHaveLength(0); expect(sim.snapshot()).toMatchObject({exp:10,gold:1});
   });
 });
 

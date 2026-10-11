@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { rules,professions,spells,professionRules,defaultActions,actionAllowed,emptySpellCooldowns } from '@eldoria/content';
-import { directionSchema, nameSchema,appearanceSchema,defaultAppearance,professionSchema,weaponSchema,actionSchema } from '@eldoria/protocol';
-import { inventorySchema } from './inventory';
+import { directionSchema, nameSchema,appearanceSchema,defaultAppearance,lootSettingsSchema,defaultLootSettings,professionSchema,weaponSchema,actionSchema } from '@eldoria/protocol';
+import { inventorySchema,stashSchema } from './inventory';
 const integer = (max: number) => z.number().int().min(0).max(max);
 const point = z.object({ x: integer(255), y: integer(255) }).strict();
 const spellCooldownSchema=z.object({
@@ -22,6 +22,7 @@ export const saveSchema = z.object({
   level: z.number().int().min(1).max(100), hp: z.number().int().min(1).max(1090), mana: integer(545),
   exp: integer(9999), gold: integer(10000000), kills: integer(10000000),
   quest: questSchema, exploration: explorationSchema.default({status:'available',found:[]}), inventory: inventorySchema,
+  stash:stashSchema.default([]),lootSettings:lootSettingsSchema.default(defaultLootSettings),
   equipment: z.object({ weapon: weaponSchema.nullable(), armor: z.literal('tunic').nullable() }).strict(),
   cooldowns: z.object({ move: integer(rules.stepMs), attack: integer(rules.attackMs), spell: integer(rules.spellMs), potion: integer(rules.potionMs), mana: integer(rules.manaRegenMs) }).strict(),
   maps: z.array(z.object({ mapId: z.enum(['vareon', 'forest', 'eldoria']), creatures: z.array(z.object({

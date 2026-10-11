@@ -855,3 +855,15 @@ button:disabled { opacity:.5; cursor:default; }
 
 @media(max-width:620px) { .inventory-layout { grid-template-columns:120px 1fr; } #item-details { grid-column:1/-1; } }
 @media(max-width:440px) { .inventory-layout { grid-template-columns:1fr; } }
+.vitals-choice { display:block; margin:10px 0; font:13px system-ui; }
+#vitals-style { min-height:48px; width:100%; background:#142832; color:#ecdfb7; padding:8px; }
+#depot-dialog { width:860px; max-width:calc(100vw - 24px); box-sizing:border-box; }
+.depot-columns { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.trade-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px; border:1px solid #526979; background:#12242d; margin:6px 0; font:13px system-ui; }
+.trade-row>span:nth-child(2) { flex:1; min-width:100px; }
+.trade-row button { min-height:48px; min-width:48px; padding:6px 10px; font:12px system-ui; }
+#loot-filter { display:grid; grid-template-columns:1fr 1fr; }
+#auto-loot label { display:flex; align-items:center; gap:8px; min-height:48px; font:13px system-ui; }
+#auto-loot input { width:24px; height:24px; }
+#player-market { margin-top:14px; }
+@media(max-width:620px) { .depot-columns { grid-template-columns:1fr; } }

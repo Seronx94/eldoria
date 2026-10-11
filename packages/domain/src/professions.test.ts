@@ -23,6 +23,23 @@ describe('profession combat and validated actions',()=>{
     t.map.collision[11*t.map.width+15]=1;t.advance(800);t.sim.send({type:'Attack'});
     expect(t.sim.snapshot().creatures[0]!.hp).toBe(first.creatures[0]!.hp);expect(t.sim.snapshot().combatEvents.at(-1)?.targetId).toBeNull();
   });
+  it.each(['archer','mage'] as const)('%s keeps the chosen ranged target, rejects a blocked lock and supports clearing it',p=>{
+    const t=setup(p,[{id:'chosen',kind:'wolf',x:17,y:11},{id:'near',kind:'rat',x:14,y:11}]);
+    t.sim.send({type:'Select',targetId:'chosen'});t.map.collision[11*t.map.width+15]=1;
+    t.sim.send({type:'Attack'});t.sim.send({type:'Cast'});
+    expect(t.sim.snapshot()).toMatchObject({mana:50,combatEvents:[],selectedId:'chosen'});
+    expect(t.sim.snapshot().creatures.map(c=>c.hp)).toEqual([70,30]);
+    t.map.collision[11*t.map.width+15]=0;t.sim.send({type:'Attack'});
+    expect(t.sim.snapshot().combatEvents.at(-1)?.targetId).toBe('chosen');expect(t.sim.snapshot().creatures[1]!.hp).toBe(30);
+    t.sim.send({type:'ClearTarget'});t.advance(800);t.sim.send({type:'Attack'});
+    expect(t.sim.snapshot().combatEvents.at(-1)?.targetId).toBe('near');
+  });
+  it.each(['archer','mage'] as const)('%s cannot shoot a selected target beyond either weapon or spell range',p=>{
+    const t=setup(p,[{id:'far',kind:'wolf',x:20,y:11},{id:'near',kind:'rat',x:14,y:11}]);
+    t.sim.send({type:'Select',targetId:'far'});t.sim.send({type:'Attack'});t.sim.send({type:'Cast'});
+    expect(t.sim.snapshot()).toMatchObject({mana:50,combatEvents:[],selectedId:'far'});
+    expect(t.sim.snapshot().creatures.map(c=>c.hp)).toEqual([70,30]);
+  });
   it('rejects foreign, malformed or locked actions without consuming mana or touching cooldowns',()=>{
     const t=setup('knight');for(const command of [{type:'Cast',spellId:'fireball'},{type:'Cast',spellId:'unknown'},{type:'SetActionSlot',slot:0,actionId:'volley'},{type:'SetActionSlot',slot:4,actionId:'attack'}])t.sim.send(command);
     expect(t.sim.snapshot()).toMatchObject({mana:50,combatEvents:[],actionSlots:defaultActions('knight')});
